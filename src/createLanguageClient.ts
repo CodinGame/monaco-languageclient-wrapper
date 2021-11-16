@@ -2,7 +2,7 @@ import { createWebSocketConnection, ConsoleLogger, toSocket, MessageSignature } 
 import { Uri } from 'monaco-editor'
 import {
   MonacoLanguageClient,
-  createConnection, ConnectionErrorHandler, ConnectionCloseHandler, IConnection, Middleware, ErrorHandler, IConnectionProvider, InitializeParams, CodeAction, RegistrationRequest, RegistrationParams
+  createConnection, ConnectionErrorHandler, ConnectionCloseHandler, IConnection, Middleware, ErrorHandler, IConnectionProvider, InitializeParams, RegistrationRequest, RegistrationParams
 } from '@codingame/monaco-languageclient'
 import delay from 'delay'
 import once from 'once'
@@ -36,18 +36,6 @@ async function openConnection (url: URL | string, errorHandler: ConnectionErrorH
             rootUri: rootPath != null ? Uri.from({ scheme: 'file', path: rootPath }).toString() : null
           }
           return connection.initialize(fixedParams)
-        },
-        sendRequest: async (...args: Parameters<typeof connection.sendRequest>) => {
-          const result = await connection.sendRequest<CodeAction[]>(...args)
-          // Hack for https://github.com/OmniSharp/omnisharp-roslyn/issues/2068
-          if ((args[0] as MessageSignature).method === 'textDocument/codeAction') {
-            result.forEach(item => {
-              if (item.edit != null && Object.keys(item.edit).length === 0) {
-                delete item.edit
-              }
-            })
-          }
-          return result
         },
         onRequest (...args: Parameters<typeof connection.onRequest>): void {
           connection.onRequest(args[0], (...params) => {
