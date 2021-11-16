@@ -2,7 +2,7 @@ import { createWebSocketConnection, ConsoleLogger, toSocket, MessageSignature } 
 import { Uri } from 'monaco-editor'
 import {
   MonacoLanguageClient,
-  createConnection, ConnectionErrorHandler, ConnectionCloseHandler, IConnection, Middleware, ErrorHandler, IConnectionProvider, InitializeParams, CodeAction, RegistrationRequest, RegistrationParams
+  createConnection, ConnectionErrorHandler, ConnectionCloseHandler, IConnection, Middleware, ErrorHandler, IConnectionProvider, InitializeParams, RegistrationRequest, RegistrationParams
 } from '@codingame/monaco-languageclient'
 import delay from 'delay'
 import once from 'once'
@@ -37,18 +37,6 @@ async function openConnection (url: URL | string, errorHandler: ConnectionErrorH
           }
           return connection.initialize(fixedParams)
         },
-        sendRequest: async (...args: Parameters<typeof connection.sendRequest>) => {
-          const result = await connection.sendRequest<CodeAction[]>(...args)
-          // Hack for https://github.com/OmniSharp/omnisharp-roslyn/issues/2068
-          if ((args[0] as MessageSignature).method === 'textDocument/codeAction') {
-            result.forEach(item => {
-              if (item.edit != null && Object.keys(item.edit).length === 0) {
-                delete item.edit
-              }
-            })
-          }
-          return result
-        },
         onRequest (...args: Parameters<typeof connection.onRequest>): void {
           connection.onRequest(args[0], (...params) => {
             // Hack for https://github.com/OmniSharp/omnisharp-roslyn/issues/2119
@@ -70,7 +58,7 @@ async function openConnection (url: URL | string, errorHandler: ConnectionErrorH
           } catch (error) {
             // The dispose should NEVER fail or the lsp client is not properly cleaned
             // see https://github.com/microsoft/vscode-languageserver-node/blob/master/client/src/client.ts#L3105
-            console.warn('Error while disposing connection', error)
+            console.warn('[LSP]', 'Error while disposing connection', error)
           }
           // Hack, when the language client is removed, the connection is disposed but the closeHandler is not always properly called
           // The language client is then still active but without a proper connection and errors will occurs
@@ -82,7 +70,7 @@ async function openConnection (url: URL | string, errorHandler: ConnectionErrorH
           try {
             connection.exit()
           } catch (error) {
-            console.warn('Error while shutdown lsp', error)
+            console.warn('[LSP]', 'Error while shutdown lsp', error)
           }
         }
       }

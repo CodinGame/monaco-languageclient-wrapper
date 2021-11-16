@@ -154,6 +154,8 @@ export class LanguageClientManager implements LanguageClient {
               delay(15000)
             ])
             disposable!.dispose()
+          }, error => {
+            console.error('[LSP]', 'Error while waiting for the language client to be ready', error)
           })
           break
         }

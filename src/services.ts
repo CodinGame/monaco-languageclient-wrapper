@@ -39,7 +39,7 @@ function autoSaveModels (services: CgMonacoServices) {
     timeoutMap.set(e.textDocument.uri, window.setTimeout(() => {
       timeoutMap.delete(e.textDocument.uri)
       services.workspace.saveDocument(e.textDocument, TextDocumentSaveReason.AfterDelay).catch(err => {
-        console.error(`Unable to save the document ${e.textDocument.uri.toString()}`, err)
+        console.error('[LSP]', `Unable to save the document ${e.textDocument.uri.toString()}`, err)
       })
     }, 500))
   })
