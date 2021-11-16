@@ -70,7 +70,7 @@ async function openConnection (url: URL | string, errorHandler: ConnectionErrorH
           } catch (error) {
             // The dispose should NEVER fail or the lsp client is not properly cleaned
             // see https://github.com/microsoft/vscode-languageserver-node/blob/master/client/src/client.ts#L3105
-            console.warn('Error while disposing connection', error)
+            console.warn('[LSP]', 'Error while disposing connection', error)
           }
           // Hack, when the language client is removed, the connection is disposed but the closeHandler is not always properly called
           // The language client is then still active but without a proper connection and errors will occurs
@@ -82,7 +82,7 @@ async function openConnection (url: URL | string, errorHandler: ConnectionErrorH
           try {
             connection.exit()
           } catch (error) {
-            console.warn('Error while shutdown lsp', error)
+            console.warn('[LSP]', 'Error while shutdown lsp', error)
           }
         }
       }

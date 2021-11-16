@@ -46,17 +46,17 @@ export default class WatchableConsoleWindow implements Window {
     const displayedMessage = message + '\n' + actions.map(action => `- ${action.title}`).join('\n')
 
     if (type === MessageType.Error) {
-      console.error(displayedMessage)
+      console.error('[LSP]', displayedMessage)
     }
     if (type === MessageType.Warning) {
-      console.warn(displayedMessage)
+      console.warn('[LSP]', displayedMessage)
     }
     if (type === MessageType.Info) {
-      console.info(displayedMessage)
+      console.info('[LSP]', displayedMessage)
     }
     if (type === MessageType.Log) {
       // eslint-disable-next-line no-console
-      console.log(displayedMessage)
+      console.log('[LSP]', displayedMessage)
     }
 
     if (actions.length > 1) {
