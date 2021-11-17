@@ -1,4 +1,5 @@
 import 'proxy-polyfill'
+import './hacks'
 import { createLanguageClientManager, LanguageServerConfig, StatusChangeEvent } from './languageClient'
 
 export {
