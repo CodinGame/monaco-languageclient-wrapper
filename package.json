@@ -1,6 +1,6 @@
 {
   "name": "@codingame/monaco-languageclient-wrapper",
-  "version": "1.0.8",
+  "version": "1.0.9",
   "private": false,
   "description": "Enhanced Monaco editor with TextMate grammars and more",
   "scripts": {
@@ -22,7 +22,8 @@
   "types": "dist/index.d.ts",
   "dependencies": {
     "@codingame/monaco-editor-wrapper": "^1.0.3",
-    "once": "^1.4.0"
+    "once": "^1.4.0",
+    "sweetalert": "^2.1.2"
   },
   "devDependencies": {
     "@babel/core": "7.16.0",
