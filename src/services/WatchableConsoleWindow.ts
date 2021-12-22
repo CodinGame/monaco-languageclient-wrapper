@@ -1,5 +1,6 @@
-import { MessageType, OutputChannel, Window, MessageActionItem, Emitter, Event } from '@codingame/monaco-languageclient'
+import { MessageType, OutputChannel, Window, MessageActionItem, Emitter, Event, CancellationToken, CancellationTokenSource } from '@codingame/monaco-languageclient'
 import swal from 'sweetalert'
+import type * as vscode from 'vscode'
 
 class WatchableOutputChannel implements OutputChannel {
   logs: string = ''
@@ -92,5 +93,18 @@ export default class WatchableConsoleWindow implements Window {
 
   get onDidChangeChannels (): Event<void> {
     return this.onDidChangeChannelsEmitter.event
+  }
+
+  withProgress: typeof vscode.window.withProgress = async <R> (options: vscode.ProgressOptions, task: (progress: vscode.Progress<{ message?: string, increment?: number }>, token: CancellationToken) => PromiseLike<R>): Promise<R> => {
+    console.info('[LSP]', 'Starting task with progress:', options.location, options.title)
+    try {
+      return await task({
+        report: (params) => {
+          console.info('[LSP]', `Task progress: ${params.increment}%:`, params.message)
+        }
+      }, new CancellationTokenSource().token)
+    } finally {
+      console.info('[LSP]', 'Task completed:', options.title)
+    }
   }
 }
