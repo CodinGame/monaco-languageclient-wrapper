@@ -37,28 +37,26 @@ class MemoryWorkspaceConfiguration implements WorkspaceConfiguration {
   }
 }
 
+const simpleConfigurationService = monaco.editor.StaticServices.configurationService.get() as monaco.extra.SimpleConfigurationService
 class Configuration implements Configurations {
   protected readonly onDidChangeConfigurationEmitter = new Emitter<ConfigurationChangeEvent>()
 
-  private configurations: Record<string, unknown> = {}
-
-  getConfiguration (section?: string): MemoryWorkspaceConfiguration {
-    return new MemoryWorkspaceConfiguration(section != null ? lookUp(this.configurations, section) : this.configurations)
+  getConfiguration (section?: string, resource?: string): MemoryWorkspaceConfiguration {
+    return new MemoryWorkspaceConfiguration(this.getValue(section, resource))
   }
 
-  update (section: string, value: unknown): void {
-    monaco.extra.addToValueTree(this.configurations, section, value, e => { throw new Error(e) })
-
-    const event: ConfigurationChangeEvent = {
-      affectsConfiguration (eventSection: string): boolean {
-        return section === eventSection
-      }
+  private getValue (section?: string, resource?: string) {
+    const override = {
+      resource: resource != null ? monaco.Uri.parse(resource) : null
     }
-    this.onDidChangeConfigurationEmitter.fire(event)
+    if (section == null) {
+      return simpleConfigurationService.getValue(override)
+    }
+    return simpleConfigurationService.getValue(section, override)
   }
 
   get onDidChangeConfiguration (): Event<ConfigurationChangeEvent> {
-    return this.onDidChangeConfigurationEmitter.event
+    return simpleConfigurationService.onDidChangeConfiguration
   }
 }
 
