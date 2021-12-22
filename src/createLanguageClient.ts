@@ -37,8 +37,8 @@ async function openConnection (url: URL | string, errorHandler: ConnectionErrorH
           }
           return connection.initialize(fixedParams)
         },
-        onRequest (...args: Parameters<typeof connection.onRequest>): void {
-          connection.onRequest(args[0], (...params) => {
+        onRequest (...args: Parameters<typeof connection.onRequest>) {
+          return connection.onRequest(args[0], (...params) => {
             // Hack for https://github.com/OmniSharp/omnisharp-roslyn/issues/2119
             if ((args[0] as MessageSignature).method === RegistrationRequest.type.method) {
               const registrationParams = params[0] as unknown as RegistrationParams
@@ -68,7 +68,7 @@ async function openConnection (url: URL | string, errorHandler: ConnectionErrorH
           // The shutdown should NEVER fail or the connection is not closed and the lsp client is not properly cleaned
           // see https://github.com/microsoft/vscode-languageserver-node/blob/master/client/src/client.ts#L3103
           try {
-            connection.exit()
+            await connection.exit()
           } catch (error) {
             console.warn('[LSP]', 'Error while shutdown lsp', error)
           }
