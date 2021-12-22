@@ -6,8 +6,8 @@ import {
 } from '@codingame/monaco-languageclient'
 import delay from 'delay'
 import once from 'once'
-import { LanguageServerConfig } from './languageClient'
 import { registerExtensionFeatures } from './extensions'
+import { StaticLanguageClientOptions } from './staticOptions'
 
 async function openConnection (url: URL | string, errorHandler: ConnectionErrorHandler, closeHandler: () => void): Promise<IConnection> {
   return new Promise((resolve, reject) => {
@@ -85,19 +85,19 @@ async function openConnection (url: URL | string, errorHandler: ConnectionErrorH
 const RETRY_DELAY = 3000
 class CGLSPConnectionProvider implements IConnectionProvider {
   private readonly serverUrl: string
-  private readonly language: string
+  private readonly id: string
   private readonly libraryUrls: string[]
   private readonly getSecurityToken: () => Promise<string>
-  constructor (serverUrl: string, language: string, libraryUrls: string[], getSecurityToken: () => Promise<string>) {
+  constructor (serverUrl: string, id: string, libraryUrls: string[], getSecurityToken: () => Promise<string>) {
     this.serverUrl = serverUrl
-    this.language = language
+    this.id = id
     this.libraryUrls = libraryUrls
     this.getSecurityToken = getSecurityToken
   }
 
   async get (errorHandler: ConnectionErrorHandler, closeHandler: ConnectionCloseHandler) {
     try {
-      const url = new URL(`run/${this.language}`, this.serverUrl)
+      const url = new URL(`run/${this.id}`, this.serverUrl)
       this.libraryUrls.forEach(libraryUrl => url.searchParams.append('libraryUrl', libraryUrl))
       url.searchParams.append('token', await this.getSecurityToken())
 
@@ -111,12 +111,12 @@ class CGLSPConnectionProvider implements IConnectionProvider {
 }
 
 function createLanguageClient (
+  id: string,
   {
     documentSelector,
-    language: languageServerLanguage,
-    configurationSection,
+    synchronize,
     initializationOptions
-  }: LanguageServerConfig,
+  }: StaticLanguageClientOptions,
   languageServerUrl: string,
   getSecurityToken: () => Promise<string>,
   libraryUrls: string[],
@@ -124,25 +124,23 @@ function createLanguageClient (
   middleware?: Middleware
 ): MonacoLanguageClient {
   const client = new MonacoLanguageClient({
-    id: `${languageServerLanguage}-languageclient`,
-    name: `CodinGame ${languageServerLanguage} Language Client`,
+    id: `${id}-languageclient`,
+    name: `CodinGame ${id} Language Client`,
     clientOptions: {
       // use a language id as a document selector
       documentSelector,
       // disable the default error handler
       errorHandler,
       middleware,
-      synchronize: {
-        configurationSection
-      },
+      synchronize,
       initializationOptions
     },
-    connectionProvider: new CGLSPConnectionProvider(languageServerUrl, languageServerLanguage, libraryUrls, getSecurityToken)
+    connectionProvider: new CGLSPConnectionProvider(languageServerUrl, id, libraryUrls, getSecurityToken)
   })
 
   client.registerProposedFeatures()
 
-  registerExtensionFeatures(client, languageServerLanguage)
+  registerExtensionFeatures(client, id)
 
   return client
 }
