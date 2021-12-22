@@ -120,7 +120,8 @@ export class LanguageClientManager implements LanguageClient {
   }
 
   start (): void {
-    const onDidHandleDiagnostics = new Emitter<void>()
+    const onServerResponse = new Emitter<void>()
+
     const languageClient = createLanguageClient(
       this.languageServerConfig,
       this.languageServerUrl,
@@ -131,7 +132,41 @@ export class LanguageClientManager implements LanguageClient {
       }, {
         handleDiagnostics: (uri: Uri, diagnostics: vscode.Diagnostic[], next: HandleDiagnosticsSignature) => {
           next(uri, diagnostics)
-          onDidHandleDiagnostics.fire()
+          onServerResponse.fire()
+        },
+        provideCodeActions: async (document, range, context, token, next) => {
+          try {
+            return await next(document, range, context, token)
+          } finally {
+            onServerResponse.fire()
+          }
+        },
+        provideDocumentRangeSemanticTokens: async (document, range, token, next) => {
+          try {
+            return await next(document, range, token)
+          } finally {
+            onServerResponse.fire()
+          }
+        },
+        provideDocumentSemanticTokens: async (document, token, next) => {
+          try {
+            return await next(document, token)
+          } finally {
+            onServerResponse.fire()
+          }
+        },
+        handleWorkDoneProgress: async (token, params, next) => {
+          next(token, params)
+          if (params.kind === 'end') {
+            onServerResponse.fire()
+          }
+        },
+        provideHover: async (document, position, token, next) => {
+          try {
+            return await next(document, position, token)
+          } finally {
+            onServerResponse.fire()
+          }
         }
       })
     this.languageClient = languageClient
@@ -149,7 +184,7 @@ export class LanguageClientManager implements LanguageClient {
             let disposable: Disposable | null = null
             await Promise.race([
               new Promise<void>(resolve => {
-                disposable = onDidHandleDiagnostics.event(resolve)
+                disposable = onServerResponse.event(resolve)
               }),
               delay(15000)
             ])
