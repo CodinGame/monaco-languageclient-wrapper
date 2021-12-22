@@ -39,15 +39,12 @@ export class LanguageClientManager implements LanguageClient {
   protected readonly onWillCloseEmitter = new Emitter<void>()
   protected currentStatus?: Status
 
-  protected configuration: unknown
-
   constructor (
     private languageServerUrl: string,
     private getSecurityToken: () => Promise<string>,
     private languageServerConfig: LanguageServerConfig,
     private libraryUrls: string[]
   ) {
-    this.configuration = languageServerConfig.configuration
   }
 
   private updateStatus (status: Status) {
@@ -111,14 +108,6 @@ export class LanguageClientManager implements LanguageClient {
     return ErrorAction.Continue
   }
 
-  updateConfiguration (configuration: unknown): void {
-    const { configurationSection } = this.languageServerConfig
-    this.configuration = configuration
-    if (configurationSection != null && this.languageClient != null) {
-      updateConfiguration(configurationSection, configuration)
-    }
-  }
-
   start (): void {
     const onServerResponse = new Emitter<void>()
 
@@ -170,10 +159,6 @@ export class LanguageClientManager implements LanguageClient {
         }
       })
     this.languageClient = languageClient
-
-    if (this.configuration != null) {
-      this.updateConfiguration(this.configuration)
-    }
 
     let readyPromise: Promise<void> | null = null
     languageClient.onDidChangeState(async (state) => {
