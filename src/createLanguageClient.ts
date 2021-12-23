@@ -2,7 +2,7 @@ import { createWebSocketConnection, ConsoleLogger, toSocket, MessageSignature } 
 import { Uri } from 'monaco-editor'
 import {
   MonacoLanguageClient,
-  createConnection, ConnectionErrorHandler, ConnectionCloseHandler, IConnection, Middleware, ErrorHandler, IConnectionProvider, InitializeParams, RegistrationRequest, RegistrationParams
+  createConnection, ConnectionErrorHandler, ConnectionCloseHandler, IConnection, Middleware, ErrorHandler, IConnectionProvider, InitializeParams, RegistrationRequest, RegistrationParams, UnregistrationRequest, UnregistrationParams
 } from '@codingame/monaco-languageclient'
 import delay from 'delay'
 import once from 'once'
@@ -43,11 +43,21 @@ async function openConnection (url: URL | string, errorHandler: ConnectionErrorH
             if ((args[0] as MessageSignature).method === RegistrationRequest.type.method) {
               const registrationParams = params[0] as unknown as RegistrationParams
               registrationParams.registrations = registrationParams.registrations.filter(registration => {
-                return !existingRegistrations.has(registration.id)
+                const alreadyExisting = existingRegistrations.has(registration.id)
+                if (alreadyExisting) {
+                  console.warn('Registration already existing', registration.id, registration.method)
+                }
+                return !alreadyExisting
               })
               registrationParams.registrations.forEach(registration => {
                 existingRegistrations.add(registration.id)
               })
+            }
+            if ((args[0] as MessageSignature).method === UnregistrationRequest.type.method) {
+              const unregistrationParams = params[0] as unknown as UnregistrationParams
+              for (const unregistration of unregistrationParams.unregisterations) {
+                existingRegistrations.delete(unregistration.id)
+              }
             }
             return args[1](...params)
           })
