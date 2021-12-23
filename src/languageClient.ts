@@ -33,7 +33,8 @@ export class LanguageClientManager implements LanguageClient {
 
   constructor (
     private id: string,
-    private languageServerUrl: string,
+    private sessionId: string | undefined,
+    private languageServerAddress: string,
     private getSecurityToken: () => Promise<string>,
     private languageServerOptions: StaticLanguageClientOptions,
     private libraryUrls: string[]
@@ -109,8 +110,9 @@ export class LanguageClientManager implements LanguageClient {
 
     const languageClient = createLanguageClient(
       this.id,
+      this.sessionId,
       this.languageServerOptions,
-      this.languageServerUrl,
+      this.languageServerAddress,
       this.getSecurityToken,
       this.libraryUrls, {
         error: this.handleError,
@@ -207,7 +209,8 @@ const languageClientManagerByLanguageId: Partial<Record<string, LanguageClientMa
 
 function createLanguageClientManager (
   id: string,
-  languageServerUrl: string,
+  sessionId: string | undefined,
+  languageServerAddress: string,
   getSecurityToken: () => Promise<string>,
   libraryUrls: string[]
 ): LanguageClientManager {
@@ -220,7 +223,7 @@ function createLanguageClientManager (
   }
   installServices()
 
-  const languageClientManager = new LanguageClientManager(id, languageServerUrl, getSecurityToken, languageServerOptions, libraryUrls)
+  const languageClientManager = new LanguageClientManager(id, sessionId, languageServerAddress, getSecurityToken, languageServerOptions, libraryUrls)
   languageClientManagerByLanguageId[id] = languageClientManager
 
   const textModelContentProviderDisposable = registerTextModelContentProvider('file', {

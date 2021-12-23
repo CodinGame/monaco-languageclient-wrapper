@@ -84,20 +84,19 @@ async function openConnection (url: URL | string, errorHandler: ConnectionErrorH
 
 const RETRY_DELAY = 3000
 class CGLSPConnectionProvider implements IConnectionProvider {
-  private readonly serverUrl: string
-  private readonly id: string
-  private readonly libraryUrls: string[]
-  private readonly getSecurityToken: () => Promise<string>
-  constructor (serverUrl: string, id: string, libraryUrls: string[], getSecurityToken: () => Promise<string>) {
-    this.serverUrl = serverUrl
-    this.id = id
-    this.libraryUrls = libraryUrls
-    this.getSecurityToken = getSecurityToken
+  constructor (
+    private serverAddress: string,
+    private id: string,
+    private sessionId: string | undefined,
+    private libraryUrls: string[],
+    private getSecurityToken: () => Promise<string>
+  ) {
   }
 
   async get (errorHandler: ConnectionErrorHandler, closeHandler: ConnectionCloseHandler) {
     try {
-      const url = new URL(`run/${this.id}`, this.serverUrl)
+      const path = this.sessionId != null ? `run/${this.sessionId}/${this.id}` : `run/${this.id}`
+      const url = new URL(path, this.serverAddress)
       this.libraryUrls.forEach(libraryUrl => url.searchParams.append('libraryUrl', libraryUrl))
       url.searchParams.append('token', await this.getSecurityToken())
 
@@ -112,12 +111,13 @@ class CGLSPConnectionProvider implements IConnectionProvider {
 
 function createLanguageClient (
   id: string,
+  sessionId: string | undefined,
   {
     documentSelector,
     synchronize,
     initializationOptions
   }: StaticLanguageClientOptions,
-  languageServerUrl: string,
+  languageServerAddress: string,
   getSecurityToken: () => Promise<string>,
   libraryUrls: string[],
   errorHandler: ErrorHandler,
@@ -135,7 +135,7 @@ function createLanguageClient (
       synchronize,
       initializationOptions
     },
-    connectionProvider: new CGLSPConnectionProvider(languageServerUrl, id, libraryUrls, getSecurityToken)
+    connectionProvider: new CGLSPConnectionProvider(languageServerAddress, id, sessionId, libraryUrls, getSecurityToken)
   })
 
   client.registerProposedFeatures()
