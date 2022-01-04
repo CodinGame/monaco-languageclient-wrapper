@@ -8,7 +8,10 @@ export interface LanguageServerConfig {
 
 export type StaticLanguageClientOptions = Pick<LanguageClientOptions, 'documentSelector' | 'synchronize' | 'initializationOptions'>
 
-const staticOptions: Partial<Record<string, StaticLanguageClientOptions>> = {
+type LanguageClientOptionsById<T extends string> = Record<T, StaticLanguageClientOptions>
+const asLanguageClientOptionsById = <K extends string> (options: LanguageClientOptionsById<K>): LanguageClientOptionsById<K> => options
+
+const staticOptions = asLanguageClientOptionsById({
   angular: {
     documentSelector: [
       {
@@ -243,6 +246,8 @@ const staticOptions: Partial<Record<string, StaticLanguageClientOptions>> = {
     ],
     synchronize: {}
   }
-}
+})
+
+export type LanguageClientId = keyof typeof staticOptions
 
 export default staticOptions

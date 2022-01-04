@@ -8,7 +8,7 @@ import { registerTextModelContentProvider } from '@codingame/monaco-editor-wrapp
 import { installServices } from './services'
 import createLanguageClient from './createLanguageClient'
 import { getFile } from './customRequests'
-import staticOptions, { StaticLanguageClientOptions } from './staticOptions'
+import staticOptions, { LanguageClientId, StaticLanguageClientOptions } from './staticOptions'
 
 type Status = {
   type: string
@@ -32,7 +32,7 @@ export class LanguageClientManager implements LanguageClient {
   protected currentStatus?: Status
 
   constructor (
-    private id: string,
+    private id: LanguageClientId,
     private sessionId: string | undefined,
     private languageServerAddress: string,
     private getSecurityToken: () => Promise<string>,
@@ -208,7 +208,7 @@ export class LanguageClientManager implements LanguageClient {
 const languageClientManagerByLanguageId: Partial<Record<string, LanguageClientManager>> = {}
 
 function createLanguageClientManager (
-  id: string,
+  id: LanguageClientId,
   sessionId: string | undefined,
   languageServerAddress: string,
   getSecurityToken: () => Promise<string>,
@@ -218,6 +218,7 @@ function createLanguageClientManager (
     throw new Error(`Language client for language ${id} already started`)
   }
   const languageServerOptions = staticOptions[id]
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
   if (languageServerOptions == null) {
     throw new Error(`Unknown ${id} language server`)
   }

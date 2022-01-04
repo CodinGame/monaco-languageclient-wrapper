@@ -7,7 +7,7 @@ import {
 import delay from 'delay'
 import once from 'once'
 import { registerExtensionFeatures } from './extensions'
-import { StaticLanguageClientOptions } from './staticOptions'
+import { LanguageClientId, StaticLanguageClientOptions } from './staticOptions'
 
 async function openConnection (url: URL | string, errorHandler: ConnectionErrorHandler, closeHandler: () => void): Promise<IConnection> {
   return new Promise((resolve, reject) => {
@@ -97,7 +97,7 @@ const RETRY_DELAY = 3000
 class CGLSPConnectionProvider implements IConnectionProvider {
   constructor (
     private serverAddress: string,
-    private id: string,
+    private id: LanguageClientId,
     private sessionId: string | undefined,
     private libraryUrls: string[],
     private getSecurityToken: () => Promise<string>
@@ -121,7 +121,7 @@ class CGLSPConnectionProvider implements IConnectionProvider {
 }
 
 function createLanguageClient (
-  id: string,
+  id: LanguageClientId,
   sessionId: string | undefined,
   {
     documentSelector,
