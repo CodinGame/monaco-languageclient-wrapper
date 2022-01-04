@@ -40,7 +40,8 @@ async function openConnection (url: URL | string, errorHandler: ConnectionErrorH
         onRequest (...args: Parameters<typeof connection.onRequest>) {
           return connection.onRequest(args[0], (...params) => {
             // Hack for https://github.com/OmniSharp/omnisharp-roslyn/issues/2119
-            if ((args[0] as MessageSignature).method === RegistrationRequest.type.method) {
+            const method = (args[0] as MessageSignature).method
+            if (method === RegistrationRequest.type.method) {
               const registrationParams = params[0] as unknown as RegistrationParams
               registrationParams.registrations = registrationParams.registrations.filter(registration => {
                 const alreadyExisting = existingRegistrations.has(registration.id)
@@ -53,7 +54,7 @@ async function openConnection (url: URL | string, errorHandler: ConnectionErrorH
                 existingRegistrations.add(registration.id)
               })
             }
-            if ((args[0] as MessageSignature).method === UnregistrationRequest.type.method) {
+            if (method === UnregistrationRequest.type.method) {
               const unregistrationParams = params[0] as unknown as UnregistrationParams
               for (const unregistration of unregistrationParams.unregisterations) {
                 existingRegistrations.delete(unregistration.id)
