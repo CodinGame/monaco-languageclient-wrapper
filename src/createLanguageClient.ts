@@ -2,12 +2,12 @@ import { createWebSocketConnection, ConsoleLogger, toSocket, MessageSignature } 
 import { Uri } from 'monaco-editor'
 import {
   MonacoLanguageClient,
-  createConnection, ConnectionErrorHandler, ConnectionCloseHandler, IConnection, Middleware, ErrorHandler, IConnectionProvider, InitializeParams, RegistrationRequest, RegistrationParams
+  createConnection, ConnectionErrorHandler, ConnectionCloseHandler, IConnection, Middleware, ErrorHandler, IConnectionProvider, InitializeParams, RegistrationRequest, RegistrationParams, UnregistrationRequest, UnregistrationParams
 } from '@codingame/monaco-languageclient'
 import delay from 'delay'
 import once from 'once'
-import { LanguageServerConfig } from './languageClient'
 import { registerExtensionFeatures } from './extensions'
+import { LanguageClientId, StaticLanguageClientOptions } from './staticOptions'
 
 async function openConnection (url: URL | string, errorHandler: ConnectionErrorHandler, closeHandler: () => void): Promise<IConnection> {
   return new Promise((resolve, reject) => {
@@ -37,17 +37,28 @@ async function openConnection (url: URL | string, errorHandler: ConnectionErrorH
           }
           return connection.initialize(fixedParams)
         },
-        onRequest (...args: Parameters<typeof connection.onRequest>): void {
-          connection.onRequest(args[0], (...params) => {
+        onRequest (...args: Parameters<typeof connection.onRequest>) {
+          return connection.onRequest(args[0], (...params) => {
             // Hack for https://github.com/OmniSharp/omnisharp-roslyn/issues/2119
-            if ((args[0] as MessageSignature).method === RegistrationRequest.type.method) {
+            const method = (args[0] as MessageSignature).method
+            if (method === RegistrationRequest.type.method) {
               const registrationParams = params[0] as unknown as RegistrationParams
               registrationParams.registrations = registrationParams.registrations.filter(registration => {
-                return !existingRegistrations.has(registration.id)
+                const alreadyExisting = existingRegistrations.has(registration.id)
+                if (alreadyExisting) {
+                  console.warn('Registration already existing', registration.id, registration.method)
+                }
+                return !alreadyExisting
               })
               registrationParams.registrations.forEach(registration => {
                 existingRegistrations.add(registration.id)
               })
+            }
+            if (method === UnregistrationRequest.type.method) {
+              const unregistrationParams = params[0] as unknown as UnregistrationParams
+              for (const unregistration of unregistrationParams.unregisterations) {
+                existingRegistrations.delete(unregistration.id)
+              }
             }
             return args[1](...params)
           })
@@ -68,7 +79,7 @@ async function openConnection (url: URL | string, errorHandler: ConnectionErrorH
           // The shutdown should NEVER fail or the connection is not closed and the lsp client is not properly cleaned
           // see https://github.com/microsoft/vscode-languageserver-node/blob/master/client/src/client.ts#L3103
           try {
-            connection.exit()
+            await connection.exit()
           } catch (error) {
             console.warn('[LSP]', 'Error while shutdown lsp', error)
           }
@@ -84,20 +95,19 @@ async function openConnection (url: URL | string, errorHandler: ConnectionErrorH
 
 const RETRY_DELAY = 3000
 class CGLSPConnectionProvider implements IConnectionProvider {
-  private readonly serverUrl: string
-  private readonly language: string
-  private readonly libraryUrls: string[]
-  private readonly getSecurityToken: () => Promise<string>
-  constructor (serverUrl: string, language: string, libraryUrls: string[], getSecurityToken: () => Promise<string>) {
-    this.serverUrl = serverUrl
-    this.language = language
-    this.libraryUrls = libraryUrls
-    this.getSecurityToken = getSecurityToken
+  constructor (
+    private serverAddress: string,
+    private id: LanguageClientId,
+    private sessionId: string | undefined,
+    private libraryUrls: string[],
+    private getSecurityToken: () => Promise<string>
+  ) {
   }
 
   async get (errorHandler: ConnectionErrorHandler, closeHandler: ConnectionCloseHandler) {
     try {
-      const url = new URL(`run/${this.language}`, this.serverUrl)
+      const path = this.sessionId != null ? `run/${this.sessionId}/${this.id}` : `run/${this.id}`
+      const url = new URL(path, this.serverAddress)
       this.libraryUrls.forEach(libraryUrl => url.searchParams.append('libraryUrl', libraryUrl))
       url.searchParams.append('token', await this.getSecurityToken())
 
@@ -111,38 +121,37 @@ class CGLSPConnectionProvider implements IConnectionProvider {
 }
 
 function createLanguageClient (
+  id: LanguageClientId,
+  sessionId: string | undefined,
   {
     documentSelector,
-    language: languageServerLanguage,
-    configurationSection,
+    synchronize,
     initializationOptions
-  }: LanguageServerConfig,
-  languageServerUrl: string,
+  }: StaticLanguageClientOptions,
+  languageServerAddress: string,
   getSecurityToken: () => Promise<string>,
   libraryUrls: string[],
   errorHandler: ErrorHandler,
   middleware?: Middleware
 ): MonacoLanguageClient {
   const client = new MonacoLanguageClient({
-    id: `${languageServerLanguage}-languageclient`,
-    name: `CodinGame ${languageServerLanguage} Language Client`,
+    id: `${id}-languageclient`,
+    name: `CodinGame ${id} Language Client`,
     clientOptions: {
       // use a language id as a document selector
       documentSelector,
       // disable the default error handler
       errorHandler,
       middleware,
-      synchronize: {
-        configurationSection
-      },
+      synchronize,
       initializationOptions
     },
-    connectionProvider: new CGLSPConnectionProvider(languageServerUrl, languageServerLanguage, libraryUrls, getSecurityToken)
+    connectionProvider: new CGLSPConnectionProvider(languageServerAddress, id, sessionId, libraryUrls, getSecurityToken)
   })
 
   client.registerProposedFeatures()
 
-  registerExtensionFeatures(client, languageServerLanguage)
+  registerExtensionFeatures(client, id)
 
   return client
 }

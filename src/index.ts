@@ -1,12 +1,13 @@
 import 'proxy-polyfill'
 import './hacks'
-import { createLanguageClientManager, LanguageServerConfig, StatusChangeEvent } from './languageClient'
+import { createLanguageClientManager, StatusChangeEvent } from './languageClient'
+import { LanguageClientId } from './staticOptions'
 
 export {
   createLanguageClientManager
 }
 
 export type {
-  LanguageServerConfig,
-  StatusChangeEvent
+  StatusChangeEvent,
+  LanguageClientId
 }

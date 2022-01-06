@@ -66,16 +66,11 @@ function installServices (): void {
   }
 }
 
-function updateConfiguration (section: string, value: unknown): void {
-  services!.workspace.configurations.update(section, value)
-}
-
 async function saveDocument (document: TextDocument, reason: TextDocumentSaveReason): Promise<void> {
   await services!.workspace.saveDocument(document, reason)
 }
 
 export {
   installServices,
-  saveDocument,
-  updateConfiguration
+  saveDocument
 }

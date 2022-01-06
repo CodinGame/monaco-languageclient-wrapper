@@ -1,14 +1,14 @@
 import * as monaco from 'monaco-editor'
 import {
-  CloseAction, ErrorAction, Disposable, MonacoLanguageClient, Emitter, Event, DocumentSelector, TextDocument, Services, State, HandleDiagnosticsSignature
+  CloseAction, ErrorAction, Disposable, MonacoLanguageClient, Emitter, Event, TextDocument, Services, State
 } from '@codingame/monaco-languageclient'
 import delay from 'delay'
-import type * as vscode from 'vscode'
 import { Uri } from 'monaco-editor'
 import { registerTextModelContentProvider } from '@codingame/monaco-editor-wrapper'
-import { installServices, updateConfiguration } from './services'
+import { installServices } from './services'
 import createLanguageClient from './createLanguageClient'
 import { getFile } from './customRequests'
+import staticOptions, { LanguageClientId, StaticLanguageClientOptions } from './staticOptions'
 
 type Status = {
   type: string
@@ -24,14 +24,6 @@ export interface StatusChangeEvent {
   status: Status
 }
 
-export interface LanguageServerConfig {
-  language: string
-  documentSelector: DocumentSelector
-  configurationSection?: string
-  configuration?: unknown
-  initializationOptions?: unknown | (() => unknown)
-}
-
 export class LanguageClientManager implements LanguageClient {
   languageClient?: MonacoLanguageClient
   protected readonly onDidChangeStatusEmitter = new Emitter<StatusChangeEvent>()
@@ -39,15 +31,14 @@ export class LanguageClientManager implements LanguageClient {
   protected readonly onWillCloseEmitter = new Emitter<void>()
   protected currentStatus?: Status
 
-  protected configuration: unknown
-
   constructor (
-    private languageServerUrl: string,
+    private id: LanguageClientId,
+    private sessionId: string | undefined,
+    private languageServerAddress: string,
     private getSecurityToken: () => Promise<string>,
-    private languageServerConfig: LanguageServerConfig,
+    private languageServerOptions: StaticLanguageClientOptions,
     private libraryUrls: string[]
   ) {
-    this.configuration = languageServerConfig.configuration
   }
 
   private updateStatus (status: Status) {
@@ -89,7 +80,10 @@ export class LanguageClientManager implements LanguageClient {
   }
 
   isModelManaged (document: TextDocument): boolean {
-    return Services.get().languages.match(this.languageServerConfig.documentSelector, document)
+    if (this.languageServerOptions.documentSelector == null) {
+      return false
+    }
+    return Services.get().languages.match(this.languageServerOptions.documentSelector, document)
   }
 
   isDisposed (): boolean {
@@ -111,34 +105,59 @@ export class LanguageClientManager implements LanguageClient {
     return ErrorAction.Continue
   }
 
-  updateConfiguration (configuration: unknown): void {
-    const { configurationSection } = this.languageServerConfig
-    this.configuration = configuration
-    if (configurationSection != null && this.languageClient != null) {
-      updateConfiguration(configurationSection, configuration)
-    }
-  }
-
   start (): void {
-    const onDidHandleDiagnostics = new Emitter<void>()
+    const onServerResponse = new Emitter<void>()
+
     const languageClient = createLanguageClient(
-      this.languageServerConfig,
-      this.languageServerUrl,
+      this.id,
+      this.sessionId,
+      this.languageServerOptions,
+      this.languageServerAddress,
       this.getSecurityToken,
       this.libraryUrls, {
         error: this.handleError,
         closed: this.handleClose
       }, {
-        handleDiagnostics: (uri: Uri, diagnostics: vscode.Diagnostic[], next: HandleDiagnosticsSignature) => {
+        handleDiagnostics: (uri, diagnostics, next) => {
           next(uri, diagnostics)
-          onDidHandleDiagnostics.fire()
+          onServerResponse.fire()
+        },
+        provideCodeActions: async (document, range, context, token, next) => {
+          try {
+            return await next(document, range, context, token)
+          } finally {
+            onServerResponse.fire()
+          }
+        },
+        provideDocumentRangeSemanticTokens: async (document, range, token, next) => {
+          try {
+            return await next(document, range, token)
+          } finally {
+            onServerResponse.fire()
+          }
+        },
+        provideDocumentSemanticTokens: async (document, token, next) => {
+          try {
+            return await next(document, token)
+          } finally {
+            onServerResponse.fire()
+          }
+        },
+        handleWorkDoneProgress: async (token, params, next) => {
+          next(token, params)
+          if (params.kind === 'end') {
+            onServerResponse.fire()
+          }
+        },
+        provideHover: async (document, position, token, next) => {
+          try {
+            return await next(document, position, token)
+          } finally {
+            onServerResponse.fire()
+          }
         }
       })
     this.languageClient = languageClient
-
-    if (this.configuration != null) {
-      this.updateConfiguration(this.configuration)
-    }
 
     let readyPromise: Promise<void> | null = null
     languageClient.onDidChangeState(async (state) => {
@@ -149,7 +168,7 @@ export class LanguageClientManager implements LanguageClient {
             let disposable: Disposable | null = null
             await Promise.race([
               new Promise<void>(resolve => {
-                disposable = onDidHandleDiagnostics.event(resolve)
+                disposable = onServerResponse.event(resolve)
               }),
               delay(15000)
             ])
@@ -189,18 +208,24 @@ export class LanguageClientManager implements LanguageClient {
 const languageClientManagerByLanguageId: Partial<Record<string, LanguageClientManager>> = {}
 
 function createLanguageClientManager (
-  languageServerUrl: string,
+  id: LanguageClientId,
+  sessionId: string | undefined,
+  languageServerAddress: string,
   getSecurityToken: () => Promise<string>,
-  languageServerConfig: LanguageServerConfig,
   libraryUrls: string[]
 ): LanguageClientManager {
-  if (languageClientManagerByLanguageId[languageServerConfig.language] != null) {
-    throw new Error(`Language client for language ${languageServerConfig.language} already started`)
+  if (languageClientManagerByLanguageId[id] != null) {
+    throw new Error(`Language client for language ${id} already started`)
+  }
+  const languageServerOptions = staticOptions[id]
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+  if (languageServerOptions == null) {
+    throw new Error(`Unknown ${id} language server`)
   }
   installServices()
 
-  const languageClientManager = new LanguageClientManager(languageServerUrl, getSecurityToken, languageServerConfig, libraryUrls)
-  languageClientManagerByLanguageId[languageServerConfig.language] = languageClientManager
+  const languageClientManager = new LanguageClientManager(id, sessionId, languageServerAddress, getSecurityToken, languageServerOptions, libraryUrls)
+  languageClientManagerByLanguageId[id] = languageClientManager
 
   const textModelContentProviderDisposable = registerTextModelContentProvider('file', {
     async provideTextContent (resource: Uri): Promise<monaco.editor.ITextModel | null> {
@@ -215,7 +240,7 @@ function createLanguageClientManager (
   })
 
   languageClientManager.onWillClose(() => {
-    delete languageClientManagerByLanguageId[languageServerConfig.language]
+    delete languageClientManagerByLanguageId[id]
     textModelContentProviderDisposable.dispose()
   })
 
