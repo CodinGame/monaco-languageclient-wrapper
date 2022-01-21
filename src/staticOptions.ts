@@ -215,7 +215,13 @@ const staticOptions = asLanguageClientOptionsById({
       {
         language: 'sql'
       }
-    ]
+    ],
+    // Disable code actions
+    middleware: {
+      provideCodeActions () {
+        return []
+      }
+    }
   },
   swift: {
     // https://github.com/apple/sourcekit-lsp/blob/59b5e68f7f8408b5bc44bd47f71ef1afdc63e7a6/Editors/vscode/src/extension.ts#L22
