@@ -6,7 +6,7 @@ export interface LanguageServerConfig {
   initializationOptions?: unknown | (() => unknown)
 }
 
-export type StaticLanguageClientOptions = Pick<LanguageClientOptions, 'documentSelector' | 'synchronize' | 'initializationOptions'>
+export type StaticLanguageClientOptions = Pick<LanguageClientOptions, 'documentSelector' | 'synchronize' | 'initializationOptions' | 'middleware'>
 
 type LanguageClientOptionsById<T extends string> = Record<T, StaticLanguageClientOptions>
 const asLanguageClientOptionsById = <K extends string> (options: LanguageClientOptionsById<K>): LanguageClientOptionsById<K> => options

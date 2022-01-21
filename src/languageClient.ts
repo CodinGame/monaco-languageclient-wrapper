@@ -118,40 +118,65 @@ export class LanguageClientManager implements LanguageClient {
         error: this.handleError,
         closed: this.handleClose
       }, {
+        ...(this.languageServerOptions.middleware ?? {}),
         handleDiagnostics: (uri, diagnostics, next) => {
-          next(uri, diagnostics)
+          if (this.languageServerOptions.middleware?.handleDiagnostics != null) {
+            this.languageServerOptions.middleware.handleDiagnostics(uri, diagnostics, next)
+          } else {
+            next(uri, diagnostics)
+          }
           onServerResponse.fire()
         },
         provideCodeActions: async (document, range, context, token, next) => {
           try {
-            return await next(document, range, context, token)
+            if (this.languageServerOptions.middleware?.provideCodeActions != null) {
+              return await this.languageServerOptions.middleware.provideCodeActions(document, range, context, token, next)
+            } else {
+              return await next(document, range, context, token)
+            }
           } finally {
             onServerResponse.fire()
           }
         },
         provideDocumentRangeSemanticTokens: async (document, range, token, next) => {
           try {
-            return await next(document, range, token)
+            if (this.languageServerOptions.middleware?.provideDocumentRangeSemanticTokens != null) {
+              return await this.languageServerOptions.middleware.provideDocumentRangeSemanticTokens(document, range, token, next)
+            } else {
+              return await next(document, range, token)
+            }
           } finally {
             onServerResponse.fire()
           }
         },
         provideDocumentSemanticTokens: async (document, token, next) => {
           try {
-            return await next(document, token)
+            if (this.languageServerOptions.middleware?.provideDocumentSemanticTokens != null) {
+              return await this.languageServerOptions.middleware.provideDocumentSemanticTokens(document, token, next)
+            } else {
+              return await next(document, token)
+            }
           } finally {
             onServerResponse.fire()
           }
         },
         handleWorkDoneProgress: async (token, params, next) => {
-          next(token, params)
+          if (this.languageServerOptions.middleware?.handleWorkDoneProgress != null) {
+            this.languageServerOptions.middleware.handleWorkDoneProgress(token, params, next)
+          } else {
+            next(token, params)
+          }
           if (params.kind === 'end') {
             onServerResponse.fire()
           }
         },
         provideHover: async (document, position, token, next) => {
           try {
-            return await next(document, position, token)
+            if (this.languageServerOptions.middleware?.provideHover != null) {
+              return await this.languageServerOptions.middleware.provideHover(document, position, token, next)
+            } else {
+              return await next(document, position, token)
+            }
           } finally {
             onServerResponse.fire()
           }
