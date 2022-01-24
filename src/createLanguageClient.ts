@@ -79,7 +79,7 @@ async function openConnection (url: URL | string, errorHandler: ConnectionErrorH
           // The shutdown should NEVER fail or the connection is not closed and the lsp client is not properly cleaned
           // see https://github.com/microsoft/vscode-languageserver-node/blob/master/client/src/client.ts#L3103
           try {
-            await connection.exit()
+            await connection.shutdown()
           } catch (error) {
             console.warn('[LSP]', 'Error while shutdown lsp', error)
           }
