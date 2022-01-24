@@ -4,7 +4,6 @@ import {
   MonacoLanguageClient,
   createConnection, ConnectionErrorHandler, ConnectionCloseHandler, IConnection, Middleware, ErrorHandler, IConnectionProvider, InitializeParams, RegistrationRequest, RegistrationParams, UnregistrationRequest, UnregistrationParams
 } from '@codingame/monaco-languageclient'
-import delay from 'delay'
 import once from 'once'
 import { registerExtensionFeatures } from './extensions'
 import { LanguageClientId, StaticLanguageClientOptions } from './staticOptions'
@@ -20,9 +19,7 @@ async function openConnection (url: URL | string, errorHandler: ConnectionErrorH
         webSocket.close()
       })
 
-      const onceCloseHandler = once(closeHandler)
-
-      const connection = createConnection(webSocketConnection, errorHandler, onceCloseHandler)
+      const connection = createConnection(webSocketConnection, errorHandler, closeHandler)
 
       const existingRegistrations = new Set<string>()
       const fixedConnection: IConnection = {
@@ -73,7 +70,7 @@ async function openConnection (url: URL | string, errorHandler: ConnectionErrorH
           }
           // Hack, when the language client is removed, the connection is disposed but the closeHandler is not always properly called
           // The language client is then still active but without a proper connection and errors will occurs
-          onceCloseHandler()
+          closeHandler()
         },
         shutdown: async () => {
           // The shutdown should NEVER fail or the connection is not closed and the lsp client is not properly cleaned
@@ -105,16 +102,20 @@ class CGLSPConnectionProvider implements IConnectionProvider {
   }
 
   async get (errorHandler: ConnectionErrorHandler, closeHandler: ConnectionCloseHandler) {
+    const onceDelayedCloseHandler = once(() => {
+      setTimeout(() => {
+        closeHandler()
+      }, RETRY_DELAY)
+    })
     try {
       const path = this.sessionId != null ? `run/${this.sessionId}/${this.id}` : `run/${this.id}`
       const url = new URL(path, this.serverAddress)
       this.libraryUrls.forEach(libraryUrl => url.searchParams.append('libraryUrl', libraryUrl))
       url.searchParams.append('token', await this.getSecurityToken())
 
-      return await openConnection(url, errorHandler, closeHandler)
+      return await openConnection(url, errorHandler, onceDelayedCloseHandler)
     } catch (err) {
-      setTimeout(closeHandler, RETRY_DELAY)
-      await delay(1000)
+      onceDelayedCloseHandler()
       throw err
     }
   }
