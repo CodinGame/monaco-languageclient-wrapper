@@ -9,6 +9,7 @@ import { installServices } from './services'
 import createLanguageClient from './createLanguageClient'
 import { getFile } from './customRequests'
 import staticOptions, { LanguageClientId, StaticLanguageClientOptions } from './staticOptions'
+import { WillDisposeFeature, WillShutdownParams } from './extensions'
 
 type Status = {
   type: string
@@ -29,6 +30,7 @@ export class LanguageClientManager implements LanguageClient {
   protected readonly onDidChangeStatusEmitter = new Emitter<StatusChangeEvent>()
   protected readonly onErrorEmitter = new Emitter<Error>()
   protected readonly onWillCloseEmitter = new Emitter<void>()
+  protected readonly onWillShutdownEmitter = new Emitter<WillShutdownParams>()
   protected currentStatus?: Status
 
   constructor (
@@ -73,6 +75,10 @@ export class LanguageClientManager implements LanguageClient {
 
   get onWillClose (): Event<void> {
     return this.onWillCloseEmitter.event
+  }
+
+  get onWillShutdown (): Event<WillShutdownParams> {
+    return this.onWillShutdownEmitter.event
   }
 
   get onError (): Event<Error> {
@@ -217,6 +223,8 @@ export class LanguageClientManager implements LanguageClient {
         }
       }
     })
+
+    this.languageClient.registerFeature(new WillDisposeFeature(this.languageClient, this.onWillShutdownEmitter))
 
     this.languageClient.start()
   }
