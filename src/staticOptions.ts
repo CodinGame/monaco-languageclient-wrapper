@@ -183,8 +183,7 @@ const staticOptions = asLanguageClientOptionsById({
   react: {
     documentSelector: [
       {
-        pattern: '**/*.{js,jsx}',
-        language: 'javascript'
+        pattern: '**/*.{tsx,jsx}'
       }
     ],
     synchronize: {}
