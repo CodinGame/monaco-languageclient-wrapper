@@ -1,6 +1,9 @@
 import { LanguageClientOptions } from '@codingame/monaco-languageclient'
 
-export type StaticLanguageClientOptions = Pick<LanguageClientOptions, 'documentSelector' | 'synchronize' | 'initializationOptions' | 'middleware'>
+export type StaticLanguageClientOptions = Pick<LanguageClientOptions, 'documentSelector' | 'synchronize' | 'initializationOptions' | 'middleware'> & {
+  vscodeExtensionIds?: string[]
+  mutualizable: boolean
+}
 
 type LanguageClientOptionsById<T extends string> = Record<T, StaticLanguageClientOptions>
 const asLanguageClientOptionsById = <K extends string> (options: LanguageClientOptionsById<K>): LanguageClientOptionsById<K> => options
@@ -12,7 +15,9 @@ const staticOptions = asLanguageClientOptionsById({
         scheme: 'file',
         pattern: '**/*.ts'
       }
-    ]
+    ],
+    mutualizable: true,
+    vscodeExtensionIds: ['typescript-language-features', 'angular']
   },
   bash: {
     documentSelector: [
@@ -20,25 +25,34 @@ const staticOptions = asLanguageClientOptionsById({
         scheme: 'file',
         pattern: '**/*.bash'
       }
-    ]
+    ],
+    mutualizable: true
   },
   c: {
     documentSelector: [
       { scheme: 'file', language: 'c' },
       { scheme: 'file', language: 'cpp' }
-    ]
+    ],
+    mutualizable: false
+    // The extension is cpptools BUT the language server is unable to use the configuration
+    // vscodeExtensionIds: ['cpptools']
   },
   csharp: {
     documentSelector: [
       { language: 'csharp' }
-    ]
+    ],
+    mutualizable: true,
+    vscodeExtensionIds: ['omnisharp']
   },
   cpp: {
     documentSelector: [
       { scheme: 'file', language: 'c' },
       { scheme: 'file', language: 'cpp' },
       { scheme: 'file', language: 'cuda-cpp' }
-    ]
+    ],
+    mutualizable: false
+    // The extension is cpptools BUT the language server is unable to use the configuration
+    // vscodeExtensionIds: ['cpptools']
   },
   clojure: {
     documentSelector: [
@@ -47,13 +61,16 @@ const staticOptions = asLanguageClientOptionsById({
         pattern: '**/*.clj',
         language: 'clojure'
       }
-    ]
+    ],
+    mutualizable: true
   },
   cobol: {
     documentSelector: ['COBOL'],
     synchronize: {
       configurationSection: 'cobol-lsp'
-    }
+    },
+    mutualizable: false,
+    vscodeExtensionIds: ['cobol']
   },
   dart: {
     documentSelector: [
@@ -62,7 +79,9 @@ const staticOptions = asLanguageClientOptionsById({
         pattern: '**/*.dart',
         language: 'dart'
       }
-    ]
+    ],
+    mutualizable: true,
+    vscodeExtensionIds: ['dart']
   },
   go: {
     documentSelector: [
@@ -71,7 +90,8 @@ const staticOptions = asLanguageClientOptionsById({
       { language: 'go.sum', scheme: 'file' },
       { language: 'go.work', scheme: 'file' },
       { language: 'tmpl', scheme: 'file' }
-    ]
+    ],
+    mutualizable: true
   },
   groovy: {
     documentSelector: [
@@ -79,7 +99,9 @@ const staticOptions = asLanguageClientOptionsById({
     ],
     synchronize: {
       configurationSection: 'groovy'
-    }
+    },
+    mutualizable: true,
+    vscodeExtensionIds: ['vscode-groovy']
   },
   java: {
     documentSelector: [
@@ -89,7 +111,9 @@ const staticOptions = asLanguageClientOptionsById({
     ],
     synchronize: {
       configurationSection: ['java', 'editor.insertSpaces', 'editor.tabSize']
-    }
+    },
+    mutualizable: true,
+    vscodeExtensionIds: ['java']
   },
   javascript: {
     documentSelector: [
@@ -101,7 +125,9 @@ const staticOptions = asLanguageClientOptionsById({
         pattern: '**/**.{js,jsx}',
         language: 'javascript'
       }
-    ]
+    ],
+    mutualizable: true,
+    vscodeExtensionIds: ['typescript-language-features']
   },
   kotlin: {
     // https://github.com/fwcd/vscode-kotlin/blob/db5916080868a6a8e064c60d49624926c2fa61bd/src/languageSetup.ts#L104
@@ -111,7 +137,8 @@ const staticOptions = asLanguageClientOptionsById({
     ],
     synchronize: {
       configurationSection: 'kotlin'
-    }
+    },
+    mutualizable: false
   },
   lua: {
     documentSelector: [
@@ -119,7 +146,9 @@ const staticOptions = asLanguageClientOptionsById({
     ],
     synchronize: {
       configurationSection: 'Lua'
-    }
+    },
+    mutualizable: true,
+    vscodeExtensionIds: ['lua']
   },
   'php-serenata': {
     // https://gitlab.com/Serenata/visual-studio-code-client/-/blob/master/src/extension.ts#L120
@@ -146,7 +175,8 @@ const staticOptions = asLanguageClientOptionsById({
           'file:///opt/serenata'
         ]
       }
-    }
+    },
+    mutualizable: true
   },
   php: {
     documentSelector: [
@@ -154,7 +184,8 @@ const staticOptions = asLanguageClientOptionsById({
         pattern: '**/*.php',
         language: 'php'
       }
-    ]
+    ],
+    mutualizable: true
   },
   python: {
     documentSelector: [
@@ -162,7 +193,9 @@ const staticOptions = asLanguageClientOptionsById({
     ],
     synchronize: {
       configurationSection: 'python'
-    }
+    },
+    mutualizable: true,
+    vscodeExtensionIds: ['vscode-python']
   },
   r: {
     // https://github.com/REditorSupport/vscode-R/blob/96ed4740101d8cd82f908b415df1dd205b4be824/src/languageService.ts#L186
@@ -172,7 +205,9 @@ const staticOptions = asLanguageClientOptionsById({
     ],
     synchronize: {
       configurationSection: 'r.lsp'
-    }
+    },
+    mutualizable: true,
+    vscodeExtensionIds: ['vscode-R']
   },
   react: {
     documentSelector: [
@@ -180,20 +215,24 @@ const staticOptions = asLanguageClientOptionsById({
         pattern: '**/*.{tsx,jsx}'
       }
     ],
-    synchronize: {}
+    synchronize: {},
+    mutualizable: true,
+    vscodeExtensionIds: ['typescript-language-features']
   },
   ruby: {
     // https://github.com/rubyide/vscode-ruby/blob/8ba0e01956865a3dbd932279a3d42f7183bcf73a/packages/vscode-ruby-client/src/client.ts#L30
     documentSelector: [
       { scheme: 'file', language: 'ruby' },
       { scheme: 'untitled', language: 'ruby' }
-    ]
+    ],
+    mutualizable: true
   },
   rust: {
     // https://github.com/rust-lang/vscode-rust/blob/b1ae67b06640ffab6e1ebb72e07364b4477dfbf1/rust-analyzer/editors/code/src/client.ts#L42
     documentSelector: [
       { scheme: 'file', language: 'rust' }
-    ]
+    ],
+    mutualizable: false
   },
   scala: {
     documentSelector: [
@@ -201,7 +240,9 @@ const staticOptions = asLanguageClientOptionsById({
     ],
     synchronize: {
       configurationSection: 'metals'
-    }
+    },
+    mutualizable: false,
+    vscodeExtensionIds: ['scalameta']
   },
   sql: {
     documentSelector: [
@@ -214,7 +255,8 @@ const staticOptions = asLanguageClientOptionsById({
       provideCodeActions () {
         return []
       }
-    }
+    },
+    mutualizable: false
   },
   swift: {
     // https://github.com/apple/sourcekit-lsp/blob/59b5e68f7f8408b5bc44bd47f71ef1afdc63e7a6/Editors/vscode/src/extension.ts#L22
@@ -225,7 +267,8 @@ const staticOptions = asLanguageClientOptionsById({
       'objective-c',
       'objective-cpp'
     ],
-    synchronize: {}
+    synchronize: {},
+    mutualizable: true
   },
   typescript: {
     documentSelector: [
@@ -234,7 +277,9 @@ const staticOptions = asLanguageClientOptionsById({
         language: 'typescript'
       }
     ],
-    synchronize: {}
+    synchronize: {},
+    mutualizable: true,
+    vscodeExtensionIds: ['typescript-language-features']
   },
   vue: {
     documentSelector: [
@@ -243,7 +288,9 @@ const staticOptions = asLanguageClientOptionsById({
         language: 'javascript'
       }
     ],
-    synchronize: {}
+    synchronize: {},
+    mutualizable: true,
+    vscodeExtensionIds: ['typescript-language-features']
   }
 })
 
