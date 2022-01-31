@@ -1,10 +1,4 @@
-import { DocumentSelector, LanguageClientOptions } from '@codingame/monaco-languageclient'
-
-export interface LanguageServerConfig {
-  documentSelector: DocumentSelector
-  synchronizeConfigurationSection?: string | string[]
-  initializationOptions?: unknown | (() => unknown)
-}
+import { LanguageClientOptions } from '@codingame/monaco-languageclient'
 
 export type StaticLanguageClientOptions = Pick<LanguageClientOptions, 'documentSelector' | 'synchronize' | 'initializationOptions' | 'middleware'>
 
