@@ -10,6 +10,7 @@ import createLanguageClient from './createLanguageClient'
 import { getFile } from './customRequests'
 import staticOptions, { LanguageClientId, StaticLanguageClientOptions } from './staticOptions'
 import { WillDisposeFeature, WillShutdownParams } from './extensions'
+import { loadExtensionConfigurations } from './extensionConfiguration'
 
 type Status = {
   type: string
@@ -39,7 +40,8 @@ export class LanguageClientManager implements LanguageClient {
     private languageServerAddress: string,
     private getSecurityToken: () => Promise<string>,
     private languageServerOptions: StaticLanguageClientOptions,
-    private libraryUrls: string[]
+    private libraryUrls: string[],
+    private mutualized: boolean
   ) {
   }
 
@@ -226,7 +228,13 @@ export class LanguageClientManager implements LanguageClient {
 
     this.languageClient.registerFeature(new WillDisposeFeature(this.languageClient, this.onWillShutdownEmitter))
 
-    this.languageClient.start()
+    loadExtensionConfigurations([this.id], this.mutualized).catch(error => {
+      console.error('Unable to load extension configuration', error)
+    }).finally(() => {
+      if (!this.isDisposed()) {
+        this.languageClient!.start()
+      }
+    })
   }
 
   sendNotification (method: string, params: unknown): void {
@@ -245,7 +253,8 @@ function createLanguageClientManager (
   sessionId: string | undefined,
   languageServerAddress: string,
   getSecurityToken: () => Promise<string>,
-  libraryUrls: string[]
+  libraryUrls: string[],
+  mutualized: boolean = languageServerAddress.includes('mutualized')
 ): LanguageClientManager {
   if (languageClientManagerByLanguageId[id] != null) {
     throw new Error(`Language client for language ${id} already started`)
@@ -257,7 +266,7 @@ function createLanguageClientManager (
   }
   installServices()
 
-  const languageClientManager = new LanguageClientManager(id, sessionId, languageServerAddress, getSecurityToken, languageServerOptions, libraryUrls)
+  const languageClientManager = new LanguageClientManager(id, sessionId, languageServerAddress, getSecurityToken, languageServerOptions, libraryUrls, mutualized)
   languageClientManagerByLanguageId[id] = languageClientManager
 
   const textModelContentProviderDisposable = registerTextModelContentProvider('file', {
