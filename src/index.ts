@@ -1,15 +1,18 @@
 import 'proxy-polyfill'
 import { loadExtensionConfigurations } from './extensionConfiguration'
+import { WillShutdownParams } from './extensions'
 import './hacks'
-import { createLanguageClientManager, StatusChangeEvent } from './languageClient'
+import { createLanguageClientManager, LanguageClientManager, StatusChangeEvent } from './languageClient'
 import { LanguageClientId } from './staticOptions'
 
 export {
   loadExtensionConfigurations,
-  createLanguageClientManager
+  createLanguageClientManager,
+  LanguageClientManager
 }
 
 export type {
   StatusChangeEvent,
-  LanguageClientId
+  LanguageClientId,
+  WillShutdownParams
 }
