@@ -248,6 +248,16 @@ export class LanguageClientManager implements LanguageClient {
 
 const languageClientManagerByLanguageId: Partial<Record<string, LanguageClientManager>> = {}
 
+/**
+ * Create a language client manager
+ * @param id The predefined id of the language client
+ * @param sessionId An optional sessionId when connecting to the session-mutualized server
+ * @param languageServerAddress The domain of the server
+ * @param getSecurityToken A function which returns a valid JWT token to use to connect to the server
+ * @param libraryUrls A list of urls which link to zip files containing libraries/resources
+ * @param useMutualizedProxy The language server proxy is used, so we only need to load configurations for language servers which are not mutualized
+ * @returns A language client manager
+ */
 function createLanguageClientManager (
   id: LanguageClientId,
   sessionId: string | undefined,
