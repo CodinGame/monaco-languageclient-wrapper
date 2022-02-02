@@ -28,6 +28,7 @@ export interface StatusChangeEvent {
 
 export class LanguageClientManager implements LanguageClient {
   languageClient?: MonacoLanguageClient
+  private disposed: boolean = false
   protected readonly onDidChangeStatusEmitter = new Emitter<StatusChangeEvent>()
   protected readonly onErrorEmitter = new Emitter<Error>()
   protected readonly onWillCloseEmitter = new Emitter<void>()
@@ -63,6 +64,7 @@ export class LanguageClientManager implements LanguageClient {
   }
 
   async dispose (): Promise<void> {
+    this.disposed = true
     this.onWillCloseEmitter.fire()
     if (this.languageClient != null) {
       const languageClient = this.languageClient
@@ -95,7 +97,7 @@ export class LanguageClientManager implements LanguageClient {
   }
 
   isDisposed (): boolean {
-    return this.languageClient == null
+    return this.disposed
   }
 
   private handleClose = () => {
