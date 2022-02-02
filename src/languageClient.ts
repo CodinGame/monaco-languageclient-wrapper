@@ -41,7 +41,7 @@ export class LanguageClientManager implements LanguageClient {
     private getSecurityToken: () => Promise<string>,
     private languageServerOptions: StaticLanguageClientOptions,
     private libraryUrls: string[],
-    private mutualized: boolean
+    private useMutualizedProxy: boolean
   ) {
   }
 
@@ -254,7 +254,7 @@ function createLanguageClientManager (
   languageServerAddress: string,
   getSecurityToken: () => Promise<string>,
   libraryUrls: string[],
-  mutualized: boolean = languageServerAddress.includes('mutualized')
+  useMutualizedProxy: boolean = languageServerAddress.includes('mutualized')
 ): LanguageClientManager {
   if (languageClientManagerByLanguageId[id] != null) {
     throw new Error(`Language client for language ${id} already started`)
@@ -266,7 +266,7 @@ function createLanguageClientManager (
   }
   installServices()
 
-  const languageClientManager = new LanguageClientManager(id, sessionId, languageServerAddress, getSecurityToken, languageServerOptions, libraryUrls, mutualized)
+  const languageClientManager = new LanguageClientManager(id, sessionId, languageServerAddress, getSecurityToken, languageServerOptions, libraryUrls, useMutualizedProxy)
   languageClientManagerByLanguageId[id] = languageClientManager
 
   const textModelContentProviderDisposable = registerTextModelContentProvider('file', {
