@@ -11,7 +11,7 @@ export async function loadExtensionConfigurations (forLanguageClientIds: Languag
   for (const languageClientId of forLanguageClientIds) {
     const config = staticOptions[languageClientId]
     if (!config.mutualizable || !useMutualizedProxy) {
-      (config.vscodeExtensionIds ?? []).forEach(extensionId => {
+      config.vscodeExtensionIds?.forEach(extensionId => {
         extensionConfigurationToLoad.add(extensionId)
       })
     }
