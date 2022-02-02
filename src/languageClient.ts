@@ -276,11 +276,21 @@ function createLanguageClientManager (
   if (languageClientManagerByLanguageId[id] != null) {
     throw new Error(`Language client for language ${id} already started`)
   }
-  const languageServerOptions = staticOptions[id]
+  let languageServerOptions = staticOptions[id]
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
   if (languageServerOptions == null) {
     throw new Error(`Unknown ${id} language server`)
   }
+
+  if (useMutualizedProxy && languageServerOptions.mutualizable) {
+    // When using the mutualized proxy, we don't need to synchronize the configuration nor send the initialization options
+    languageServerOptions = {
+      ...languageServerOptions,
+      synchronize: undefined,
+      initializationOptions: undefined
+    }
+  }
+
   installServices()
 
   const languageClientManager = new LanguageClientManager(id, sessionId, languageServerAddress, getSecurityToken, languageServerOptions, libraryUrls, useMutualizedProxy)
