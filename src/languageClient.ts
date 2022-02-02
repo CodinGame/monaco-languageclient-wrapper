@@ -115,7 +115,18 @@ export class LanguageClientManager implements LanguageClient {
     return ErrorAction.Continue
   }
 
-  start (): void {
+  public async start (): Promise<void> {
+    try {
+      await loadExtensionConfigurations([this.id], this.useMutualizedProxy)
+    } catch (error) {
+      console.error('Unable to load extension configuration', error)
+    }
+    if (!this.isDisposed()) {
+      this._start()
+    }
+  }
+
+  private _start (): void {
     const onServerResponse = new Emitter<void>()
 
     const languageClient = createLanguageClient(
@@ -230,13 +241,7 @@ export class LanguageClientManager implements LanguageClient {
 
     this.languageClient.registerFeature(new WillDisposeFeature(this.languageClient, this.onWillShutdownEmitter))
 
-    loadExtensionConfigurations([this.id], this.mutualized).catch(error => {
-      console.error('Unable to load extension configuration', error)
-    }).finally(() => {
-      if (!this.isDisposed()) {
-        this.languageClient!.start()
-      }
-    })
+    this.languageClient.start()
   }
 
   sendNotification (method: string, params: unknown): void {
