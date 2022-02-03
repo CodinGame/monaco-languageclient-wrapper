@@ -10,6 +10,7 @@ import createLanguageClient from './createLanguageClient'
 import { getFile } from './customRequests'
 import staticOptions, { LanguageClientId, StaticLanguageClientOptions } from './staticOptions'
 import { WillDisposeFeature, WillShutdownParams } from './extensions'
+import { loadExtensionConfigurations } from './extensionConfiguration'
 
 type Status = {
   type: string
@@ -27,6 +28,7 @@ export interface StatusChangeEvent {
 
 export class LanguageClientManager implements LanguageClient {
   languageClient?: MonacoLanguageClient
+  private disposed: boolean = false
   protected readonly onDidChangeStatusEmitter = new Emitter<StatusChangeEvent>()
   protected readonly onErrorEmitter = new Emitter<Error>()
   protected readonly onWillCloseEmitter = new Emitter<void>()
@@ -39,7 +41,8 @@ export class LanguageClientManager implements LanguageClient {
     private languageServerAddress: string,
     private getSecurityToken: () => Promise<string>,
     private languageServerOptions: StaticLanguageClientOptions,
-    private libraryUrls: string[]
+    private libraryUrls: string[],
+    private useMutualizedProxy: boolean
   ) {
   }
 
@@ -61,6 +64,7 @@ export class LanguageClientManager implements LanguageClient {
   }
 
   async dispose (): Promise<void> {
+    this.disposed = true
     this.onWillCloseEmitter.fire()
     if (this.languageClient != null) {
       const languageClient = this.languageClient
@@ -93,7 +97,7 @@ export class LanguageClientManager implements LanguageClient {
   }
 
   isDisposed (): boolean {
-    return this.languageClient == null
+    return this.disposed
   }
 
   private handleClose = () => {
@@ -111,7 +115,18 @@ export class LanguageClientManager implements LanguageClient {
     return ErrorAction.Continue
   }
 
-  start (): void {
+  public async start (): Promise<void> {
+    try {
+      await loadExtensionConfigurations([this.id], this.useMutualizedProxy)
+    } catch (error) {
+      console.error('Unable to load extension configuration', error)
+    }
+    if (!this.isDisposed()) {
+      this._start()
+    }
+  }
+
+  private _start (): void {
     const onServerResponse = new Emitter<void>()
 
     const languageClient = createLanguageClient(
@@ -240,24 +255,45 @@ export class LanguageClientManager implements LanguageClient {
 
 const languageClientManagerByLanguageId: Partial<Record<string, LanguageClientManager>> = {}
 
+/**
+ * Create a language client manager
+ * @param id The predefined id of the language client
+ * @param sessionId An optional sessionId when connecting to the session-mutualized server
+ * @param languageServerAddress The domain of the server
+ * @param getSecurityToken A function which returns a valid JWT token to use to connect to the server
+ * @param libraryUrls A list of urls which link to zip files containing libraries/resources
+ * @param useMutualizedProxy The language server proxy is used, so we only need to load configurations for language servers which are not mutualized
+ * @returns A language client manager
+ */
 function createLanguageClientManager (
   id: LanguageClientId,
   sessionId: string | undefined,
   languageServerAddress: string,
   getSecurityToken: () => Promise<string>,
-  libraryUrls: string[]
+  libraryUrls: string[],
+  useMutualizedProxy: boolean = languageServerAddress.includes('mutualized')
 ): LanguageClientManager {
   if (languageClientManagerByLanguageId[id] != null) {
     throw new Error(`Language client for language ${id} already started`)
   }
-  const languageServerOptions = staticOptions[id]
+  let languageServerOptions = staticOptions[id]
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
   if (languageServerOptions == null) {
     throw new Error(`Unknown ${id} language server`)
   }
+
+  if (useMutualizedProxy && languageServerOptions.mutualizable) {
+    // When using the mutualized proxy, we don't need to synchronize the configuration nor send the initialization options
+    languageServerOptions = {
+      ...languageServerOptions,
+      synchronize: undefined,
+      initializationOptions: undefined
+    }
+  }
+
   installServices()
 
-  const languageClientManager = new LanguageClientManager(id, sessionId, languageServerAddress, getSecurityToken, languageServerOptions, libraryUrls)
+  const languageClientManager = new LanguageClientManager(id, sessionId, languageServerAddress, getSecurityToken, languageServerOptions, libraryUrls, useMutualizedProxy)
   languageClientManagerByLanguageId[id] = languageClientManager
 
   const textModelContentProviderDisposable = registerTextModelContentProvider('file', {
