@@ -220,12 +220,15 @@ const staticOptions = asLanguageClientOptionsById({
     vscodeExtensionIds: ['typescript-language-features']
   },
   ruby: {
-    // https://github.com/rubyide/vscode-ruby/blob/8ba0e01956865a3dbd932279a3d42f7183bcf73a/packages/vscode-ruby-client/src/client.ts#L30
+    // https://github.com/castwide/vscode-solargraph/blob/3ebd9241f013305a84ec64334fca45b487bde904/src/language-client.ts#L56
     documentSelector: [
-      { scheme: 'file', language: 'ruby' },
-      { scheme: 'untitled', language: 'ruby' }
+      { scheme: 'file', language: 'ruby' }
     ],
-    mutualizable: true
+    mutualizable: true,
+    vscodeExtensionIds: ['solargraph'],
+    synchronize: {
+      configurationSection: 'solargraph'
+    }
   },
   rust: {
     // https://github.com/rust-lang/vscode-rust/blob/b1ae67b06640ffab6e1ebb72e07364b4477dfbf1/rust-analyzer/editors/code/src/client.ts#L42
