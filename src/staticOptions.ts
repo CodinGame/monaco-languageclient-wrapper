@@ -150,6 +150,25 @@ const staticOptions = asLanguageClientOptionsById({
     mutualizable: true,
     vscodeExtensionIds: ['lua']
   },
+  mysql: {
+    documentSelector: [{
+      language: 'sql'
+    }],
+    // Disable code actions
+    middleware: {
+      provideCodeActions () {
+        return []
+      }
+    },
+    mutualizable: false
+  },
+  ocaml: {
+    documentSelector: [{
+      scheme: 'file',
+      language: 'ocaml'
+    }],
+    mutualizable: false
+  },
   'php-serenata': {
     // https://gitlab.com/Serenata/visual-studio-code-client/-/blob/master/src/extension.ts#L120
     documentSelector: [
@@ -186,6 +205,18 @@ const staticOptions = asLanguageClientOptionsById({
       }
     ],
     mutualizable: true
+  },
+  postgresql: {
+    documentSelector: [{
+      language: 'postgresql'
+    }],
+    // Disable code actions
+    middleware: {
+      provideCodeActions () {
+        return []
+      }
+    },
+    mutualizable: false
   },
   python: {
     documentSelector: [
