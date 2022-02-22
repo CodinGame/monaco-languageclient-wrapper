@@ -12,15 +12,12 @@ import { WillDisposeFeature, WillShutdownParams } from './extensions'
 import { loadExtensionConfigurations } from './extensionConfiguration'
 import { getLanguageClientOptions, LanguageClientId, LanguageClientOptions } from './languageClientOptions'
 
-type Status = {
-  type: string
-  message: string
-}
-
 export interface LanguageClient {
   sendNotification (method: string, params: unknown): void
   sendRequest<R> (method: string, params: unknown): Promise<R>
 }
+
+type Status = 'ready' | 'error' | 'connecting' | 'connected' | 'closed'
 
 export interface StatusChangeEvent {
   status: Status
@@ -33,7 +30,7 @@ export class LanguageClientManager implements LanguageClient {
   protected readonly onErrorEmitter = new Emitter<Error>()
   protected readonly onWillCloseEmitter = new Emitter<void>()
   protected readonly onWillShutdownEmitter = new Emitter<WillShutdownParams>()
-  protected currentStatus?: Status
+  protected currentStatus: Status = 'connecting'
 
   constructor (
     private id: LanguageClientId,
@@ -52,15 +49,13 @@ export class LanguageClientManager implements LanguageClient {
   }
 
   private notifyStatusChanged () {
-    if (this.currentStatus != null) {
-      this.onDidChangeStatusEmitter.fire({
-        status: this.currentStatus
-      })
-    }
+    this.onDidChangeStatusEmitter.fire({
+      status: this.currentStatus
+    })
   }
 
   isReady (): boolean {
-    return this.currentStatus?.type === 'ready'
+    return this.currentStatus === 'ready'
   }
 
   async dispose (): Promise<void> {
@@ -110,7 +105,7 @@ export class LanguageClientManager implements LanguageClient {
 
   private handleError = (error: Error) => {
     this.onErrorEmitter.fire(error)
-    this.updateStatus({ type: 'error', message: error.message })
+    this.updateStatus('error')
 
     return ErrorAction.Continue
   }
@@ -209,7 +204,7 @@ export class LanguageClientManager implements LanguageClient {
     languageClient.onDidChangeState(async (state) => {
       switch (state.newState) {
         case State.Starting: {
-          this.updateStatus({ type: 'connecting', message: 'Connecting language server...' })
+          this.updateStatus('connecting')
           readyPromise = languageClient.onReady().then(async () => {
             let disposable: Disposable | null = null
             await Promise.race([
@@ -225,15 +220,15 @@ export class LanguageClientManager implements LanguageClient {
           break
         }
         case State.Running: {
-          this.updateStatus({ type: 'connected', message: 'Connected to language server' })
+          this.updateStatus('connected')
 
           await readyPromise
 
-          this.updateStatus({ type: 'ready', message: 'Language server ready' })
+          this.updateStatus('ready')
           break
         }
         case State.Stopped: {
-          this.updateStatus({ type: 'closed', message: 'Connection closed' })
+          this.updateStatus('closed')
           break
         }
       }
