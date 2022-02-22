@@ -2,11 +2,11 @@ import { createWebSocketConnection, ConsoleLogger, toSocket, MessageSignature } 
 import { Uri } from 'monaco-editor'
 import {
   MonacoLanguageClient,
-  createConnection, ConnectionErrorHandler, ConnectionCloseHandler, IConnection, Middleware, ErrorHandler, IConnectionProvider, InitializeParams, RegistrationRequest, RegistrationParams, UnregistrationRequest, UnregistrationParams
+  createConnection, ConnectionErrorHandler, ConnectionCloseHandler, IConnection, Middleware, ErrorHandler, IConnectionProvider, InitializeParams, RegistrationRequest, RegistrationParams, UnregistrationRequest, UnregistrationParams, LanguageClientOptions
 } from '@codingame/monaco-languageclient'
 import once from 'once'
 import { registerExtensionFeatures } from './extensions'
-import { LanguageClientId, StaticLanguageClientOptions } from './staticOptions'
+import { LanguageClientId } from './languageClientOptions'
 
 async function openConnection (url: URL | string, errorHandler: ConnectionErrorHandler, closeHandler: () => void): Promise<IConnection> {
   return new Promise((resolve, reject) => {
@@ -128,7 +128,7 @@ function createLanguageClient (
     documentSelector,
     synchronize,
     initializationOptions
-  }: StaticLanguageClientOptions,
+  }: LanguageClientOptions,
   languageServerAddress: string,
   getSecurityToken: () => Promise<string>,
   libraryUrls: string[],
