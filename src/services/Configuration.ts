@@ -37,7 +37,7 @@ class MemoryWorkspaceConfiguration implements WorkspaceConfiguration {
   }
 }
 
-const simpleConfigurationService = monaco.editor.StaticServices.configurationService.get() as monaco.extra.SimpleConfigurationService
+const simpleConfigurationService = monaco.extra.StandaloneServices.get(monaco.extra.IConfigurationService) as monaco.extra.StandaloneConfigurationService
 class Configuration implements Configurations {
   protected readonly onDidChangeConfigurationEmitter = new Emitter<ConfigurationChangeEvent>()
 
