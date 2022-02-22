@@ -1,6 +1,6 @@
 import * as monaco from 'monaco-editor'
 import {
-  CloseAction, ErrorAction, Disposable, MonacoLanguageClient, Emitter, Event, TextDocument, Services, State
+  CloseAction, ErrorAction, MonacoLanguageClient, Emitter, Event, TextDocument, Services, State, DisposableCollection
 } from '@codingame/monaco-languageclient'
 import delay from 'delay'
 import { Uri } from 'monaco-editor'
@@ -206,14 +206,14 @@ export class LanguageClientManager implements LanguageClient {
         case State.Starting: {
           this.updateStatus('connecting')
           readyPromise = languageClient.onReady().then(async () => {
-            let disposable: Disposable | null = null
+            const disposableCollection = new DisposableCollection()
             await Promise.race([
               new Promise<void>(resolve => {
-                disposable = onServerResponse.event(resolve)
+                disposableCollection.push(onServerResponse.event(resolve))
               }),
               delay(15000)
             ])
-            disposable!.dispose()
+            disposableCollection.dispose()
           }, error => {
             console.error('[LSP]', 'Error while waiting for the language client to be ready', error)
           })
