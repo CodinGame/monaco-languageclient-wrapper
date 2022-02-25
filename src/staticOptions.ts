@@ -203,7 +203,7 @@ const staticOptions = asLanguageClientOptionsById({
   },
   postgresql: {
     documentSelector: [{
-      language: 'postgresql'
+      language: 'postgres'
     }],
     // Disable code actions
     middleware: {
