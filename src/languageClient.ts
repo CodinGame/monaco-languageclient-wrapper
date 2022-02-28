@@ -1,6 +1,6 @@
 import * as monaco from 'monaco-editor'
 import {
-  CloseAction, ErrorAction, Disposable, MonacoLanguageClient, Emitter, Event, TextDocument, Services, State
+  CloseAction, ErrorAction, MonacoLanguageClient, Emitter, Event, TextDocument, Services, State, DisposableCollection
 } from '@codingame/monaco-languageclient'
 import delay from 'delay'
 import { Uri } from 'monaco-editor'
@@ -8,19 +8,16 @@ import { registerTextModelContentProvider } from '@codingame/monaco-editor-wrapp
 import { installServices } from './services'
 import createLanguageClient from './createLanguageClient'
 import { getFile } from './customRequests'
-import staticOptions, { LanguageClientId, StaticLanguageClientOptions } from './staticOptions'
 import { WillDisposeFeature, WillShutdownParams } from './extensions'
 import { loadExtensionConfigurations } from './extensionConfiguration'
-
-type Status = {
-  type: string
-  message: string
-}
+import { getLanguageClientOptions, LanguageClientId, LanguageClientOptions } from './languageClientOptions'
 
 export interface LanguageClient {
   sendNotification (method: string, params: unknown): void
   sendRequest<R> (method: string, params: unknown): Promise<R>
 }
+
+type Status = 'ready' | 'error' | 'connecting' | 'connected' | 'closed'
 
 export interface StatusChangeEvent {
   status: Status
@@ -33,14 +30,14 @@ export class LanguageClientManager implements LanguageClient {
   protected readonly onErrorEmitter = new Emitter<Error>()
   protected readonly onWillCloseEmitter = new Emitter<void>()
   protected readonly onWillShutdownEmitter = new Emitter<WillShutdownParams>()
-  protected currentStatus?: Status
+  protected currentStatus: Status = 'connecting'
 
   constructor (
     private id: LanguageClientId,
     private sessionId: string | undefined,
     private languageServerAddress: string,
     private getSecurityToken: () => Promise<string>,
-    private languageServerOptions: StaticLanguageClientOptions,
+    private languageServerOptions: LanguageClientOptions,
     private libraryUrls: string[],
     private useMutualizedProxy: boolean
   ) {
@@ -52,15 +49,13 @@ export class LanguageClientManager implements LanguageClient {
   }
 
   private notifyStatusChanged () {
-    if (this.currentStatus != null) {
-      this.onDidChangeStatusEmitter.fire({
-        status: this.currentStatus
-      })
-    }
+    this.onDidChangeStatusEmitter.fire({
+      status: this.currentStatus
+    })
   }
 
   isReady (): boolean {
-    return this.currentStatus?.type === 'ready'
+    return this.currentStatus === 'ready'
   }
 
   async dispose (): Promise<void> {
@@ -110,7 +105,7 @@ export class LanguageClientManager implements LanguageClient {
 
   private handleError = (error: Error) => {
     this.onErrorEmitter.fire(error)
-    this.updateStatus({ type: 'error', message: error.message })
+    this.updateStatus('error')
 
     return ErrorAction.Continue
   }
@@ -209,31 +204,31 @@ export class LanguageClientManager implements LanguageClient {
     languageClient.onDidChangeState(async (state) => {
       switch (state.newState) {
         case State.Starting: {
-          this.updateStatus({ type: 'connecting', message: 'Connecting language server...' })
+          this.updateStatus('connecting')
           readyPromise = languageClient.onReady().then(async () => {
-            let disposable: Disposable | null = null
+            const disposableCollection = new DisposableCollection()
             await Promise.race([
               new Promise<void>(resolve => {
-                disposable = onServerResponse.event(resolve)
+                disposableCollection.push(onServerResponse.event(resolve))
               }),
               delay(15000)
             ])
-            disposable!.dispose()
+            disposableCollection.dispose()
           }, error => {
             console.error('[LSP]', 'Error while waiting for the language client to be ready', error)
           })
           break
         }
         case State.Running: {
-          this.updateStatus({ type: 'connected', message: 'Connected to language server' })
+          this.updateStatus('connected')
 
           await readyPromise
 
-          this.updateStatus({ type: 'ready', message: 'Language server ready' })
+          this.updateStatus('ready')
           break
         }
         case State.Stopped: {
-          this.updateStatus({ type: 'closed', message: 'Connection closed' })
+          this.updateStatus('closed')
           break
         }
       }
@@ -276,7 +271,7 @@ function createLanguageClientManager (
   if (languageClientManagerByLanguageId[id] != null) {
     throw new Error(`Language client for language ${id} already started`)
   }
-  let languageServerOptions = staticOptions[id]
+  let languageServerOptions = getLanguageClientOptions(id)
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
   if (languageServerOptions == null) {
     throw new Error(`Unknown ${id} language server`)

@@ -1,11 +1,6 @@
-import { LanguageClientOptions } from '@codingame/monaco-languageclient'
+import type { LanguageClientOptions } from './languageClientOptions'
 
-export type StaticLanguageClientOptions = Pick<LanguageClientOptions, 'documentSelector' | 'synchronize' | 'initializationOptions' | 'middleware'> & {
-  vscodeExtensionIds?: string[]
-  mutualizable: boolean
-}
-
-type LanguageClientOptionsById<T extends string> = Record<T, StaticLanguageClientOptions>
+type LanguageClientOptionsById<T extends string> = Record<T, LanguageClientOptions>
 const asLanguageClientOptionsById = <K extends string> (options: LanguageClientOptionsById<K>): LanguageClientOptionsById<K> => options
 
 const staticOptions = asLanguageClientOptionsById({
@@ -208,7 +203,7 @@ const staticOptions = asLanguageClientOptionsById({
   },
   postgresql: {
     documentSelector: [{
-      language: 'postgresql'
+      language: 'postgres'
     }],
     // Disable code actions
     middleware: {
@@ -328,6 +323,6 @@ const staticOptions = asLanguageClientOptionsById({
   }
 })
 
-export type LanguageClientId = keyof typeof staticOptions
+export type StaticLanguageClientId = keyof typeof staticOptions
 
 export default staticOptions

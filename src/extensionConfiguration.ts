@@ -1,5 +1,5 @@
 import { loadConfigurationForExtension } from '@codingame/monaco-editor-wrapper/dist/features/extensionConfigurations'
-import staticOptions, { LanguageClientId } from './staticOptions'
+import { getLanguageClientOptions, LanguageClientId } from './languageClientOptions'
 
 /**
  * Load the configuration schemas from vscode extensions
@@ -9,7 +9,7 @@ import staticOptions, { LanguageClientId } from './staticOptions'
 export async function loadExtensionConfigurations (forLanguageClientIds: LanguageClientId[], useMutualizedProxy: boolean): Promise<void> {
   const extensionConfigurationToLoad = new Set<string>()
   for (const languageClientId of forLanguageClientIds) {
-    const config = staticOptions[languageClientId]
+    const config = getLanguageClientOptions(languageClientId)
     if (!config.mutualizable || !useMutualizedProxy) {
       config.vscodeExtensionIds?.forEach(extensionId => {
         extensionConfigurationToLoad.add(extensionId)
