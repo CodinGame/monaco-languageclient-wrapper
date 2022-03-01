@@ -13,8 +13,8 @@
     "url": "https://github.com/CodinGame/monaco-languageclient-wrapper"
   },
   "moduleResolution": "node",
-  "main": "dist/main.js",
-  "module": "dist/main.js",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
   "files": [
     "dist/",
     "stats.html"
