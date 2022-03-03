@@ -310,6 +310,15 @@ const staticOptions = asLanguageClientOptionsById({
     mutualizable: true,
     vscodeExtensionIds: ['typescript-language-features']
   },
+  verilog: {
+    documentSelector: [
+      {
+        language: 'verilog'
+      }
+    ],
+    mutualizable: false,
+    vscodeExtensionIds: ['svlangserver']
+  },
   vue: {
     documentSelector: [
       {
