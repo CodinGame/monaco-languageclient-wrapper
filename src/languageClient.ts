@@ -1,20 +1,20 @@
 import * as monaco from 'monaco-editor'
 import {
-  CloseAction, ErrorAction, MonacoLanguageClient, Emitter, Event, TextDocument, Services, State, DisposableCollection
+  CloseAction, ErrorAction, MonacoLanguageClient, Emitter, Event, TextDocument, Services, State, DisposableCollection, CancellationToken, RequestType, NotificationType
 } from '@codingame/monaco-languageclient'
 import delay from 'delay'
 import { Uri } from 'monaco-editor'
 import { registerTextModelContentProvider } from '@codingame/monaco-editor-wrapper'
 import { installServices } from './services'
 import createLanguageClient from './createLanguageClient'
-import { getFile } from './customRequests'
-import { WillDisposeFeature, WillShutdownParams } from './extensions'
+import { getFile, WillShutdownParams } from './customRequests'
+import { WillDisposeFeature } from './extensions'
 import { loadExtensionConfigurations } from './extensionConfiguration'
 import { getLanguageClientOptions, LanguageClientId, LanguageClientOptions } from './languageClientOptions'
 
 export interface LanguageClient {
-  sendNotification (method: string, params: unknown): void
-  sendRequest<R> (method: string, params: unknown): Promise<R>
+  sendNotification<P>(type: NotificationType<P>, params?: P): void
+  sendRequest<P, R, E> (request: RequestType<P, R, E>, params: P, token?: CancellationToken): Promise<R>
 }
 
 type Status = 'ready' | 'error' | 'connecting' | 'connected' | 'closed'
@@ -239,12 +239,12 @@ export class LanguageClientManager implements LanguageClient {
     this.languageClient.start()
   }
 
-  sendNotification (method: string, params: unknown): void {
-    this.languageClient!.sendNotification(method, params)
+  sendNotification<P> (type: NotificationType<P>, params?: P): void {
+    this.languageClient!.sendNotification(type, params)
   }
 
-  sendRequest<R> (method: string, params: unknown): Promise<R> {
-    return this.languageClient!.sendRequest<R>(method, params)
+  sendRequest<P, R, E> (type: RequestType<P, R, E>, params: P): Promise<R> {
+    return this.languageClient!.sendRequest<P, R, E>(type, params)
   }
 }
 

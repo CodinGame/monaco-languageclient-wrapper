@@ -3,7 +3,7 @@ import {
   ServerCapabilities, DocumentSelector, MonacoLanguageClient, StaticFeature, Services,
   TextDocumentSyncOptions, TextDocument, DidSaveTextDocumentNotification, Emitter, ProtocolNotificationType
 } from '@codingame/monaco-languageclient'
-import { updateFile } from './customRequests'
+import { updateFile, willShutdownNotificationType, WillShutdownParams } from './customRequests'
 
 interface ResolvedTextDocumentSyncCapabilities {
   resolvedTextDocumentSync?: TextDocumentSyncOptions
@@ -88,11 +88,6 @@ export function registerExtensionFeatures (client: MonacoLanguageClient, languag
     client.registerFeature(new CobolResolveSubroutineFeature(client))
   }
 }
-
-export interface WillShutdownParams {
-  delay: number
-}
-export const willShutdownNotificationType = new ProtocolNotificationType<WillShutdownParams, void>('willShutdown')
 
 export class WillDisposeFeature implements StaticFeature {
   constructor (private languageClient: MonacoLanguageClient, private onWillShutdownEmitter: Emitter<WillShutdownParams>) {}
