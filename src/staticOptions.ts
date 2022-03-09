@@ -1,3 +1,4 @@
+import { Services } from '@codingame/monaco-languageclient'
 import type { LanguageClientOptions } from './languageClientOptions'
 
 type LanguageClientOptionsById<T extends string> = Record<T, LanguageClientOptions>
@@ -175,10 +176,10 @@ const staticOptions = asLanguageClientOptionsById({
     synchronize: {
       configurationSection: 'serenata'
     },
-    initializationOptions: {
+    initializationOptions: () => ({
       configuration: {
         uris: [
-          'file:///tmp/project'
+          Services.get().workspace.rootUri
         ],
         phpVersion: 7.3,
         fileExtensions: [
@@ -189,7 +190,7 @@ const staticOptions = asLanguageClientOptionsById({
           'file:///opt/serenata'
         ]
       }
-    },
+    }),
     mutualizable: true
   },
   php: {
