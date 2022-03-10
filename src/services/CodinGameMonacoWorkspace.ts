@@ -5,11 +5,14 @@ import {
 import * as monaco from 'monaco-editor'
 import type * as vscode from 'vscode'
 import Configuration from './Configuration'
-import { updateFile } from '../customRequests'
-import { getAllLanguageClientManagersByTextDocument } from '../languageClient'
+
+export interface ITextModelContentSaveHandler {
+  saveTextContent(document: TextDocument, reason: TextDocumentSaveReason): Promise<void>
+}
 
 export default class CodinGameMonacoWorkspace extends MonacoWorkspace {
   protected readonly onWillSaveTextDocumentEmitter = new Emitter<TextDocumentWillSaveEvent>()
+  private readonly savehandlers: ITextModelContentSaveHandler[] = []
   protected readonly onDidSaveTextDocumentEmitter = new Emitter<TextDocument>()
   readonly workspaceFolders: typeof vscode.workspace.workspaceFolders
 
@@ -40,6 +43,16 @@ export default class CodinGameMonacoWorkspace extends MonacoWorkspace {
     return this.onDidSaveTextDocumentEmitter.event
   }
 
+  registerSaveDocumentHandler (handler: ITextModelContentSaveHandler): Disposable {
+    this.savehandlers.push(handler)
+    return Disposable.create(() => {
+      const index = this.savehandlers.indexOf(handler)
+      if (index >= 0) {
+        this.savehandlers.splice(index, 1)
+      }
+    })
+  }
+
   async saveDocument (document: TextDocument, reason: TextDocumentSaveReason): Promise<void> {
     this.onWillSaveTextDocumentEmitter.fire({
       textDocument: document,
@@ -47,10 +60,8 @@ export default class CodinGameMonacoWorkspace extends MonacoWorkspace {
     })
 
     try {
-      await Promise.all(getAllLanguageClientManagersByTextDocument(document).map(async languageClient => {
-        if (languageClient.isReady()) {
-          await updateFile(document.uri.toString(), document.getText(), languageClient)
-        }
+      await Promise.all(this.savehandlers.map(handler => {
+        return handler.saveTextContent(document, reason)
       }))
 
       this.onDidSaveTextDocumentEmitter.fire(document)
