@@ -1,6 +1,6 @@
 import {
   MonacoWorkspace, TextDocument, TextDocumentSaveReason,
-  ProtocolToMonacoConverter, MonacoToProtocolConverter, Emitter, Event, TextDocumentWillSaveEvent
+  ProtocolToMonacoConverter, MonacoToProtocolConverter, Emitter, Event, TextDocumentWillSaveEvent, Disposable
 } from '@codingame/monaco-languageclient'
 import * as monaco from 'monaco-editor'
 import type * as vscode from 'vscode'
@@ -14,18 +14,19 @@ export default class CodinGameMonacoWorkspace extends MonacoWorkspace {
   protected readonly onWillSaveTextDocumentEmitter = new Emitter<TextDocumentWillSaveEvent>()
   private readonly savehandlers: ITextModelContentSaveHandler[] = []
   protected readonly onDidSaveTextDocumentEmitter = new Emitter<TextDocument>()
-  readonly workspaceFolders: typeof vscode.workspace.workspaceFolders
 
   configurations = new Configuration()
 
   constructor (
     p2m: ProtocolToMonacoConverter,
     m2p: MonacoToProtocolConverter,
-    _rootUri: string | null = null) {
+    _rootUri: string | null = null,
+    public workspaceFolders: typeof vscode.workspace.workspaceFolders
+  ) {
     super(monaco, p2m, m2p, _rootUri)
 
     // "workaround" for https://github.com/TypeFox/monaco-languageclient/pull/199#issuecomment-593414330
-    if (_rootUri != null) {
+    if (this.workspaceFolders == null && _rootUri != null) {
       const uri = monaco.Uri.parse(_rootUri)
       this.workspaceFolders = [{
         uri,
