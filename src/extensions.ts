@@ -64,7 +64,7 @@ class CobolResolveSubroutineFeature implements StaticFeature {
   initialize (capabilities: ServerCapabilities, documentSelector: DocumentSelector): void {
     this.onRequestDisposable = this.languageClient.onRequest('cobol/resolveSubroutine', (routineName: string) => {
       const constantRoutinePaths: Partial<Record<string, string>> = {
-        'assert-equals': 'file:/tmp/project/deps/assert-equals.cbl'
+        'assert-equals': `${Services.get().workspace.rootUri ?? 'file:/tmp/project'}/deps/assert-equals.cbl`
       }
       const contantRoutinePath = constantRoutinePaths[routineName.toLowerCase()]
       if (contantRoutinePath != null) {
