@@ -1,7 +1,7 @@
 
 import * as monaco from 'monaco-editor'
 import {
-  Services, MonacoToProtocolConverter, ProtocolToMonacoConverter, MonacoLanguages, TextDocumentSaveReason, MonacoCommands, TextDocument
+  Services, MonacoToProtocolConverter, ProtocolToMonacoConverter, MonacoLanguages, TextDocumentSaveReason, MonacoCommands
 } from '@codingame/monaco-languageclient'
 import { RenameFile, CreateFile, WorkspaceEdit } from 'vscode-languageserver-protocol'
 import WatchableConsoleWindow from './services/WatchableConsoleWindow'
@@ -70,11 +70,6 @@ function installServices (infrastructure: Infrastructure): CgMonacoServices {
   return services
 }
 
-async function saveDocument (document: TextDocument, reason: TextDocumentSaveReason): Promise<void> {
-  await services!.workspace.saveDocument(document, reason)
-}
-
 export {
-  installServices,
-  saveDocument
+  installServices
 }
