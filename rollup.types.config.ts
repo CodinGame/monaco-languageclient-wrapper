@@ -15,7 +15,7 @@ export default rollup.defineConfig({
       return false
     }
     // Do not include types that rollup-plugin-dts fails to parse
-    if (/^vscode$|proxy-polyfill/.test(source)) {
+    if (/^proxy-polyfill/.test(source)) {
       return true
     }
     // Force include all types from vscode-* libs (vscode-languageclient, vscode-languageserver-protocol....)
@@ -25,6 +25,33 @@ export default rollup.defineConfig({
     return externals.some(external => source.startsWith(external))
   },
   plugins: [
+    {
+      // Remove "declare module 'vscode'" from vscode type
+      // Or else dts plugin is unable to extract types from it
+      name: 'remove-vscode-declare-module',
+      transform: (code, id) => {
+        if (id.endsWith('@types/vscode/index.d.ts')) {
+          const lines = code.split('\n')
+          let index = lines.indexOf('declare module \'vscode\' {')
+          lines.splice(index, 1)
+          if (index >= 0) {
+            let end = false
+            while (!end) {
+              if (lines[index] === '}') {
+                lines.splice(index, 1)
+                end = true
+              } else {
+                // unindent
+                lines[index] = lines[index].slice(4)
+              }
+              index++
+            }
+          }
+          return lines.join('\n')
+        }
+        return code
+      }
+    },
     dts({
       respectExternal: true
     })
