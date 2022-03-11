@@ -1,16 +1,17 @@
 import * as monaco from 'monaco-editor'
 import {
-  CloseAction, ErrorAction, MonacoLanguageClient, Emitter, Event, TextDocument, Services, State, DisposableCollection, CancellationToken, RequestType, NotificationType
+  CloseAction, ErrorAction, MonacoLanguageClient, Emitter, Event, TextDocument, Services, State, DisposableCollection, CancellationToken, RequestType, NotificationType, Disposable
 } from '@codingame/monaco-languageclient'
 import delay from 'delay'
 import { Uri } from 'monaco-editor'
 import { registerTextModelContentProvider } from '@codingame/monaco-editor-wrapper'
 import { installServices } from './services'
 import createLanguageClient from './createLanguageClient'
-import { getFile, WillShutdownParams } from './customRequests'
-import { WillDisposeFeature } from './extensions'
+import { WillShutdownParams } from './customRequests'
+import { InitializeTextDocumentFeature, WillDisposeFeature } from './extensions'
 import { loadExtensionConfigurations } from './extensionConfiguration'
 import { getLanguageClientOptions, LanguageClientId, LanguageClientOptions } from './languageClientOptions'
+import { Infrastructure } from './infrastructure'
 
 export interface LanguageClient {
   sendNotification<P>(type: NotificationType<P>, params?: P): void
@@ -34,12 +35,8 @@ export class LanguageClientManager implements LanguageClient {
 
   constructor (
     private id: LanguageClientId,
-    private sessionId: string | undefined,
-    private languageServerAddress: string,
-    private getSecurityToken: () => Promise<string>,
     private languageServerOptions: LanguageClientOptions,
-    private libraryUrls: string[],
-    private useMutualizedProxy: boolean
+    private infrastructure: Infrastructure
   ) {
   }
 
@@ -112,7 +109,7 @@ export class LanguageClientManager implements LanguageClient {
 
   public async start (): Promise<void> {
     try {
-      await loadExtensionConfigurations([this.id], this.useMutualizedProxy)
+      await loadExtensionConfigurations([this.id], this.infrastructure.useMutualizedProxy)
     } catch (error) {
       console.error('Unable to load extension configuration', error)
     }
@@ -126,11 +123,8 @@ export class LanguageClientManager implements LanguageClient {
 
     const languageClient = createLanguageClient(
       this.id,
-      this.sessionId,
-      this.languageServerOptions,
-      this.languageServerAddress,
-      this.getSecurityToken,
-      this.libraryUrls, {
+      this.infrastructure,
+      this.languageServerOptions, {
         error: this.handleError,
         closed: this.handleClose
       }, {
@@ -236,6 +230,10 @@ export class LanguageClientManager implements LanguageClient {
 
     this.languageClient.registerFeature(new WillDisposeFeature(this.languageClient, this.onWillShutdownEmitter))
 
+    if (!this.infrastructure.automaticTextDocumentUpdate) {
+      this.languageClient.registerFeature(new InitializeTextDocumentFeature(this))
+    }
+
     this.languageClient.start()
   }
 
@@ -253,20 +251,13 @@ const languageClientManagerByLanguageId: Partial<Record<string, LanguageClientMa
 /**
  * Create a language client manager
  * @param id The predefined id of the language client
- * @param sessionId An optional sessionId when connecting to the session-mutualized server
- * @param languageServerAddress The domain of the server
- * @param getSecurityToken A function which returns a valid JWT token to use to connect to the server
- * @param libraryUrls A list of urls which link to zip files containing libraries/resources
- * @param useMutualizedProxy The language server proxy is used, so we only need to load configurations for language servers which are not mutualized
+ * @param infrastructure The infrastructure to use
+ * @param parameters the infrastructure parameters
  * @returns A language client manager
  */
 function createLanguageClientManager (
   id: LanguageClientId,
-  sessionId: string | undefined,
-  languageServerAddress: string,
-  getSecurityToken: () => Promise<string>,
-  libraryUrls: string[],
-  useMutualizedProxy: boolean = languageServerAddress.includes('mutualized')
+  infrastructure: Infrastructure
 ): LanguageClientManager {
   if (languageClientManagerByLanguageId[id] != null) {
     throw new Error(`Language client for language ${id} already started`)
@@ -277,7 +268,7 @@ function createLanguageClientManager (
     throw new Error(`Unknown ${id} language server`)
   }
 
-  if (useMutualizedProxy && languageServerOptions.mutualizable) {
+  if (infrastructure.useMutualizedProxy && languageServerOptions.mutualizable) {
     // When using the mutualized proxy, we don't need to synchronize the configuration nor send the initialization options
     languageServerOptions = {
       ...languageServerOptions,
@@ -286,26 +277,30 @@ function createLanguageClientManager (
     }
   }
 
-  installServices()
+  const services = installServices(infrastructure)
 
-  const languageClientManager = new LanguageClientManager(id, sessionId, languageServerAddress, getSecurityToken, languageServerOptions, libraryUrls, useMutualizedProxy)
+  const disposableCollection = new DisposableCollection()
+
+  const languageClientManager = new LanguageClientManager(id, languageServerOptions, infrastructure)
   languageClientManagerByLanguageId[id] = languageClientManager
+  disposableCollection.push(Disposable.create(() => {
+    delete languageClientManagerByLanguageId[id]
+  }))
 
-  const textModelContentProviderDisposable = registerTextModelContentProvider('file', {
+  disposableCollection.push(registerTextModelContentProvider('file', {
     async provideTextContent (resource: Uri): Promise<monaco.editor.ITextModel | null> {
-      try {
-        const content = (await getFile(resource.toString(true), languageClientManager)).text
-        return monaco.editor.createModel(content, undefined, resource)
-      } catch (error) {
-        // file not found
-        return null
-      }
+      const content = await infrastructure.getFileContent(resource, languageClientManager)
+      return content != null ? monaco.editor.createModel(content, undefined, resource) : null
     }
-  })
+  }))
+  disposableCollection.push(services.workspace.registerSaveDocumentHandler({
+    async saveTextContent (textDocument, reason) {
+      await infrastructure.saveFileContent?.(textDocument, reason, languageClientManager)
+    }
+  }))
 
   languageClientManager.onWillClose(() => {
-    delete languageClientManagerByLanguageId[id]
-    textModelContentProviderDisposable.dispose()
+    disposableCollection.dispose()
   })
 
   return languageClientManager

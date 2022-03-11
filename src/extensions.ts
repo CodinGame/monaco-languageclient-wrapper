@@ -1,18 +1,19 @@
 import {
   Disposable,
   ServerCapabilities, DocumentSelector, MonacoLanguageClient, StaticFeature, Services,
-  TextDocumentSyncOptions, TextDocument, DidSaveTextDocumentNotification, Emitter, ProtocolNotificationType
+  TextDocumentSyncOptions, TextDocument, DidSaveTextDocumentNotification, Emitter
 } from '@codingame/monaco-languageclient'
 import { updateFile, willShutdownNotificationType, WillShutdownParams } from './customRequests'
+import { LanguageClient } from './languageClient'
 
 interface ResolvedTextDocumentSyncCapabilities {
   resolvedTextDocumentSync?: TextDocumentSyncOptions
 }
 
 // Initialize the file content into the lsp server for implementations that don't support open/close notifications
-class InitializeTextDocumentFeature implements StaticFeature {
+export class InitializeTextDocumentFeature implements StaticFeature {
   private didOpenTextDocumentDisposable: Disposable | undefined
-  constructor (private languageClient: MonacoLanguageClient) {}
+  constructor (private languageClient: LanguageClient) {}
 
   fillClientCapabilities (): void {}
 
@@ -83,7 +84,6 @@ class CobolResolveSubroutineFeature implements StaticFeature {
 }
 
 export function registerExtensionFeatures (client: MonacoLanguageClient, language: string): void {
-  client.registerFeature(new InitializeTextDocumentFeature(client))
   if (language === 'cobol') {
     client.registerFeature(new CobolResolveSubroutineFeature(client))
   }
