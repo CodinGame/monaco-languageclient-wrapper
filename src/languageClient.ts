@@ -1,7 +1,7 @@
 import * as monaco from 'monaco-editor'
 import {
   CloseAction, ErrorAction, MonacoLanguageClient, Emitter, Event, TextDocument, Services, State, DisposableCollection, CancellationToken, RequestType, NotificationType, Disposable
-} from '@codingame/monaco-languageclient'
+} from 'monaco-languageclient'
 import delay from 'delay'
 import { Uri } from 'monaco-editor'
 import { registerTextModelContentProvider } from '@codingame/monaco-editor-wrapper'

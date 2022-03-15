@@ -74,7 +74,7 @@ export default rollup.defineConfig({
         replacement: 'monaco-editor/esm/vs/editor/edcore.main'
       }, {
         find: 'vscode',
-        replacement: require.resolve('@codingame/monaco-languageclient/lib/vscode-compatibility')
+        replacement: require.resolve('monaco-languageclient/lib/vscode-compatibility')
       }]
     }),
     {

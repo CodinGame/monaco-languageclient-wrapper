@@ -1,4 +1,4 @@
-import { Disposable, LanguageClientOptions as MonacoLanguageClientOptions } from '@codingame/monaco-languageclient'
+import { Disposable, LanguageClientOptions as MonacoLanguageClientOptions } from 'monaco-languageclient'
 import staticOptions, { StaticLanguageClientId } from './staticOptions'
 
 export type LanguageClientOptions = Pick<MonacoLanguageClientOptions, 'documentSelector' | 'synchronize' | 'initializationOptions' | 'middleware'> & {

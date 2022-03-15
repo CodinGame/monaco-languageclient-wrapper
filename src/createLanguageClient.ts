@@ -3,7 +3,7 @@ import { Uri } from 'monaco-editor'
 import {
   MonacoLanguageClient,
   createConnection, ConnectionErrorHandler, ConnectionCloseHandler, IConnection, Middleware, ErrorHandler, IConnectionProvider, InitializeParams, RegistrationRequest, RegistrationParams, UnregistrationRequest, UnregistrationParams, LanguageClientOptions
-} from '@codingame/monaco-languageclient'
+} from 'monaco-languageclient'
 import once from 'once'
 import { registerExtensionFeatures } from './extensions'
 import { LanguageClientId } from './languageClientOptions'

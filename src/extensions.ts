@@ -2,7 +2,7 @@ import {
   Disposable,
   ServerCapabilities, DocumentSelector, MonacoLanguageClient, StaticFeature, Services,
   TextDocumentSyncOptions, TextDocument, DidSaveTextDocumentNotification, Emitter
-} from '@codingame/monaco-languageclient'
+} from 'monaco-languageclient'
 import { updateFile, willShutdownNotificationType, WillShutdownParams } from './customRequests'
 import { LanguageClient } from './languageClient'
 

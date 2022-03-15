@@ -1,5 +1,5 @@
 import { ConsoleLogger, createWebSocketConnection, toSocket } from '@codingame/monaco-jsonrpc'
-import { MessageConnection, TextDocument, TextDocumentSaveReason } from '@codingame/monaco-languageclient'
+import { MessageConnection, TextDocument, TextDocumentSaveReason } from 'monaco-languageclient'
 import * as monaco from 'monaco-editor'
 import type * as vscode from 'vscode'
 import { getFile, updateFile } from './customRequests'

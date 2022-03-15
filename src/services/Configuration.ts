@@ -1,6 +1,6 @@
 import {
   Configurations, ConfigurationChangeEvent, WorkspaceConfiguration, Event, Emitter
-} from '@codingame/monaco-languageclient'
+} from 'monaco-languageclient'
 import * as monaco from 'monaco-editor'
 
 // comes from vscode (vs/workbench/api/common/extHostConfiguration.ts)
