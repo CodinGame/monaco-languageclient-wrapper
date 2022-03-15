@@ -24,10 +24,10 @@ export default rollup.defineConfig({
     if (isResolved) {
       return false
     }
-    if ([/^vscode-/, /@types/].some(reg => reg.test(source))) {
-      return false
+    if (externals.some(external => source.startsWith(external))) {
+      return true
     }
-    return externals.some(external => source.startsWith(external))
+    return false
   },
   output: [{
     chunkFileNames: '[name].js',
@@ -48,7 +48,9 @@ export default rollup.defineConfig({
     nodeResolve({
       extensions
     }),
-    commonjs(),
+    commonjs({
+      esmExternals: (id) => id.match(/^vscode-languageserver-protocol(\/.*)?/) != null // required for monaco-emacs with use import monaco-editor esm code from commonjs code
+    }),
     babel({
       extensions,
       presets: [
@@ -62,7 +64,7 @@ export default rollup.defineConfig({
         '@babel/plugin-proposal-optional-chaining'
       ],
       babelHelpers: 'bundled',
-      exclude: /node_modules\/(?!monaco-languageclient|monaco-jsonrpc|vscode-jsonrpc|vscode-languageserver-protocol|vscode-languageserver-types|vscode-languageclient)/
+      exclude: /node_modules\/(?!monaco-languageclient|vscode-languageserver-types|vscode-languageclient)/
     }),
     visualizer(),
     alias({
