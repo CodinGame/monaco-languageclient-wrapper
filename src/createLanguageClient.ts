@@ -20,7 +20,7 @@ async function messageConnectionToConnection (messageConnection: MessageConnecti
       const rootPath = params.rootPath?.replace(/\\/g, '/')
       const fixedParams: InitializeParams = {
         ...params,
-        rootPath: rootPath,
+        rootPath,
         rootUri: rootPath != null ? Uri.from({ scheme: 'file', path: rootPath }).toString() : null
       }
       return connection.initialize(fixedParams)
