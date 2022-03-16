@@ -81,7 +81,7 @@ export abstract class CodinGameInfrastructure implements Infrastructure {
     /**
      * A list of urls which link to zip files containing libraries/resources
      */
-     private libraryUrls?: string[]
+    private libraryUrls?: string[]
   ) {
   }
 
