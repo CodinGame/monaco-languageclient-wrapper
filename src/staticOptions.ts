@@ -1,4 +1,4 @@
-import { Services } from '@codingame/monaco-languageclient'
+import { Services } from 'monaco-languageclient'
 import type { LanguageClientOptions } from './languageClientOptions'
 
 type LanguageClientOptionsById<T extends string> = Record<T, LanguageClientOptions>

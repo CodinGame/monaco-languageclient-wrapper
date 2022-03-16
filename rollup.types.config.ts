@@ -19,11 +19,10 @@ export default rollup.defineConfig({
     if (/^proxy-polyfill/.test(source)) {
       return true
     }
-    // Force include all types from vscode-* libs (vscode-languageclient, vscode-languageserver-protocol....)
-    if (/^vscode-/.test(source)) {
-      return false
+    if (externals.some(external => source.startsWith(external))) {
+      return true
     }
-    return externals.some(external => source.startsWith(external))
+    return false
   },
   plugins: [
     removeVscodeDeclareModule(),

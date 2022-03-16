@@ -2,7 +2,7 @@
 import * as monaco from 'monaco-editor'
 import {
   Services, MonacoToProtocolConverter, ProtocolToMonacoConverter, MonacoLanguages, TextDocumentSaveReason, MonacoCommands
-} from '@codingame/monaco-languageclient'
+} from 'monaco-languageclient'
 import { RenameFile, CreateFile, WorkspaceEdit } from 'vscode-languageserver-protocol'
 import WatchableConsoleWindow from './services/WatchableConsoleWindow'
 import CodinGameMonacoWorkspace from './services/CodinGameMonacoWorkspace'

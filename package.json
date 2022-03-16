@@ -1,6 +1,6 @@
 {
   "name": "@codingame/monaco-languageclient-wrapper",
-  "version": "2.0.2",
+  "version": "2.1.2",
   "private": false,
   "description": "Enhanced Monaco editor with TextMate grammars and more",
   "scripts": {
@@ -21,19 +21,19 @@
   ],
   "types": "dist/index.d.ts",
   "dependencies": {
-    "@codingame/monaco-editor-wrapper": "^1.9.0",
+    "@codingame/monaco-editor-wrapper": "^1.10.1",
+    "@codingame/monaco-jsonrpc": "^0.3.1",
     "once": "^1.4.0",
-    "sweetalert": "^2.1.2"
+    "sweetalert": "^2.1.2",
+    "vscode-languageserver-protocol": "^3.16.0"
   },
   "devDependencies": {
-    "@babel/core": "7.17.5",
+    "@babel/core": "7.17.7",
     "@babel/plugin-proposal-class-properties": "7.16.7",
     "@babel/plugin-proposal-optional-chaining": "7.16.7",
     "@babel/preset-env": "7.16.11",
     "@babel/preset-typescript": "7.16.7",
-    "@babel/runtime": "7.17.2",
-    "@codingame/monaco-jsonrpc": "^0.3.1",
-    "@codingame/monaco-languageclient": "^0.17.4",
+    "@babel/runtime": "7.17.7",
     "@rollup/plugin-alias": "3.1.9",
     "@rollup/plugin-babel": "5.3.1",
     "@rollup/plugin-commonjs": "21.0.2",
@@ -44,25 +44,28 @@
     "@types/once": "^1.4.0",
     "@types/rollup-plugin-node-builtins": "^2.1.2",
     "@types/vscode": "^1.65.0",
-    "@typescript-eslint/eslint-plugin": "5.14.0",
-    "@typescript-eslint/parser": "5.14.0",
-    "eslint": "8.10.0",
-    "eslint-config-standard": "16.0.3",
-    "eslint-config-standard-jsx": "10.0.0",
+    "@typescript-eslint/eslint-plugin": "5.15.0",
+    "@typescript-eslint/parser": "5.15.0",
+    "eslint": "8.11.0",
+    "eslint-config-standard": "17.0.0-1",
+    "eslint-config-standard-jsx": "11.0.0-1",
     "eslint-plugin-import": "2.25.4",
     "eslint-plugin-node": "11.1.0",
     "eslint-plugin-promise": "6.0.0",
     "eslint-plugin-unused-imports": "2.0.0",
+    "monaco-languageclient": "^0.18.0",
     "proxy-polyfill": "^0.3.2",
-    "rollup": "2.70.0",
+    "rollup": "2.70.1",
     "rollup-plugin-dts": "^4.2.0",
     "rollup-plugin-node-builtins": "^2.1.2",
     "rollup-plugin-postcss": "4.0.2",
     "rollup-plugin-visualizer": "5.6.0",
     "rollup-plugin-web-worker-loader": "1.6.1",
     "tslib": "^2.3.1",
-    "typescript": "4.6.2",
-    "vscode-languageserver-protocol": "^3.16.0"
+    "typescript": "4.6.2"
+  },
+  "resolutions": {
+    "eslint": "8.11.0"
   },
   "browserslist": [
     "defaults",

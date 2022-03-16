@@ -1,7 +1,7 @@
 import {
   MonacoWorkspace, TextDocument, TextDocumentSaveReason,
   ProtocolToMonacoConverter, MonacoToProtocolConverter, Emitter, Event, TextDocumentWillSaveEvent, Disposable
-} from '@codingame/monaco-languageclient'
+} from 'monaco-languageclient'
 import * as monaco from 'monaco-editor'
 import type * as vscode from 'vscode'
 import Configuration from './Configuration'

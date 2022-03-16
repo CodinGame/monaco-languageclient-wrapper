@@ -1,4 +1,4 @@
-import { MessageType, OutputChannel, Window, MessageActionItem, Emitter, Event, CancellationToken, CancellationTokenSource } from '@codingame/monaco-languageclient'
+import { MessageType, OutputChannel, Window, MessageActionItem, Emitter, Event, CancellationToken, CancellationTokenSource } from 'monaco-languageclient'
 import swal from 'sweetalert'
 import type * as vscode from 'vscode'
 
