@@ -1,11 +1,12 @@
 
 import * as monaco from 'monaco-editor'
 import {
-  Services, MonacoToProtocolConverter, ProtocolToMonacoConverter, MonacoLanguages, TextDocumentSaveReason, MonacoCommands, TextDocument
+  Services, MonacoToProtocolConverter, ProtocolToMonacoConverter, MonacoLanguages, TextDocumentSaveReason, MonacoCommands
 } from '@codingame/monaco-languageclient'
 import { RenameFile, CreateFile, WorkspaceEdit } from 'vscode-languageserver-protocol'
 import WatchableConsoleWindow from './services/WatchableConsoleWindow'
 import CodinGameMonacoWorkspace from './services/CodinGameMonacoWorkspace'
+import { Infrastructure } from './infrastructure'
 
 interface CgMonacoServices extends Services {
   commands: MonacoCommands
@@ -46,7 +47,7 @@ function autoSaveModels (services: CgMonacoServices) {
 }
 
 let services: CgMonacoServices | null = null
-function installServices (): void {
+function installServices (infrastructure: Infrastructure): CgMonacoServices {
   const m2p = new MonacoToProtocolConverter(monaco)
   const p2m = new ProtocolToMonacoConverter(monaco)
 
@@ -54,7 +55,7 @@ function installServices (): void {
     services = {
       commands: new MonacoCommands(monaco),
       languages: new MonacoLanguages(monaco, p2m, m2p),
-      workspace: new CodinGameMonacoWorkspace(p2m, m2p, 'file:///tmp/project'),
+      workspace: new CodinGameMonacoWorkspace(p2m, m2p, infrastructure.rootUri, infrastructure.workspaceFolders),
       window: new WatchableConsoleWindow()
     }
 
@@ -62,15 +63,13 @@ function installServices (): void {
 
     installCommands(services)
 
-    autoSaveModels(services)
+    if (!infrastructure.automaticTextDocumentUpdate) {
+      autoSaveModels(services)
+    }
   }
-}
-
-async function saveDocument (document: TextDocument, reason: TextDocumentSaveReason): Promise<void> {
-  await services!.workspace.saveDocument(document, reason)
+  return services
 }
 
 export {
-  installServices,
-  saveDocument
+  installServices
 }
