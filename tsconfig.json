@@ -23,7 +23,7 @@
     "sourceMap": true,
     "target": "es5"
   },
-  "include": ["src", "update-extensions.ts", "rollup.config.ts", "rollup.types.config.ts"],
+  "include": ["src", "rollup", "update-extensions.ts", "rollup.config.ts", "rollup.types.config.ts"],
   "exclude": [
     "dist",
     "node_modules"
