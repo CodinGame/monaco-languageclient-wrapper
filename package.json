@@ -23,7 +23,7 @@
   ],
   "types": "dist/index.d.ts",
   "dependencies": {
-    "@codingame/monaco-editor-wrapper": "^1.10.1",
+    "@codingame/monaco-editor-wrapper": "^1.10.2",
     "@codingame/monaco-jsonrpc": "^0.3.1",
     "once": "^1.4.0",
     "sweetalert": "^2.1.2",
@@ -36,6 +36,8 @@
     "@babel/plugin-transform-modules-commonjs": "^7.17.7",
     "@babel/preset-env": "7.16.11",
     "@babel/preset-typescript": "7.16.7",
+    "@codingame/monaco-jsonrpc": "^0.3.1",
+    "@codingame/monaco-languageclient": "^0.17.4",
     "@babel/runtime": "7.17.7",
     "@rollup/plugin-alias": "3.1.9",
     "@rollup/plugin-babel": "5.3.1",
@@ -51,6 +53,7 @@
     "@typescript-eslint/eslint-plugin": "5.15.0",
     "@typescript-eslint/parser": "5.15.0",
     "conventional-changelog-conventionalcommits": "^4.6.3",
+    "canvas": "^2.9.0",
     "eslint": "8.11.0",
     "eslint-config-standard": "17.0.0-1",
     "eslint-config-standard-jsx": "11.0.0-1",
@@ -69,7 +72,9 @@
     "rollup-plugin-visualizer": "5.6.0",
     "rollup-plugin-web-worker-loader": "1.6.1",
     "tslib": "^2.3.1",
-    "typescript": "4.6.2"
+    "typescript": "4.6.2",
+    "vscode-languageserver-protocol": "^3.16.0",
+    "vscode-languageserver": "^7.0.0"
   },
   "resolutions": {
     "eslint": "8.11.0"
