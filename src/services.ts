@@ -15,11 +15,11 @@ interface CgMonacoServices extends Services {
   window: WatchableConsoleWindow
 }
 
-function installCommands (services: CgMonacoServices) {
+function installCommands (services: CgMonacoServices): Disposable {
   // Comes from https://github.com/redhat-developer/vscode-java/blob/9b0f0aca80cbefabad4c034fb5dd365d029f6170/src/extension.ts#L155-L160
   // Other commands needs to be implemented as well?
   // (https://github.com/eclipse/eclipse.jdt.ls/issues/376#issuecomment-333923685)
-  services.commands.registerCommand('java.apply.workspaceEdit', (edit: WorkspaceEdit) => {
+  return services.commands.registerCommand('java.apply.workspaceEdit', (edit: WorkspaceEdit) => {
     if (edit.documentChanges != null && edit.documentChanges.some(change => RenameFile.is(change) || CreateFile.is(change))) {
       alert('Unimplemented command')
       return
