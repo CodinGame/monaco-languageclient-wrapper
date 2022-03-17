@@ -5,7 +5,7 @@ import {
 import delay from 'delay'
 import { Uri } from 'monaco-editor'
 import { registerTextModelContentProvider } from '@codingame/monaco-editor-wrapper'
-import { installServices } from './services'
+import { getServices, installServices } from './services'
 import createLanguageClient from './createLanguageClient'
 import { WillShutdownParams } from './customRequests'
 import { InitializeTextDocumentFeature, WillDisposeFeature } from './extensions'
@@ -277,9 +277,9 @@ function createLanguageClientManager (
     }
   }
 
-  const services = installServices(infrastructure)
-
   const disposableCollection = new DisposableCollection()
+
+  disposableCollection.push(installServices(infrastructure))
 
   const languageClientManager = new LanguageClientManager(id, languageServerOptions, infrastructure)
   languageClientManagerByLanguageId[id] = languageClientManager
@@ -293,7 +293,7 @@ function createLanguageClientManager (
       return content != null ? monaco.editor.createModel(content, undefined, resource) : null
     }
   }))
-  disposableCollection.push(services.workspace.registerSaveDocumentHandler({
+  disposableCollection.push(getServices().workspace.registerSaveDocumentHandler({
     async saveTextContent (textDocument, reason) {
       await infrastructure.saveFileContent?.(textDocument, reason, languageClientManager)
     }
