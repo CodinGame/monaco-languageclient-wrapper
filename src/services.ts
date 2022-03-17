@@ -1,9 +1,9 @@
 
 import * as monaco from 'monaco-editor'
 import {
-  Services, MonacoToProtocolConverter, ProtocolToMonacoConverter, MonacoLanguages, TextDocumentSaveReason, MonacoCommands
+  Services, MonacoToProtocolConverter, ProtocolToMonacoConverter, MonacoLanguages, TextDocumentSaveReason, MonacoCommands, DisposableCollection
 } from 'monaco-languageclient'
-import { RenameFile, CreateFile, WorkspaceEdit } from 'vscode-languageserver-protocol'
+import { RenameFile, CreateFile, WorkspaceEdit, Disposable } from 'vscode-languageserver-protocol'
 import WatchableConsoleWindow from './services/WatchableConsoleWindow'
 import CodinGameMonacoWorkspace from './services/CodinGameMonacoWorkspace'
 import { Infrastructure } from './infrastructure'
@@ -29,9 +29,10 @@ function installCommands (services: CgMonacoServices) {
   })
 }
 
-function autoSaveModels (services: CgMonacoServices) {
+function autoSaveModels (services: CgMonacoServices): Disposable {
+  const disposableCollection = new DisposableCollection()
   const timeoutMap = new Map<string, number>()
-  services.workspace.onDidChangeTextDocument(e => {
+  disposableCollection.push(services.workspace.onDidChangeTextDocument(e => {
     const timeout = timeoutMap.get(e.textDocument.uri)
     if (timeout != null) {
       window.clearTimeout(timeout)
@@ -43,7 +44,13 @@ function autoSaveModels (services: CgMonacoServices) {
         console.error('[LSP]', `Unable to save the document ${e.textDocument.uri.toString()}`, err)
       })
     }, 500))
-  })
+  }))
+  disposableCollection.push(Disposable.create(() => {
+    for (const timeout of Array.from(timeoutMap.values())) {
+      window.clearTimeout(timeout)
+    }
+  }))
+  return disposableCollection
 }
 
 let services: CgMonacoServices | null = null
