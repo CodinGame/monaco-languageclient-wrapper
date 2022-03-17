@@ -95,7 +95,7 @@ export abstract class CodinGameInfrastructure implements Infrastructure {
   }]
 
   public async saveFileContent (document: TextDocument, reason: TextDocumentSaveReason, languageClient: LanguageClientManager): Promise<void> {
-    if (languageClient.isReady()) {
+    if (languageClient.isConnected()) {
       await updateFile(document.uri.toString(), document.getText(), languageClient)
     }
   }

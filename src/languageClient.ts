@@ -51,8 +51,8 @@ export class LanguageClientManager implements LanguageClient {
     })
   }
 
-  isReady (): boolean {
-    return this.currentStatus === 'ready'
+  isConnected (): boolean {
+    return ['connected', 'ready'].includes(this.currentStatus)
   }
 
   async dispose (): Promise<void> {
