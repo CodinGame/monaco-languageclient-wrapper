@@ -17,9 +17,9 @@ jobs:
       with:
         node-version: 16.x
     - name: Install dependencies
-      run: npx ci
+      run: npm ci
     - name: Install semantic-release extra plugins
-      run: npm install --save-dev @semantic-release/changelog @semantic-release/git      
+      run: npm install --save-dev @semantic-release/changelog @semantic-release/git conventional-changelog-conventionalcommits  
     - name: Build
       run: npm run build      
     - name: Release
