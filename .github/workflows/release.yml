@@ -19,7 +19,7 @@ jobs:
     - name: Install dependencies
       run: npm ci
     - name: Install semantic-release extra plugins
-      run: npm install --save-dev @semantic-release/changelog @semantic-release/git conventional-changelog-conventionalcommits  
+      run: npm install -g @semantic-release/changelog @semantic-release/git conventional-changelog-conventionalcommits  
     - name: Build
       run: npm run build      
     - name: Release
