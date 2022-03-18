@@ -1,9 +1,10 @@
+import { TextDocument, TextDocumentSaveReason } from 'monaco-languageclient'
 import 'proxy-polyfill'
 import { WorkspaceFolder } from 'vscode'
+import { CodinGameInfrastructure, Infrastructure } from './infrastructure'
 import { WillShutdownParams } from './customRequests'
 import { loadExtensionConfigurations } from './extensionConfiguration'
 import './hacks'
-import { CodinGameInfrastructure, Infrastructure } from './infrastructure'
 import { createLanguageClientManager, LanguageClientManager, StatusChangeEvent } from './languageClient'
 import { LanguageClientId, registerLanguageClient } from './languageClientOptions'
 import { StaticLanguageClientId } from './staticOptions'
@@ -22,5 +23,7 @@ export type {
   LanguageClientId,
   WillShutdownParams,
   Infrastructure,
-  WorkspaceFolder
+  WorkspaceFolder,
+  TextDocument,
+  TextDocumentSaveReason
 }

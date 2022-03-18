@@ -1,9 +1,9 @@
 
 import * as monaco from 'monaco-editor'
 import {
-  Services, MonacoToProtocolConverter, ProtocolToMonacoConverter, MonacoLanguages, TextDocumentSaveReason, MonacoCommands
+  Services, MonacoToProtocolConverter, ProtocolToMonacoConverter, MonacoLanguages, TextDocumentSaveReason, MonacoCommands, DisposableCollection
 } from 'monaco-languageclient'
-import { RenameFile, CreateFile, WorkspaceEdit } from 'vscode-languageserver-protocol'
+import { RenameFile, CreateFile, WorkspaceEdit, Disposable } from 'vscode-languageserver-protocol'
 import WatchableConsoleWindow from './services/WatchableConsoleWindow'
 import CodinGameMonacoWorkspace from './services/CodinGameMonacoWorkspace'
 import { Infrastructure } from './infrastructure'
@@ -15,11 +15,11 @@ interface CgMonacoServices extends Services {
   window: WatchableConsoleWindow
 }
 
-function installCommands (services: CgMonacoServices) {
+function installCommands (services: CgMonacoServices): Disposable {
   // Comes from https://github.com/redhat-developer/vscode-java/blob/9b0f0aca80cbefabad4c034fb5dd365d029f6170/src/extension.ts#L155-L160
   // Other commands needs to be implemented as well?
   // (https://github.com/eclipse/eclipse.jdt.ls/issues/376#issuecomment-333923685)
-  services.commands.registerCommand('java.apply.workspaceEdit', (edit: WorkspaceEdit) => {
+  return services.commands.registerCommand('java.apply.workspaceEdit', (edit: WorkspaceEdit) => {
     if (edit.documentChanges != null && edit.documentChanges.some(change => RenameFile.is(change) || CreateFile.is(change))) {
       alert('Unimplemented command')
       return
@@ -29,9 +29,10 @@ function installCommands (services: CgMonacoServices) {
   })
 }
 
-function autoSaveModels (services: CgMonacoServices) {
+function autoSaveModels (services: CgMonacoServices): Disposable {
+  const disposableCollection = new DisposableCollection()
   const timeoutMap = new Map<string, number>()
-  services.workspace.onDidChangeTextDocument(e => {
+  disposableCollection.push(services.workspace.onDidChangeTextDocument(e => {
     const timeout = timeoutMap.get(e.textDocument.uri)
     if (timeout != null) {
       window.clearTimeout(timeout)
@@ -43,33 +44,59 @@ function autoSaveModels (services: CgMonacoServices) {
         console.error('[LSP]', `Unable to save the document ${e.textDocument.uri.toString()}`, err)
       })
     }, 500))
-  })
+  }))
+  disposableCollection.push(Disposable.create(() => {
+    for (const timeout of Array.from(timeoutMap.values())) {
+      window.clearTimeout(timeout)
+    }
+  }))
+  return disposableCollection
 }
 
 let services: CgMonacoServices | null = null
-function installServices (infrastructure: Infrastructure): CgMonacoServices {
-  const m2p = new MonacoToProtocolConverter(monaco)
-  const p2m = new ProtocolToMonacoConverter(monaco)
-
+let serviceDisposable: Disposable | null = null
+let serviceReferenceCount = 0
+function installServices (infrastructure: Infrastructure): Disposable {
   if (services == null) {
+    // FIXME: we can't recreate services because MonacoWorkspace can't be disposed without memory leaks
+    // fix me as soon as https://github.com/TypeFox/monaco-languageclient/pull/330/files is released
+    const m2p = new MonacoToProtocolConverter(monaco)
+    const p2m = new ProtocolToMonacoConverter(monaco)
     services = {
       commands: new MonacoCommands(monaco),
       languages: new MonacoLanguages(monaco, p2m, m2p),
       workspace: new CodinGameMonacoWorkspace(p2m, m2p, infrastructure.rootUri, infrastructure.workspaceFolders),
       window: new WatchableConsoleWindow()
     }
+  }
 
-    Services.install(services)
+  if (serviceReferenceCount === 0) {
+    const disposableCollection = new DisposableCollection()
 
-    installCommands(services)
+    disposableCollection.push(installCommands(services))
+    disposableCollection.push(Services.install(services))
 
     if (!infrastructure.automaticTextDocumentUpdate) {
-      autoSaveModels(services)
+      disposableCollection.push(autoSaveModels(services))
     }
+    serviceDisposable = disposableCollection
   }
-  return services
+  serviceReferenceCount++
+
+  return Disposable.create(() => {
+    serviceReferenceCount--
+    if (serviceReferenceCount <= 0) {
+      serviceDisposable?.dispose()
+      serviceDisposable = null
+    }
+  })
+}
+
+function getServices (): CgMonacoServices {
+  return Services.get()! as CgMonacoServices
 }
 
 export {
-  installServices
+  installServices,
+  getServices
 }
