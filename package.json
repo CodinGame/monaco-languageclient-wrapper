@@ -7,7 +7,6 @@
     "test": "npx jest",
     "test:watch": "jest --watch",
     "build": "npm run test && rollup --config rollup.config.ts --configPlugin typescript && npm run generate-types",
-    "prepublishOnly": "npm run build",
     "generate-types": "tsc --project tsconfig.types.json && rollup --config rollup.types.config.ts --configPlugin typescript && rm -rf ./dist/types"
   },
   "repository": {
