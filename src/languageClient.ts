@@ -109,7 +109,7 @@ export class LanguageClientManager implements LanguageClient {
 
   public async start (): Promise<void> {
     try {
-      await loadExtensionConfigurations([this.id], this.infrastructure.useMutualizedProxy)
+      await loadExtensionConfigurations([this.id], this.infrastructure.useMutualizedProxy(this.id, this.languageServerOptions))
     } catch (error) {
       console.error('Unable to load extension configuration', error)
     }
@@ -268,7 +268,7 @@ function createLanguageClientManager (
     throw new Error(`Unknown ${id} language server`)
   }
 
-  if (infrastructure.useMutualizedProxy && languageServerOptions.mutualizable) {
+  if (infrastructure.useMutualizedProxy(id, languageServerOptions) && languageServerOptions.mutualizable) {
     // When using the mutualized proxy, we don't need to synchronize the configuration nor send the initialization options
     languageServerOptions = {
       ...languageServerOptions,

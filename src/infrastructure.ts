@@ -5,7 +5,7 @@ import * as monaco from 'monaco-editor'
 import type * as vscode from 'vscode'
 import { getFile, updateFile } from './customRequests'
 import { LanguageClientManager } from './languageClient'
-import { LanguageClientId } from './languageClientOptions'
+import { LanguageClientId, LanguageClientOptions } from './languageClientOptions'
 
 export interface Infrastructure {
   /**
@@ -22,10 +22,11 @@ export interface Infrastructure {
    * Workspace folders
    */
   workspaceFolders?: typeof vscode.workspace.workspaceFolders
+
   /**
-   * The language server proxy is used, so we only need to load configurations for language servers which are not mutualized
+   * Does a mutualization proxy will be used, it means we don't need to load configurations for this server
    */
-  useMutualizedProxy: boolean
+  useMutualizedProxy (languageClientId: LanguageClientId, options: LanguageClientOptions): boolean
 
   /**
    * Save a file on the filesystem
@@ -74,7 +75,7 @@ export abstract class CodinGameInfrastructure implements Infrastructure {
      * The domain of the server
      */
     public serverAddress: string,
-    public useMutualizedProxy: boolean,
+    private _useMutualizedProxy: boolean,
     /**
      * An optional sessionId when connecting to the session-mutualized server
      */
@@ -84,6 +85,10 @@ export abstract class CodinGameInfrastructure implements Infrastructure {
      */
     private libraryUrls?: string[]
   ) {
+  }
+
+  useMutualizedProxy (languageClientId: LanguageClientId, options: LanguageClientOptions): boolean {
+    return this._useMutualizedProxy && options.mutualizable
   }
 
   public readonly automaticTextDocumentUpdate = false
