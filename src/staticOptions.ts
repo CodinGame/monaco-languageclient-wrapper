@@ -134,7 +134,8 @@ const staticOptions = asLanguageClientOptionsById({
     synchronize: {
       configurationSection: 'kotlin'
     },
-    mutualizable: false
+    mutualizable: false,
+    maxInitializeDuration: 60_000
   },
   lua: {
     documentSelector: [
@@ -272,7 +273,9 @@ const staticOptions = asLanguageClientOptionsById({
       configurationSection: 'metals'
     },
     mutualizable: false,
-    vscodeExtensionIds: ['scalameta']
+    vscodeExtensionIds: ['scalameta'],
+    maxInitializeDuration: 60_000,
+    readinessMessageMatcher: /compiled scala-project in/
   },
   sql: {
     documentSelector: [
