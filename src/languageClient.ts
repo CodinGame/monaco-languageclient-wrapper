@@ -1,6 +1,6 @@
 import * as monaco from 'monaco-editor'
 import {
-  CloseAction, ErrorAction, MonacoLanguageClient, Emitter, Event, TextDocument, Services, State, DisposableCollection, CancellationToken, RequestType, NotificationType, Disposable
+  CloseAction, ErrorAction, MonacoLanguageClient, Emitter, Event, TextDocument, Services, State, DisposableCollection, CancellationToken, RequestType, NotificationType, Disposable, LogMessageNotification
 } from 'monaco-languageclient'
 import delay from 'delay'
 import { Uri } from 'monaco-editor'
@@ -32,12 +32,14 @@ export class LanguageClientManager implements LanguageClient {
   protected readonly onWillCloseEmitter = new Emitter<void>()
   protected readonly onWillShutdownEmitter = new Emitter<WillShutdownParams>()
   protected currentStatus: Status = 'connecting'
+  private useMutualizedProxy: boolean
 
   constructor (
     private id: LanguageClientId,
     private languageServerOptions: LanguageClientOptions,
     private infrastructure: Infrastructure
   ) {
+    this.useMutualizedProxy = this.infrastructure.useMutualizedProxy(this.id, this.languageServerOptions)
   }
 
   private updateStatus (status: Status) {
@@ -109,7 +111,7 @@ export class LanguageClientManager implements LanguageClient {
 
   public async start (): Promise<void> {
     try {
-      await loadExtensionConfigurations([this.id], this.infrastructure.useMutualizedProxy(this.id, this.languageServerOptions))
+      await loadExtensionConfigurations([this.id], this.useMutualizedProxy)
     } catch (error) {
       console.error('Unable to load extension configuration', error)
     }
@@ -201,11 +203,26 @@ export class LanguageClientManager implements LanguageClient {
           this.updateStatus('connecting')
           readyPromise = languageClient.onReady().then(async () => {
             const disposableCollection = new DisposableCollection()
-            await Promise.race([
-              new Promise<void>(resolve => {
+
+            let readyPromise: Promise<void>
+            const { maxInitializeDuration, readinessMessageMatcher } = this.languageServerOptions
+            if (readinessMessageMatcher != null && !this.useMutualizedProxy) {
+              readyPromise = new Promise<void>(resolve => {
+                disposableCollection.push(languageClient.onNotification(LogMessageNotification.type, logMessage => {
+                  if (readinessMessageMatcher.exec(logMessage.message) != null) {
+                    resolve()
+                  }
+                }))
+              })
+            } else {
+              readyPromise = new Promise<void>(resolve => {
                 disposableCollection.push(onServerResponse.event(resolve))
-              }),
-              delay(15000)
+              })
+            }
+
+            await Promise.race([
+              readyPromise,
+              delay(maxInitializeDuration ?? 15_000)
             ])
             disposableCollection.dispose()
           }, error => {
