@@ -35,11 +35,11 @@ export interface Infrastructure {
    */
   saveFileContent? (document: TextDocument, reason: TextDocumentSaveReason, languageClient: LanguageClientManager): Promise<void>
   /**
-   * Get a text file content
+   * Get a text file content as a model
    * @param resource the Uri of the file
    * @param languageClient The languageclient we're trying to get the file from
    */
-  getFileContent (resource: monaco.Uri, languageClient: LanguageClientManager): Promise<string | null>
+  getFileContent (resource: monaco.Uri, languageClient: LanguageClientManager): Promise<monaco.editor.ITextModel | null>
 
   /**
    * Open a connection to the language server
@@ -100,9 +100,10 @@ export abstract class CodinGameInfrastructure implements Infrastructure {
     }
   }
 
-  public async getFileContent (resource: monaco.Uri, languageClient: LanguageClientManager): Promise<string | null> {
+  public async getFileContent (resource: monaco.Uri, languageClient: LanguageClientManager): Promise<monaco.editor.ITextModel | null> {
     try {
-      return (await getFile(resource.toString(true), languageClient)).text
+      const content = (await getFile(resource.toString(true), languageClient)).text
+      return monaco.editor.createModel(content, undefined, resource)
     } catch (error) {
       console.error('File not found', resource.toString())
       return null

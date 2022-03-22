@@ -289,8 +289,7 @@ function createLanguageClientManager (
 
   disposableCollection.push(registerTextModelContentProvider('file', {
     async provideTextContent (resource: Uri): Promise<monaco.editor.ITextModel | null> {
-      const content = await infrastructure.getFileContent(resource, languageClientManager)
-      return content != null ? monaco.editor.createModel(content, undefined, resource) : null
+      return await infrastructure.getFileContent(resource, languageClientManager)
     }
   }))
   disposableCollection.push(getServices().workspace.registerSaveDocumentHandler({
