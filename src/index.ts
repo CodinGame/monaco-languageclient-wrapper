@@ -6,7 +6,7 @@ import { WillShutdownParams } from './customRequests'
 import { loadExtensionConfigurations } from './extensionConfiguration'
 import './hacks'
 import { createLanguageClientManager, LanguageClientManager, StatusChangeEvent } from './languageClient'
-import { LanguageClientId, registerLanguageClient } from './languageClientOptions'
+import { LanguageClientId, LanguageClientOptions, registerLanguageClient } from './languageClientOptions'
 import { StaticLanguageClientId } from './staticOptions'
 
 export {
@@ -25,5 +25,6 @@ export type {
   Infrastructure,
   WorkspaceFolder,
   TextDocument,
-  TextDocumentSaveReason
+  TextDocumentSaveReason,
+  LanguageClientOptions
 }
