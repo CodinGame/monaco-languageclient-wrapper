@@ -5,7 +5,7 @@ import * as monaco from 'monaco-editor'
 import type * as vscode from 'vscode'
 import { getFile, updateFile } from './customRequests'
 import { LanguageClientManager } from './languageClient'
-import { LanguageClientId } from './languageClientOptions'
+import { LanguageClientId, LanguageClientOptions } from './languageClientOptions'
 
 export interface Infrastructure {
   /**
@@ -22,10 +22,11 @@ export interface Infrastructure {
    * Workspace folders
    */
   workspaceFolders?: typeof vscode.workspace.workspaceFolders
+
   /**
-   * The language server proxy is used, so we only need to load configurations for language servers which are not mutualized
+   * Does a mutualization proxy will be used, it means we don't need to load configurations for this server
    */
-  useMutualizedProxy: boolean
+  useMutualizedProxy (languageClientId: LanguageClientId, options: LanguageClientOptions): boolean
 
   /**
    * Save a file on the filesystem
@@ -35,11 +36,11 @@ export interface Infrastructure {
    */
   saveFileContent? (document: TextDocument, reason: TextDocumentSaveReason, languageClient: LanguageClientManager): Promise<void>
   /**
-   * Get a text file content
+   * Get a text file content as a model
    * @param resource the Uri of the file
    * @param languageClient The languageclient we're trying to get the file from
    */
-  getFileContent (resource: monaco.Uri, languageClient: LanguageClientManager): Promise<string | null>
+  getFileContent (resource: monaco.Uri, languageClient: LanguageClientManager): Promise<monaco.editor.ITextModel | null>
 
   /**
    * Open a connection to the language server
@@ -74,7 +75,7 @@ export abstract class CodinGameInfrastructure implements Infrastructure {
      * The domain of the server
      */
     public serverAddress: string,
-    public useMutualizedProxy: boolean,
+    private _useMutualizedProxy: boolean,
     /**
      * An optional sessionId when connecting to the session-mutualized server
      */
@@ -84,6 +85,10 @@ export abstract class CodinGameInfrastructure implements Infrastructure {
      */
     private libraryUrls?: string[]
   ) {
+  }
+
+  useMutualizedProxy (languageClientId: LanguageClientId, options: LanguageClientOptions): boolean {
+    return this._useMutualizedProxy && options.mutualizable
   }
 
   public readonly automaticTextDocumentUpdate = false
@@ -100,9 +105,10 @@ export abstract class CodinGameInfrastructure implements Infrastructure {
     }
   }
 
-  public async getFileContent (resource: monaco.Uri, languageClient: LanguageClientManager): Promise<string | null> {
+  public async getFileContent (resource: monaco.Uri, languageClient: LanguageClientManager): Promise<monaco.editor.ITextModel | null> {
     try {
-      return (await getFile(resource.toString(true), languageClient)).text
+      const content = (await getFile(resource.toString(true), languageClient)).text
+      return monaco.editor.createModel(content, undefined, resource)
     } catch (error) {
       console.error('File not found', resource.toString())
       return null

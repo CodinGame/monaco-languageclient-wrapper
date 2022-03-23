@@ -6,8 +6,9 @@ import {
   _Connection,
   _
 } from 'vscode-languageserver/lib/common/api'
+import { monaco } from '@codingame/monaco-editor-wrapper'
 import { getFile, updateFile } from '../customRequests'
-import { Infrastructure, LanguageClientManager, TextDocument, TextDocumentSaveReason } from '../'
+import { Infrastructure, LanguageClientId, LanguageClientManager, LanguageClientOptions, TextDocument, TextDocumentSaveReason } from '../'
 
 class PipedMessageReader extends AbstractMessageReader {
   private callback: DataCallback | undefined
@@ -120,8 +121,12 @@ export class TestInfrastructure implements Infrastructure {
 
   constructor (
     public automaticTextDocumentUpdate: boolean,
-    public useMutualizedProxy: boolean
+    public _useMutualizedProxy: boolean
   ) {}
+
+  useMutualizedProxy (languageClientId: LanguageClientId, options: LanguageClientOptions): boolean {
+    return this._useMutualizedProxy && options.mutualizable
+  }
 
   rootUri = 'file:///tmp/project'
   workspaceFolders = []
@@ -131,9 +136,10 @@ export class TestInfrastructure implements Infrastructure {
   }
 
   // use same method as CodinGameInfrastructure to be able to simply catch it
-  async getFileContent (resource: Uri, languageClient: LanguageClientManager): Promise<string | null> {
+  async getFileContent (resource: Uri, languageClient: LanguageClientManager): Promise<monaco.editor.ITextModel | null> {
     try {
-      return (await getFile(resource.toString(true), languageClient)).text
+      const content = (await getFile(resource.toString(true), languageClient)).text
+      return monaco.editor.createModel(content, undefined, resource)
     } catch (error) {
       console.error('File not found', resource.toString())
       return null

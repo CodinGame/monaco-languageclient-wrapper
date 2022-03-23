@@ -3,7 +3,20 @@ import staticOptions, { StaticLanguageClientId } from './staticOptions'
 
 export type LanguageClientOptions = Pick<MonacoLanguageClientOptions, 'documentSelector' | 'synchronize' | 'initializationOptions' | 'middleware'> & {
   vscodeExtensionIds?: string[]
+  /**
+   * Is this language server mutualizable by the CodinGame mutualized proxy
+   */
   mutualizable: boolean
+  /**
+   * Maximum initialization duration. After this delay, the language server will be considered ready no matter what
+   * default: 15_000
+   */
+  maxInitializeDuration?: number
+
+  /**
+   * The language server will only be considered ready after this log message was received
+   */
+  readinessMessageMatcher?: RegExp
 }
 
 const dynamicOptions: Partial<Record<string, LanguageClientOptions>> = {}
