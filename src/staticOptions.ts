@@ -166,6 +166,16 @@ const staticOptions = asLanguageClientOptionsById({
     }],
     mutualizable: false
   },
+  'objective-c': {
+    documentSelector: [
+      { scheme: 'file', language: 'c' },
+      { scheme: 'file', language: 'cpp' },
+      { scheme: 'file', language: 'objective-c' }
+    ],
+    mutualizable: false
+    // The extension is cpptools BUT the language server is unable to use the configuration
+    // vscodeExtensionIds: ['cpptools']
+  },
   'php-serenata': {
     // https://gitlab.com/Serenata/visual-studio-code-client/-/blob/master/src/extension.ts#L120
     documentSelector: [
