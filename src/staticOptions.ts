@@ -30,7 +30,7 @@ const staticOptions = asLanguageClientOptionsById({
       { scheme: 'file', language: 'cpp' }
     ],
     mutualizable: false
-    // The extension is cpptools BUT the language server is unable to use the configuration
+    // The extension is cpptools BUT the language server is unable to use the client configuration (it requires client code)
     // vscodeExtensionIds: ['cpptools']
   },
   csharp: {
@@ -47,7 +47,7 @@ const staticOptions = asLanguageClientOptionsById({
       { scheme: 'file', language: 'cuda-cpp' }
     ],
     mutualizable: false
-    // The extension is cpptools BUT the language server is unable to use the configuration
+    // The extension is cpptools BUT the language server is unable to use the client configuration (it requires client code)
     // vscodeExtensionIds: ['cpptools']
   },
   clojure: {
@@ -165,6 +165,16 @@ const staticOptions = asLanguageClientOptionsById({
       language: 'ocaml'
     }],
     mutualizable: false
+  },
+  'objective-c': {
+    documentSelector: [
+      { scheme: 'file', language: 'c' },
+      { scheme: 'file', language: 'cpp' },
+      { scheme: 'file', language: 'objective-c' }
+    ],
+    mutualizable: false
+    // The extension is cpptools BUT the language server is unable to use the client configuration (it requires client code)
+    // vscodeExtensionIds: ['cpptools']
   },
   'php-serenata': {
     // https://gitlab.com/Serenata/visual-studio-code-client/-/blob/master/src/extension.ts#L120
