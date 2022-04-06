@@ -1,6 +1,6 @@
 import * as monaco from 'monaco-editor'
 import {
-  CloseAction, ErrorAction, MonacoLanguageClient, Emitter, Event, TextDocument, Services, State, DisposableCollection, CancellationToken, RequestType, NotificationType, Disposable, LogMessageNotification
+  CloseAction, ErrorAction, MonacoLanguageClient, Emitter, Event, TextDocument, Services, State, DisposableCollection, CancellationToken, RequestType, NotificationType, LogMessageNotification
 } from 'monaco-languageclient'
 import delay from 'delay'
 import { Uri } from 'monaco-editor'
@@ -30,6 +30,7 @@ export class LanguageClientManager implements LanguageClient {
   protected readonly onDidChangeStatusEmitter = new Emitter<StatusChangeEvent>()
   protected readonly onErrorEmitter = new Emitter<Error>()
   protected readonly onWillCloseEmitter = new Emitter<void>()
+  protected readonly onDidCloseEmitter = new Emitter<void>()
   protected readonly onWillShutdownEmitter = new Emitter<WillShutdownParams>()
   protected currentStatus: Status = 'connecting'
   private useMutualizedProxy: boolean
@@ -60,10 +61,14 @@ export class LanguageClientManager implements LanguageClient {
   async dispose (): Promise<void> {
     this.disposed = true
     this.onWillCloseEmitter.fire()
-    if (this.languageClient != null) {
-      const languageClient = this.languageClient
-      this.languageClient = undefined
-      await languageClient.stop()
+    try {
+      if (this.languageClient != null) {
+        const languageClient = this.languageClient
+        this.languageClient = undefined
+        await languageClient.stop()
+      }
+    } finally {
+      this.onDidCloseEmitter.fire()
     }
   }
 
@@ -73,6 +78,10 @@ export class LanguageClientManager implements LanguageClient {
 
   get onWillClose (): Event<void> {
     return this.onWillCloseEmitter.event
+  }
+
+  get onDidClose (): Event<void> {
+    return this.onDidCloseEmitter.event
   }
 
   get onWillShutdown (): Event<WillShutdownParams> {
@@ -263,8 +272,6 @@ export class LanguageClientManager implements LanguageClient {
   }
 }
 
-const languageClientManagerByLanguageId: Partial<Record<string, LanguageClientManager>> = {}
-
 /**
  * Create a language client manager
  * @param id The predefined id of the language client
@@ -276,9 +283,6 @@ function createLanguageClientManager (
   id: LanguageClientId,
   infrastructure: Infrastructure
 ): LanguageClientManager {
-  if (languageClientManagerByLanguageId[id] != null) {
-    throw new Error(`Language client for language ${id} already started`)
-  }
   let languageServerOptions = getLanguageClientOptions(id)
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
   if (languageServerOptions == null) {
@@ -296,13 +300,9 @@ function createLanguageClientManager (
 
   const disposableCollection = new DisposableCollection()
 
-  disposableCollection.push(installServices(infrastructure))
+  const serviceDisposable = installServices(infrastructure)
 
   const languageClientManager = new LanguageClientManager(id, languageServerOptions, infrastructure)
-  languageClientManagerByLanguageId[id] = languageClientManager
-  disposableCollection.push(Disposable.create(() => {
-    delete languageClientManagerByLanguageId[id]
-  }))
 
   disposableCollection.push(registerTextModelContentProvider('file', {
     async provideTextContent (resource: Uri): Promise<monaco.editor.ITextModel | null> {
@@ -318,20 +318,13 @@ function createLanguageClientManager (
   languageClientManager.onWillClose(() => {
     disposableCollection.dispose()
   })
+  languageClientManager.onDidClose(() => {
+    serviceDisposable.dispose()
+  })
 
   return languageClientManager
 }
 
-function getAllLanguageClientManagers (): LanguageClientManager[] {
-  return Object.values(languageClientManagerByLanguageId) as LanguageClientManager[]
-}
-
-function getAllLanguageClientManagersByTextDocument (textDocument: TextDocument): LanguageClientManager[] {
-  return getAllLanguageClientManagers().filter(manager => manager.isModelManaged(textDocument))
-}
-
 export {
-  createLanguageClientManager,
-  getAllLanguageClientManagers,
-  getAllLanguageClientManagersByTextDocument
+  createLanguageClientManager
 }
