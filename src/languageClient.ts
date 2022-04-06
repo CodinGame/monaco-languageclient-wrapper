@@ -30,6 +30,7 @@ export class LanguageClientManager implements LanguageClient {
   protected readonly onDidChangeStatusEmitter = new Emitter<StatusChangeEvent>()
   protected readonly onErrorEmitter = new Emitter<Error>()
   protected readonly onWillCloseEmitter = new Emitter<void>()
+  protected readonly onDidCloseEmitter = new Emitter<void>()
   protected readonly onWillShutdownEmitter = new Emitter<WillShutdownParams>()
   protected currentStatus: Status = 'connecting'
   private useMutualizedProxy: boolean
@@ -60,10 +61,14 @@ export class LanguageClientManager implements LanguageClient {
   async dispose (): Promise<void> {
     this.disposed = true
     this.onWillCloseEmitter.fire()
-    if (this.languageClient != null) {
-      const languageClient = this.languageClient
-      this.languageClient = undefined
-      await languageClient.stop()
+    try {
+      if (this.languageClient != null) {
+        const languageClient = this.languageClient
+        this.languageClient = undefined
+        await languageClient.stop()
+      }
+    } finally {
+      this.onDidCloseEmitter.fire()
     }
   }
 
@@ -73,6 +78,10 @@ export class LanguageClientManager implements LanguageClient {
 
   get onWillClose (): Event<void> {
     return this.onWillCloseEmitter.event
+  }
+
+  get onDidClose (): Event<void> {
+    return this.onDidCloseEmitter.event
   }
 
   get onWillShutdown (): Event<WillShutdownParams> {
@@ -291,7 +300,7 @@ function createLanguageClientManager (
 
   const disposableCollection = new DisposableCollection()
 
-  disposableCollection.push(installServices(infrastructure))
+  const serviceDisposable = installServices(infrastructure)
 
   const languageClientManager = new LanguageClientManager(id, languageServerOptions, infrastructure)
 
@@ -308,6 +317,9 @@ function createLanguageClientManager (
 
   languageClientManager.onWillClose(() => {
     disposableCollection.dispose()
+  })
+  languageClientManager.onDidClose(() => {
+    serviceDisposable.dispose()
   })
 
   return languageClientManager
