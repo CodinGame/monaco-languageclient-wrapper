@@ -67,7 +67,9 @@ export default class CodinGameMonacoWorkspace extends MonacoWorkspace {
 
       this.onDidSaveTextDocumentEmitter.fire(document)
     } catch (err) {
-      console.error('[LSP]', 'Unable to save file on language server', err)
+      monaco.errorHandler.onUnexpectedError(new Error(`[LSP] Unable to save file on language server: ${document.uri.toString()}`, {
+        cause: err as Error
+      }))
     }
   }
 }
