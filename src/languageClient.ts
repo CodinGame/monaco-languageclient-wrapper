@@ -112,6 +112,9 @@ export class LanguageClientManager implements LanguageClient {
   }
 
   private handleError = (error: Error) => {
+    monaco.errorHandler.onUnexpectedError(new Error('[LSP] Language client error', {
+      cause: error
+    }))
     this.onErrorEmitter.fire(error)
     this.updateStatus('error')
 
@@ -122,7 +125,9 @@ export class LanguageClientManager implements LanguageClient {
     try {
       await loadExtensionConfigurations([this.id], this.useMutualizedProxy)
     } catch (error) {
-      console.error('Unable to load extension configuration', error)
+      monaco.errorHandler.onUnexpectedError(new Error('[LSP] Unable to load extension configuration', {
+        cause: error as Error
+      }))
     }
     if (!this.isDisposed()) {
       this._start()
@@ -234,8 +239,10 @@ export class LanguageClientManager implements LanguageClient {
               delay(maxInitializeDuration ?? 15_000)
             ])
             disposableCollection.dispose()
-          }, error => {
-            console.error('[LSP]', 'Error while waiting for the language client to be ready', error)
+          }, (error: Error) => {
+            monaco.errorHandler.onUnexpectedError(new Error(`[LSP] Error while waiting for the ${this.id} language client to be ready`, {
+              cause: error
+            }))
           })
           break
         }
