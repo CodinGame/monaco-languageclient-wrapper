@@ -72,4 +72,11 @@ export default class CodinGameMonacoWorkspace extends MonacoWorkspace {
       }))
     }
   }
+
+  override dispose (): void {
+    super.dispose()
+    this.configurations.dispose()
+    this.onWillSaveTextDocumentEmitter.dispose()
+    this.onDidSaveTextDocumentEmitter.dispose()
+  }
 }
