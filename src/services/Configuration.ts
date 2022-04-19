@@ -1,5 +1,5 @@
 import {
-  Configurations, ConfigurationChangeEvent, WorkspaceConfiguration, Event, Emitter
+  Configurations, ConfigurationChangeEvent, WorkspaceConfiguration, Event, Emitter, Disposable, DisposableCollection
 } from 'monaco-languageclient'
 import * as monaco from 'monaco-editor'
 
@@ -38,8 +38,16 @@ class MemoryWorkspaceConfiguration implements WorkspaceConfiguration {
 }
 
 const simpleConfigurationService = monaco.extra.StandaloneServices.get(monaco.extra.IConfigurationService) as monaco.extra.StandaloneConfigurationService
-class Configuration implements Configurations {
+class Configuration implements Configurations, Disposable {
   protected readonly onDidChangeConfigurationEmitter = new Emitter<ConfigurationChangeEvent>()
+  private disposableCollection = new DisposableCollection()
+
+  constructor () {
+    this.disposableCollection.push(this.onDidChangeConfigurationEmitter)
+    this.disposableCollection.push(simpleConfigurationService.onDidChangeConfiguration((event) => {
+      this.onDidChangeConfigurationEmitter.fire(event)
+    }))
+  }
 
   getConfiguration (section?: string, resource?: string): MemoryWorkspaceConfiguration {
     return new MemoryWorkspaceConfiguration(this.getValue(section, resource))
@@ -56,7 +64,11 @@ class Configuration implements Configurations {
   }
 
   get onDidChangeConfiguration (): Event<ConfigurationChangeEvent> {
-    return simpleConfigurationService.onDidChangeConfiguration
+    return this.onDidChangeConfigurationEmitter.event
+  }
+
+  dispose (): void {
+    this.disposableCollection.dispose()
   }
 }
 

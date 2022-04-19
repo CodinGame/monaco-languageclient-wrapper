@@ -55,26 +55,22 @@ function autoSaveModels (services: CgMonacoServices): Disposable {
   return disposableCollection
 }
 
-let services: CgMonacoServices | null = null
 let serviceDisposable: Disposable | null = null
 let serviceReferenceCount = 0
 function installServices (infrastructure: Infrastructure): Disposable {
-  if (services == null) {
-    // FIXME: we can't recreate services because MonacoWorkspace can't be disposed without memory leaks
-    // fix me as soon as https://github.com/TypeFox/monaco-languageclient/pull/330/files is released
+  if (serviceReferenceCount === 0) {
+    const disposableCollection = new DisposableCollection()
+
     const m2p = new MonacoToProtocolConverter(monaco)
     const p2m = new ProtocolToMonacoConverter(monaco)
-    services = {
+    const services = {
       commands: new MonacoCommands(monaco),
       languages: new MonacoLanguages(monaco, p2m, m2p),
       workspace: new CodinGameMonacoWorkspace(p2m, m2p, infrastructure.rootUri, infrastructure.workspaceFolders),
       window: new WatchableConsoleWindow()
     }
-  }
 
-  if (serviceReferenceCount === 0) {
-    const disposableCollection = new DisposableCollection()
-
+    disposableCollection.push(services.workspace)
     disposableCollection.push(installCommands(services))
     disposableCollection.push(Services.install(services))
 
