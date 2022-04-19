@@ -29,7 +29,6 @@ export class LanguageClientManager implements LanguageClient {
   private disposed: boolean = false
   protected readonly onDidChangeStatusEmitter = new Emitter<StatusChangeEvent>()
   protected readonly onErrorEmitter = new Emitter<Error>()
-  protected readonly onWillCloseEmitter = new Emitter<void>()
   protected readonly onDidCloseEmitter = new Emitter<void>()
   protected readonly onWillShutdownEmitter = new Emitter<WillShutdownParams>()
   protected currentStatus: Status = 'connecting'
@@ -60,7 +59,6 @@ export class LanguageClientManager implements LanguageClient {
 
   async dispose (): Promise<void> {
     this.disposed = true
-    this.onWillCloseEmitter.fire()
     try {
       if (this.languageClient != null) {
         const languageClient = this.languageClient
@@ -74,10 +72,6 @@ export class LanguageClientManager implements LanguageClient {
 
   get onDidChangeStatus (): Event<StatusChangeEvent> {
     return this.onDidChangeStatusEmitter.event
-  }
-
-  get onWillClose (): Event<void> {
-    return this.onWillCloseEmitter.event
   }
 
   get onDidClose (): Event<void> {
