@@ -298,7 +298,6 @@ export class LanguageClientManager implements LanguageClient {
  * Create a language client manager
  * @param id The predefined id of the language client
  * @param infrastructure The infrastructure to use
- * @param parameters the infrastructure parameters
  * @returns A language client manager
  */
 function createLanguageClientManager (
