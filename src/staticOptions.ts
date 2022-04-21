@@ -22,7 +22,8 @@ const staticOptions = asLanguageClientOptionsById({
         pattern: '**/*.bash'
       }
     ],
-    mutualizable: true
+    mutualizable: true,
+    maxInitializeDuration: 1000
   },
   c: {
     documentSelector: [
