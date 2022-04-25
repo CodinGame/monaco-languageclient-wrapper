@@ -34,8 +34,8 @@ export default rollup.defineConfig({
     dir: 'dist',
     format: 'esm',
     paths: {
-      'monaco-editor': 'monaco-editor/esm/vs/editor/edcore.main',
-      'monaco-editor-core': 'monaco-editor/esm/vs/editor/edcore.main'
+      'monaco-editor': 'monaco-editor/esm/vs/editor/editor.api',
+      'monaco-editor-core': 'monaco-editor/esm/vs/editor/editor.api'
     }
   }],
   plugins: [
@@ -70,10 +70,10 @@ export default rollup.defineConfig({
     alias({
       entries: [{
         find: /^monaco-editor-core\//,
-        replacement: 'monaco-editor/esm/vs/editor/edcore.main'
+        replacement: 'monaco-editor/esm/vs/editor/editor.api'
       }, {
         find: /^(monaco-editor|monaco-editor-core)$/,
-        replacement: 'monaco-editor/esm/vs/editor/edcore.main'
+        replacement: 'monaco-editor/esm/vs/editor/editor.api'
       }, {
         find: 'vscode',
         replacement: require.resolve('monaco-languageclient/vscode-compatibility')
