@@ -28,21 +28,13 @@ export class InitializeTextDocumentFeature implements StaticFeature {
       if (Services.get().languages.match(documentSelector!, textDocument)) {
         await updateFile(textDocument.uri, textDocument.getText(), languageClient)
 
-        // send save notification if there is the capability
-        if (
-          textDocumentSyncOptions != null &&
-          textDocumentSyncOptions.save != null &&
-          (typeof textDocumentSyncOptions.save !== 'boolean' || textDocumentSyncOptions.save)
-        ) {
-          const includeText: boolean = typeof textDocumentSyncOptions.save === 'boolean' ? false : (textDocumentSyncOptions.save.includeText ?? false)
-
-          languageClient.sendNotification(DidSaveTextDocumentNotification.type, {
-            textDocument: {
-              uri: textDocument.uri
-            },
-            text: includeText ? textDocument.getText() : undefined
-          })
-        }
+        // Always send notification even if the server doesn't support it (because csharp register the didSave feature too late)
+        languageClient.sendNotification(DidSaveTextDocumentNotification.type, {
+          textDocument: {
+            uri: textDocument.uri
+          },
+          text: textDocument.getText()
+        })
       }
     }
 
