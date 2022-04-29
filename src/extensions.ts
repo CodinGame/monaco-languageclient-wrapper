@@ -1,10 +1,13 @@
+import { monaco, registerTextModelContentProvider } from '@codingame/monaco-editor-wrapper'
 import {
   Disposable,
   ServerCapabilities, DocumentSelector, MonacoLanguageClient, StaticFeature, Services,
-  TextDocumentSyncOptions, TextDocument, DidSaveTextDocumentNotification, Emitter
+  TextDocumentSyncOptions, TextDocument, DidSaveTextDocumentNotification, Emitter, DisposableCollection
 } from 'monaco-languageclient'
 import { updateFile, willShutdownNotificationType, WillShutdownParams } from './customRequests'
-import { LanguageClient } from './languageClient'
+import { Infrastructure } from './infrastructure'
+import { LanguageClient, LanguageClientManager } from './languageClient'
+import { getServices } from './services'
 
 interface ResolvedTextDocumentSyncCapabilities {
   resolvedTextDocumentSync?: TextDocumentSyncOptions
@@ -91,4 +94,39 @@ export class WillDisposeFeature implements StaticFeature {
   }
 
   dispose (): void {}
+}
+
+export class FileSystemFeature implements StaticFeature {
+  private disposable: Disposable | undefined
+
+  constructor (private infrastructure: Infrastructure, private languageClientManager: LanguageClientManager) {}
+
+  private registerFileHandlers (): Disposable {
+    const disposableCollection = new DisposableCollection()
+    const infrastructure = this.infrastructure
+    const languageClientManager = this.languageClientManager
+    disposableCollection.push(registerTextModelContentProvider('file', {
+      async provideTextContent (resource: monaco.Uri): Promise<monaco.editor.ITextModel | null> {
+        return await infrastructure.getFileContent(resource, languageClientManager)
+      }
+    }))
+    disposableCollection.push(getServices().workspace.registerSaveDocumentHandler({
+      async saveTextContent (textDocument, reason) {
+        await infrastructure.saveFileContent?.(textDocument, reason, languageClientManager)
+      }
+    }))
+    return disposableCollection
+  }
+
+  fillClientCapabilities (): void {}
+
+  initialize (): void {
+    this.dispose()
+    this.disposable = this.registerFileHandlers()
+  }
+
+  dispose (): void {
+    this.disposable?.dispose()
+    this.disposable = undefined
+  }
 }
