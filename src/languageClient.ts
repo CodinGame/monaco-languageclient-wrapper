@@ -1,14 +1,12 @@
 import * as monaco from 'monaco-editor'
 import {
-  CloseAction, ErrorAction, MonacoLanguageClient, Emitter, Event, TextDocument, Services, State, DisposableCollection, CancellationToken, RequestType, NotificationType, LogMessageNotification, Disposable
+  CloseAction, ErrorAction, MonacoLanguageClient, Emitter, Event, TextDocument, Services, State, DisposableCollection, CancellationToken, RequestType, NotificationType, LogMessageNotification
 } from 'monaco-languageclient'
 import delay from 'delay'
-import { Uri } from 'monaco-editor'
-import { registerTextModelContentProvider } from '@codingame/monaco-editor-wrapper'
-import { getServices, installServices } from './services'
+import { installServices } from './services'
 import createLanguageClient from './createLanguageClient'
 import { WillShutdownParams } from './customRequests'
-import { InitializeTextDocumentFeature, WillDisposeFeature } from './extensions'
+import { FileSystemFeature, InitializeTextDocumentFeature, WillDisposeFeature } from './extensions'
 import { loadExtensionConfigurations } from './extensionConfiguration'
 import { getLanguageClientOptions, LanguageClientId, LanguageClientOptions } from './languageClientOptions'
 import { Infrastructure } from './infrastructure'
@@ -205,7 +203,6 @@ export class LanguageClientManager implements LanguageClient {
     this.languageClient = languageClient
 
     let readyPromise: Promise<void> | null = null
-    let fileHandlerRegistration: Disposable | null = null
     languageClient.onDidChangeState(async (state) => {
       switch (state.newState) {
         case State.Starting: {
@@ -242,7 +239,6 @@ export class LanguageClientManager implements LanguageClient {
           break
         }
         case State.Running: {
-          fileHandlerRegistration = this.registerFileHandlers()
           this.updateStatus('connected')
 
           await readyPromise
@@ -251,9 +247,6 @@ export class LanguageClientManager implements LanguageClient {
           break
         }
         case State.Stopped: {
-          fileHandlerRegistration?.dispose()
-          fileHandlerRegistration = null
-
           this.updateStatus('closed')
           break
         }
@@ -261,6 +254,8 @@ export class LanguageClientManager implements LanguageClient {
     })
 
     this.languageClient.registerFeature(new WillDisposeFeature(this.languageClient, this.onWillShutdownEmitter))
+
+    this.languageClient.registerFeature(new FileSystemFeature(this.infrastructure, this))
 
     if (!this.infrastructure.automaticTextDocumentUpdate) {
       this.languageClient.registerFeature(new InitializeTextDocumentFeature(this))
@@ -275,22 +270,6 @@ export class LanguageClientManager implements LanguageClient {
 
   sendRequest<P, R, E> (type: RequestType<P, R, E>, params: P): Promise<R> {
     return this.languageClient!.sendRequest<P, R, E>(type, params)
-  }
-
-  private registerFileHandlers (): Disposable {
-    const disposableCollection = new DisposableCollection()
-    const languageClientManager = this
-    disposableCollection.push(registerTextModelContentProvider('file', {
-      async provideTextContent (resource: Uri): Promise<monaco.editor.ITextModel | null> {
-        return await languageClientManager.infrastructure.getFileContent(resource, languageClientManager)
-      }
-    }))
-    disposableCollection.push(getServices().workspace.registerSaveDocumentHandler({
-      async saveTextContent (textDocument, reason) {
-        await languageClientManager.infrastructure.saveFileContent?.(textDocument, reason, languageClientManager)
-      }
-    }))
-    return disposableCollection
   }
 }
 
