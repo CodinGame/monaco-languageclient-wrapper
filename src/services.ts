@@ -1,7 +1,7 @@
 
 import * as monaco from 'monaco-editor'
 import {
-  Services, MonacoToProtocolConverter, ProtocolToMonacoConverter, MonacoLanguages, TextDocumentSaveReason, MonacoCommands, DisposableCollection
+  Services, MonacoToProtocolConverter, ProtocolToMonacoConverter, MonacoLanguages, MonacoCommands
 } from 'monaco-languageclient'
 import { RenameFile, CreateFile, WorkspaceEdit, Disposable } from 'vscode-languageserver-protocol'
 import WatchableConsoleWindow from './services/WatchableConsoleWindow'
@@ -29,65 +29,24 @@ function installCommands (services: CgMonacoServices): Disposable {
   })
 }
 
-function autoSaveModels (services: CgMonacoServices): Disposable {
-  const disposableCollection = new DisposableCollection()
-  const timeoutMap = new Map<string, number>()
-  disposableCollection.push(services.workspace.onDidChangeTextDocument(e => {
-    const timeout = timeoutMap.get(e.textDocument.uri)
-    if (timeout != null) {
-      window.clearTimeout(timeout)
-      timeoutMap.delete(e.textDocument.uri)
-    }
-    timeoutMap.set(e.textDocument.uri, window.setTimeout(() => {
-      timeoutMap.delete(e.textDocument.uri)
-      services.workspace.saveDocument(e.textDocument, TextDocumentSaveReason.AfterDelay).catch((error: Error) => {
-        monaco.errorHandler.onUnexpectedError(new Error(`[LSP] Unable to save the document ${e.textDocument.uri.toString()}`, {
-          cause: error
-        }))
-      })
-    }, 500))
-  }))
-  disposableCollection.push(Disposable.create(() => {
-    for (const timeout of Array.from(timeoutMap.values())) {
-      window.clearTimeout(timeout)
-    }
-  }))
-  return disposableCollection
+const m2p = new MonacoToProtocolConverter(monaco)
+const p2m = new ProtocolToMonacoConverter(monaco)
+const services = {
+  commands: new MonacoCommands(monaco),
+  languages: new MonacoLanguages(monaco, p2m, m2p),
+  workspace: new CodinGameMonacoWorkspace(p2m, m2p, 'file:///tmp/project'),
+  window: new WatchableConsoleWindow()
 }
 
-let serviceDisposable: Disposable | null = null
-let serviceReferenceCount = 0
-function installServices (infrastructure: Infrastructure): Disposable {
-  if (serviceReferenceCount === 0) {
-    const disposableCollection = new DisposableCollection()
+installCommands(services)
+Services.install(services)
 
-    const m2p = new MonacoToProtocolConverter(monaco)
-    const p2m = new ProtocolToMonacoConverter(monaco)
-    const services = {
-      commands: new MonacoCommands(monaco),
-      languages: new MonacoLanguages(monaco, p2m, m2p),
-      workspace: new CodinGameMonacoWorkspace(p2m, m2p, infrastructure.rootUri, infrastructure.workspaceFolders),
-      window: new WatchableConsoleWindow()
-    }
-
-    disposableCollection.push(services.workspace)
-    disposableCollection.push(installCommands(services))
-    disposableCollection.push(Services.install(services))
-
-    if (!infrastructure.automaticTextDocumentUpdate) {
-      disposableCollection.push(autoSaveModels(services))
-    }
-    serviceDisposable = disposableCollection
-  }
-  serviceReferenceCount++
-
-  return Disposable.create(() => {
-    serviceReferenceCount--
-    if (serviceReferenceCount <= 0) {
-      serviceDisposable?.dispose()
-      serviceDisposable = null
-    }
-  })
+function updateServices (infrastructure: Infrastructure): void {
+  services.workspace.initialize(
+    infrastructure.rootUri,
+    infrastructure.workspaceFolders,
+    !infrastructure.automaticTextDocumentUpdate
+  )
 }
 
 function getServices (): CgMonacoServices {
@@ -95,6 +54,6 @@ function getServices (): CgMonacoServices {
 }
 
 export {
-  installServices,
+  updateServices,
   getServices
 }
