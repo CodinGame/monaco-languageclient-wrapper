@@ -3,7 +3,7 @@ import {
   CloseAction, ErrorAction, MonacoLanguageClient, Emitter, Event, TextDocument, Services, State, DisposableCollection, CancellationToken, RequestType, NotificationType, LogMessageNotification
 } from 'monaco-languageclient'
 import delay from 'delay'
-import { installServices } from './services'
+import { updateServices } from './services'
 import createLanguageClient from './createLanguageClient'
 import { WillShutdownParams } from './customRequests'
 import { FileSystemFeature, InitializeTextDocumentFeature, WillDisposeFeature } from './extensions'
@@ -298,15 +298,9 @@ function createLanguageClientManager (
     }
   }
 
-  const serviceDisposable = installServices(infrastructure)
+  updateServices(infrastructure)
 
-  const languageClientManager = new LanguageClientManager(id, languageServerOptions, infrastructure)
-
-  languageClientManager.onDidClose(() => {
-    serviceDisposable.dispose()
-  })
-
-  return languageClientManager
+  return new LanguageClientManager(id, languageServerOptions, infrastructure)
 }
 
 export {
