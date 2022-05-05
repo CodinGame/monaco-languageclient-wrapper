@@ -281,9 +281,9 @@ export class LanguageClientManager implements LanguageClient {
  */
 function createLanguageClientManager (
   id: LanguageClientId,
-  infrastructure: Infrastructure
+  infrastructure: Infrastructure,
+  languageServerOptions: LanguageClientOptions = getLanguageClientOptions(id)
 ): LanguageClientManager {
-  let languageServerOptions = getLanguageClientOptions(id)
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
   if (languageServerOptions == null) {
     throw new Error(`Unknown ${id} language server`)
