@@ -34,10 +34,10 @@ export class LanguageClientManager implements LanguageClient {
 
   constructor (
     private id: LanguageClientId,
-    private languageServerOptions: LanguageClientOptions,
+    private clientOptions: LanguageClientOptions,
     private infrastructure: Infrastructure
   ) {
-    this.useMutualizedProxy = this.infrastructure.useMutualizedProxy(this.id, this.languageServerOptions)
+    this.useMutualizedProxy = this.infrastructure.useMutualizedProxy(this.id, this.clientOptions)
   }
 
   private updateStatus (status: Status) {
@@ -85,10 +85,10 @@ export class LanguageClientManager implements LanguageClient {
   }
 
   isModelManaged (document: TextDocument): boolean {
-    if (this.languageServerOptions.documentSelector == null) {
+    if (this.clientOptions.documentSelector == null) {
       return false
     }
-    return Services.get().languages.match(this.languageServerOptions.documentSelector, document)
+    return Services.get().languages.match(this.clientOptions.documentSelector, document)
   }
 
   isDisposed (): boolean {
@@ -132,14 +132,14 @@ export class LanguageClientManager implements LanguageClient {
     const languageClient = createLanguageClient(
       this.id,
       this.infrastructure,
-      this.languageServerOptions, {
+      this.clientOptions, {
         error: this.handleError,
         closed: this.handleClose
       }, {
-        ...(this.languageServerOptions.middleware ?? {}),
+        ...(this.clientOptions.middleware ?? {}),
         handleDiagnostics: (uri, diagnostics, next) => {
-          if (this.languageServerOptions.middleware?.handleDiagnostics != null) {
-            this.languageServerOptions.middleware.handleDiagnostics(uri, diagnostics, next)
+          if (this.clientOptions.middleware?.handleDiagnostics != null) {
+            this.clientOptions.middleware.handleDiagnostics(uri, diagnostics, next)
           } else {
             next(uri, diagnostics)
           }
@@ -147,8 +147,8 @@ export class LanguageClientManager implements LanguageClient {
         },
         provideCodeActions: async (document, range, context, token, next) => {
           try {
-            if (this.languageServerOptions.middleware?.provideCodeActions != null) {
-              return await this.languageServerOptions.middleware.provideCodeActions(document, range, context, token, next)
+            if (this.clientOptions.middleware?.provideCodeActions != null) {
+              return await this.clientOptions.middleware.provideCodeActions(document, range, context, token, next)
             } else {
               return await next(document, range, context, token)
             }
@@ -158,8 +158,8 @@ export class LanguageClientManager implements LanguageClient {
         },
         provideDocumentRangeSemanticTokens: async (document, range, token, next) => {
           try {
-            if (this.languageServerOptions.middleware?.provideDocumentRangeSemanticTokens != null) {
-              return await this.languageServerOptions.middleware.provideDocumentRangeSemanticTokens(document, range, token, next)
+            if (this.clientOptions.middleware?.provideDocumentRangeSemanticTokens != null) {
+              return await this.clientOptions.middleware.provideDocumentRangeSemanticTokens(document, range, token, next)
             } else {
               return await next(document, range, token)
             }
@@ -169,8 +169,8 @@ export class LanguageClientManager implements LanguageClient {
         },
         provideDocumentSemanticTokens: async (document, token, next) => {
           try {
-            if (this.languageServerOptions.middleware?.provideDocumentSemanticTokens != null) {
-              return await this.languageServerOptions.middleware.provideDocumentSemanticTokens(document, token, next)
+            if (this.clientOptions.middleware?.provideDocumentSemanticTokens != null) {
+              return await this.clientOptions.middleware.provideDocumentSemanticTokens(document, token, next)
             } else {
               return await next(document, token)
             }
@@ -179,8 +179,8 @@ export class LanguageClientManager implements LanguageClient {
           }
         },
         handleWorkDoneProgress: async (token, params, next) => {
-          if (this.languageServerOptions.middleware?.handleWorkDoneProgress != null) {
-            this.languageServerOptions.middleware.handleWorkDoneProgress(token, params, next)
+          if (this.clientOptions.middleware?.handleWorkDoneProgress != null) {
+            this.clientOptions.middleware.handleWorkDoneProgress(token, params, next)
           } else {
             next(token, params)
           }
@@ -190,8 +190,8 @@ export class LanguageClientManager implements LanguageClient {
         },
         provideHover: async (document, position, token, next) => {
           try {
-            if (this.languageServerOptions.middleware?.provideHover != null) {
-              return await this.languageServerOptions.middleware.provideHover(document, position, token, next)
+            if (this.clientOptions.middleware?.provideHover != null) {
+              return await this.clientOptions.middleware.provideHover(document, position, token, next)
             } else {
               return await next(document, position, token)
             }
@@ -211,7 +211,7 @@ export class LanguageClientManager implements LanguageClient {
             const disposableCollection = new DisposableCollection()
 
             let readyPromise: Promise<void>
-            const { maxInitializeDuration, readinessMessageMatcher } = this.languageServerOptions
+            const { maxInitializeDuration, readinessMessageMatcher } = this.clientOptions
             if (readinessMessageMatcher != null && !this.useMutualizedProxy) {
               readyPromise = new Promise<void>(resolve => {
                 disposableCollection.push(languageClient.onNotification(LogMessageNotification.type, logMessage => {
@@ -282,17 +282,17 @@ export class LanguageClientManager implements LanguageClient {
 function createLanguageClientManager (
   id: LanguageClientId,
   infrastructure: Infrastructure,
-  languageServerOptions: LanguageClientOptions = getLanguageClientOptions(id)
+  clientOptions: LanguageClientOptions = getLanguageClientOptions(id)
 ): LanguageClientManager {
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-  if (languageServerOptions == null) {
+  if (clientOptions == null) {
     throw new Error(`Unknown ${id} language server`)
   }
 
-  if (infrastructure.useMutualizedProxy(id, languageServerOptions) && languageServerOptions.mutualizable) {
+  if (infrastructure.useMutualizedProxy(id, clientOptions) && clientOptions.mutualizable) {
     // When using the mutualized proxy, we don't need to synchronize the configuration nor send the initialization options
-    languageServerOptions = {
-      ...languageServerOptions,
+    clientOptions = {
+      ...clientOptions,
       synchronize: undefined,
       initializationOptions: undefined
     }
@@ -300,7 +300,7 @@ function createLanguageClientManager (
 
   updateServices(infrastructure)
 
-  return new LanguageClientManager(id, languageServerOptions, infrastructure)
+  return new LanguageClientManager(id, clientOptions, infrastructure)
 }
 
 export {
