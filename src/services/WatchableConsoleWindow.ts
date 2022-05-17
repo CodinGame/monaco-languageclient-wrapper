@@ -1,3 +1,4 @@
+import * as monaco from 'monaco-editor'
 import { MessageType, OutputChannel, Window, MessageActionItem, Emitter, Event, CancellationToken, CancellationTokenSource } from 'monaco-languageclient'
 import swal from 'sweetalert'
 import type * as vscode from 'vscode'
@@ -95,7 +96,7 @@ export default class WatchableConsoleWindow implements Window {
     return this.onDidChangeChannelsEmitter.event
   }
 
-  withProgress: typeof vscode.window.withProgress = async <R> (options: vscode.ProgressOptions, task: (progress: vscode.Progress<{ message?: string, increment?: number }>, token: CancellationToken) => PromiseLike<R>): Promise<R> => {
+  withProgress: Window['withProgress'] = async <R> (options: vscode.ProgressOptions, task: (progress: vscode.Progress<{ message?: string, increment?: number }>, token: CancellationToken) => PromiseLike<R>): Promise<R> => {
     console.info('[LSP]', 'Starting task with progress:', options.location, options.title)
     try {
       return await task({
@@ -106,5 +107,24 @@ export default class WatchableConsoleWindow implements Window {
     } finally {
       console.info('[LSP]', 'Task completed:', options.title)
     }
+  }
+
+  showTextDocument: Window['showTextDocument'] = async (document, options) => {
+    const codeEditorService = monaco.extra.StandaloneServices.get(monaco.extra.ICodeEditorService)
+    codeEditorService.getActiveCodeEditor()
+    await codeEditorService.openCodeEditor({
+      resource: document,
+      options: {
+        selection: options?.selection != null
+          ? {
+              startLineNumber: options.selection.start.line,
+              startColumn: options.selection.start.character,
+              endLineNumber: options.selection.end.line,
+              endColumn: options.selection.end.character
+            }
+          : undefined,
+        selectionSource: monaco.extra.TextEditorSelectionSource.PROGRAMMATIC
+      }
+    }, null)
   }
 }
