@@ -97,10 +97,13 @@ export class LanguageClientManager implements LanguageClient {
 
   private handleClose = () => {
     if (this.isDisposed()) {
-      return CloseAction.DoNotRestart
+      return {
+        action: CloseAction.DoNotRestart
+      }
     }
-
-    return CloseAction.Restart
+    return {
+      action: CloseAction.Restart
+    }
   }
 
   private handleError = (error: Error) => {
@@ -110,7 +113,9 @@ export class LanguageClientManager implements LanguageClient {
     this.onErrorEmitter.fire(error)
     this.updateStatus('error')
 
-    return ErrorAction.Continue
+    return {
+      action: ErrorAction.Continue
+    }
   }
 
   public async start (): Promise<void> {
@@ -126,7 +131,7 @@ export class LanguageClientManager implements LanguageClient {
     }
   }
 
-  private _start (): void {
+  private async _start (): Promise<void> {
     const onServerResponse = new Emitter<void>()
 
     const languageClient = createLanguageClient(
@@ -207,7 +212,7 @@ export class LanguageClientManager implements LanguageClient {
       switch (state.newState) {
         case State.Starting: {
           this.updateStatus('connecting')
-          readyPromise = languageClient.onReady().then(async () => {
+          readyPromise = Promise.resolve().then(async () => {
             const disposableCollection = new DisposableCollection()
 
             let readyPromise: Promise<void>
@@ -261,11 +266,11 @@ export class LanguageClientManager implements LanguageClient {
       this.languageClient.registerFeature(new InitializeTextDocumentFeature(this))
     }
 
-    this.languageClient.start()
+    await this.languageClient.start()
   }
 
-  sendNotification<P> (type: NotificationType<P>, params?: P): void {
-    this.languageClient!.sendNotification(type, params)
+  async sendNotification<P> (type: NotificationType<P>, params?: P): Promise<void> {
+    await this.languageClient!.sendNotification(type, params)
   }
 
   sendRequest<P, R, E> (type: RequestType<P, R, E>, params: P): Promise<R> {

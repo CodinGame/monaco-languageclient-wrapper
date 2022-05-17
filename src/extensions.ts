@@ -1,9 +1,10 @@
 import { monaco, registerTextModelContentProvider } from '@codingame/monaco-editor-wrapper'
 import {
   Disposable,
-  ServerCapabilities, DocumentSelector, MonacoLanguageClient, StaticFeature, Services,
+  ServerCapabilities, DocumentSelector, MonacoLanguageClient, Services,
   TextDocumentSyncOptions, TextDocument, DidSaveTextDocumentNotification, Emitter, DisposableCollection
 } from 'monaco-languageclient'
+import { StaticFeature, FeatureState } from 'vscode-languageclient'
 import { updateFile, willShutdownNotificationType, WillShutdownParams } from './customRequests'
 import { Infrastructure } from './infrastructure'
 import { LanguageClient, LanguageClientManager } from './languageClient'
@@ -45,6 +46,12 @@ export class InitializeTextDocumentFeature implements StaticFeature {
     Services.get().workspace.textDocuments.forEach(saveFile)
   }
 
+  getState (): FeatureState {
+    return {
+      kind: 'static'
+    }
+  }
+
   dispose (): void {
     this.didOpenTextDocumentDisposable?.dispose()
   }
@@ -73,6 +80,12 @@ class CobolResolveSubroutineFeature implements StaticFeature {
     })
   }
 
+  getState (): FeatureState {
+    return {
+      kind: 'static'
+    }
+  }
+
   dispose (): void {
     this.onRequestDisposable?.dispose()
   }
@@ -91,6 +104,12 @@ export class WillDisposeFeature implements StaticFeature {
     this.languageClient.onNotification(willShutdownNotificationType, (params) => {
       this.onWillShutdownEmitter.fire(params)
     })
+  }
+
+  getState (): FeatureState {
+    return {
+      kind: 'static'
+    }
   }
 
   dispose (): void {}
@@ -123,6 +142,12 @@ export class FileSystemFeature implements StaticFeature {
   initialize (): void {
     this.dispose()
     this.disposable = this.registerFileHandlers()
+  }
+
+  getState (): FeatureState {
+    return {
+      kind: 'static'
+    }
   }
 
   dispose (): void {
