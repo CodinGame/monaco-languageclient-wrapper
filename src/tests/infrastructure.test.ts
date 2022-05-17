@@ -18,7 +18,7 @@ async function initializeLanguageClientAndGetConnection (
   const infrastructure = new TestInfrastructure(automaticTextDocumentUpdate, useMutualizedProxy)
 
   const languageClient = createLanguageClientManager(languageClientId, infrastructure)
-  await languageClient.start()
+  const startPromise = languageClient.start()
 
   const connection = await infrastructure.getConnection()
 
@@ -27,6 +27,8 @@ async function initializeLanguageClientAndGetConnection (
   sendInitializationResult({
     capabilities
   })
+
+  await startPromise
 
   return [languageClient, connection]
 }
