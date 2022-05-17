@@ -22,6 +22,8 @@ export interface StatusChangeEvent {
   status: Status
 }
 
+const RETRY_CONNECTION_DELAY = 3000
+
 export class LanguageClientManager implements LanguageClient {
   languageClient?: MonacoLanguageClient
   private disposed: boolean = false
@@ -96,13 +98,8 @@ export class LanguageClientManager implements LanguageClient {
   }
 
   private handleClose = () => {
-    if (this.isDisposed()) {
-      return {
-        action: CloseAction.DoNotRestart
-      }
-    }
     return {
-      action: CloseAction.Restart
+      action: CloseAction.DoNotRestart
     }
   }
 
@@ -114,7 +111,7 @@ export class LanguageClientManager implements LanguageClient {
     this.updateStatus('error')
 
     return {
-      action: ErrorAction.Continue
+      action: ErrorAction.Shutdown
     }
   }
 
@@ -126,8 +123,17 @@ export class LanguageClientManager implements LanguageClient {
         cause: error as Error
       }))
     }
-    if (!this.isDisposed()) {
-      this._start()
+    let started = false
+    while (!this.isDisposed() && !started) {
+      try {
+        await this._start()
+        started = true
+      } catch (error) {
+        monaco.errorHandler.onUnexpectedError(new Error(`[LSP] Unable to start language client, retrying in ${RETRY_CONNECTION_DELAY} ms`, {
+          cause: error as Error
+        }))
+        await delay(RETRY_CONNECTION_DELAY)
+      }
     }
   }
 
@@ -253,6 +259,15 @@ export class LanguageClientManager implements LanguageClient {
         }
         case State.Stopped: {
           this.updateStatus('closed')
+
+          if (state.oldState === State.Running && !this.isDisposed()) {
+            console.info('[LSP] Restarting language client', state)
+            this.start().catch(error => {
+              monaco.errorHandler.onUnexpectedError(new Error('[LSP] Language client stopped', {
+                cause: error as Error
+              }))
+            })
+          }
           break
         }
       }
