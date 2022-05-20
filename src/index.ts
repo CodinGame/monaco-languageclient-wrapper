@@ -1,6 +1,6 @@
 import { TextDocument, TextDocumentSaveReason } from 'monaco-languageclient'
 import 'proxy-polyfill'
-import { WorkspaceFolder } from 'vscode'
+import type { WorkspaceFolder } from 'vscode'
 import { CodinGameInfrastructure, Infrastructure } from './infrastructure'
 import { WillShutdownParams } from './customRequests'
 import { loadExtensionConfigurations } from './extensionConfiguration'
