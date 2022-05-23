@@ -1,4 +1,4 @@
-import { TextDocument, TextDocumentSaveReason } from 'monaco-languageclient'
+import { MessageTransports, TextDocument, TextDocumentSaveReason } from 'monaco-languageclient'
 import 'proxy-polyfill'
 import type { WorkspaceFolder } from 'vscode'
 import { CodinGameInfrastructure, Infrastructure } from './infrastructure'
@@ -26,5 +26,6 @@ export type {
   WorkspaceFolder,
   TextDocument,
   TextDocumentSaveReason,
-  LanguageClientOptions
+  LanguageClientOptions,
+  MessageTransports
 }
