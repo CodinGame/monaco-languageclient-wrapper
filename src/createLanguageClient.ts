@@ -60,6 +60,13 @@ class MiddlewareMessageReader implements MessageReader {
   }
 }
 
+/**
+ * Add some hacks on transform for:
+ * - Dedup server capability registrations (for omnisharp roslyn)
+ * - Fix paths on windows
+ * @param transports The original transports
+ * @returns The transformed transports
+ */
 function hackTransports (transports: MessageTransports): MessageTransports {
   const existingRegistrations = new Set<string>()
   return {
