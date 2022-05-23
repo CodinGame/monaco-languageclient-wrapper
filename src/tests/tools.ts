@@ -1,5 +1,5 @@
 import { Uri } from 'monaco-editor'
-import { AbstractMessageReader, AbstractMessageWriter, createMessageConnection, DataCallback, Disposable, Message, MessageConnection, MessageReader, MessageWriter, NotificationHandler, RequestHandler, ServerCapabilities, TextDocumentSyncKind } from 'vscode-languageserver-protocol'
+import { AbstractMessageReader, AbstractMessageWriter, createMessageConnection, DataCallback, Disposable, Message, MessageReader, MessageWriter, NotificationHandler, RequestHandler } from 'vscode-languageserver-protocol'
 import {
   createConnection,
   WatchDog,
@@ -7,6 +7,7 @@ import {
   _
 } from 'vscode-languageserver/lib/common/api'
 import { monaco } from '@codingame/monaco-editor-wrapper'
+import { MessageTransports } from 'monaco-languageclient'
 import { getFile, updateFile } from '../customRequests'
 import { Infrastructure, LanguageClientId, LanguageClientManager, LanguageClientOptions, TextDocument, TextDocumentSaveReason } from '../'
 
@@ -52,13 +53,6 @@ function createPipedReaderWriter (): [MessageReader, MessageWriter] {
   const reader = new PipedMessageReader()
   const writer = new PipedMessageWriter(reader)
   return [reader, writer]
-}
-
-function createDuplexConnection (): [MessageConnection, MessageConnection] {
-  const [r1, w1] = createPipedReaderWriter()
-  const [r2, w2] = createPipedReaderWriter()
-
-  return [createMessageConnection(r1, w2), createMessageConnection(r2, w1)]
 }
 
 export interface DeferredPromise<ValueType> {
@@ -153,8 +147,11 @@ export class TestInfrastructure implements Infrastructure {
     }
   }
 
-  async openConnection (): Promise<MessageConnection> {
-    const [c1, c2] = createDuplexConnection()
+  async openConnection (): Promise<MessageTransports> {
+    const [r1, w1] = createPipedReaderWriter()
+    const [r2, w2] = createPipedReaderWriter()
+
+    const c2 = createMessageConnection(r2, w1)
 
     const watchDog: WatchDog = {
       shutdownReceived: false,
@@ -165,6 +162,9 @@ export class TestInfrastructure implements Infrastructure {
     this.connectionDeferred.resolve(clientConnection)
     c2.listen()
 
-    return c1
+    return {
+      reader: r1,
+      writer: w2
+    }
   }
 }

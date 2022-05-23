@@ -1,9 +1,10 @@
 import { monaco, registerTextModelContentProvider } from '@codingame/monaco-editor-wrapper'
 import {
   Disposable,
-  ServerCapabilities, DocumentSelector, MonacoLanguageClient, StaticFeature, Services,
+  ServerCapabilities, DocumentSelector, MonacoLanguageClient, Services,
   TextDocumentSyncOptions, TextDocument, DidSaveTextDocumentNotification, Emitter, DisposableCollection
 } from 'monaco-languageclient'
+import { StaticFeature, FeatureState, ProtocolRequestType } from 'vscode-languageclient'
 import { updateFile, willShutdownNotificationType, WillShutdownParams } from './customRequests'
 import { Infrastructure } from './infrastructure'
 import { LanguageClient, LanguageClientManager } from './languageClient'
@@ -45,11 +46,18 @@ export class InitializeTextDocumentFeature implements StaticFeature {
     Services.get().workspace.textDocuments.forEach(saveFile)
   }
 
+  getState (): FeatureState {
+    return {
+      kind: 'static'
+    }
+  }
+
   dispose (): void {
     this.didOpenTextDocumentDisposable?.dispose()
   }
 }
 
+export const ResolveCobolSubroutineRequestType = new ProtocolRequestType<string, string, never, void, void>('cobol/resolveSubroutine')
 class CobolResolveSubroutineFeature implements StaticFeature {
   private onRequestDisposable: Disposable | undefined
   constructor (private languageClient: MonacoLanguageClient) {
@@ -58,7 +66,7 @@ class CobolResolveSubroutineFeature implements StaticFeature {
   fillClientCapabilities (): void {}
 
   initialize (capabilities: ServerCapabilities, documentSelector: DocumentSelector): void {
-    this.onRequestDisposable = this.languageClient.onRequest('cobol/resolveSubroutine', (routineName: string) => {
+    this.onRequestDisposable = this.languageClient.onRequest(ResolveCobolSubroutineRequestType, (routineName: string) => {
       const constantRoutinePaths: Partial<Record<string, string>> = {
         'assert-equals': `${Services.get().workspace.rootUri ?? 'file:/tmp/project'}/deps/assert-equals.cbl`
       }
@@ -71,6 +79,12 @@ class CobolResolveSubroutineFeature implements StaticFeature {
         .filter(document => document.getText().match(new RegExp(`PROGRAM-ID\\.\\W+${routineName}\\.`, 'gi')))
         .sort((a, b) => a.uri.localeCompare(b.uri))[0]?.uri
     })
+  }
+
+  getState (): FeatureState {
+    return {
+      kind: 'static'
+    }
   }
 
   dispose (): void {
@@ -93,6 +107,12 @@ export class WillDisposeFeature implements StaticFeature {
     })
   }
 
+  getState (): FeatureState {
+    return {
+      kind: 'static'
+    }
+  }
+
   dispose (): void {}
 }
 
@@ -112,7 +132,9 @@ export class FileSystemFeature implements StaticFeature {
     }))
     disposableCollection.push(getServices().workspace.registerSaveDocumentHandler({
       async saveTextContent (textDocument, reason) {
-        await infrastructure.saveFileContent?.(textDocument, reason, languageClientManager)
+        if (languageClientManager.isModelManaged(textDocument)) {
+          await infrastructure.saveFileContent?.(textDocument, reason, languageClientManager)
+        }
       }
     }))
     return disposableCollection
@@ -123,6 +145,12 @@ export class FileSystemFeature implements StaticFeature {
   initialize (): void {
     this.dispose()
     this.disposable = this.registerFileHandlers()
+  }
+
+  getState (): FeatureState {
+    return {
+      kind: 'static'
+    }
   }
 
   dispose (): void {

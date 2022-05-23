@@ -7,6 +7,7 @@ import { RenameFile, CreateFile, WorkspaceEdit, Disposable } from 'vscode-langua
 import WatchableConsoleWindow from './services/WatchableConsoleWindow'
 import CodinGameMonacoWorkspace from './services/CodinGameMonacoWorkspace'
 import { Infrastructure } from './infrastructure'
+import CodinGameMonacoEnv from './services/CodinGameMonacoEnv'
 
 interface CgMonacoServices extends Services {
   commands: MonacoCommands
@@ -35,7 +36,8 @@ const services = {
   commands: new MonacoCommands(monaco),
   languages: new MonacoLanguages(monaco, p2m, m2p),
   workspace: new CodinGameMonacoWorkspace(p2m, m2p, 'file:///tmp/project'),
-  window: new WatchableConsoleWindow()
+  window: new WatchableConsoleWindow(),
+  env: new CodinGameMonacoEnv()
 }
 
 installCommands(services)

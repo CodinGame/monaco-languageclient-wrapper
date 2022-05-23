@@ -1,6 +1,5 @@
-import { ConsoleLogger, createWebSocketConnection, toSocket } from '@codingame/monaco-jsonrpc'
-import { MessageConnection } from 'vscode-languageserver-protocol'
-import { TextDocument, TextDocumentSaveReason } from 'monaco-languageclient'
+import { IWebSocket, WebSocketMessageReader, WebSocketMessageWriter, toSocket } from '@codingame/monaco-jsonrpc'
+import { MessageTransports, TextDocument, TextDocumentSaveReason } from 'monaco-languageclient'
 import * as monaco from 'monaco-editor'
 import type * as vscode from 'vscode'
 import { getFile, updateFile } from './customRequests'
@@ -46,27 +45,25 @@ export interface Infrastructure {
    * Open a connection to the language server
    * @param id The language server id
    */
-  openConnection (id: LanguageClientId): Promise<MessageConnection>
+  openConnection (id: LanguageClientId): Promise<MessageTransports>
 }
 
-function openWebsocketConnection (url: URL | string): Promise<MessageConnection> {
-  return new Promise<MessageConnection>((resolve, reject) => {
-    const webSocket = new WebSocket(url)
+async function openWebsocketConnection (url: URL | string): Promise<MessageTransports> {
+  const webSocket = new WebSocket(url)
+  const socket: IWebSocket = toSocket(webSocket)
 
-    webSocket.onopen = () => {
-      const socket = toSocket(webSocket)
-      const webSocketConnection = createWebSocketConnection(socket, new ConsoleLogger())
-      webSocketConnection.onDispose(() => {
-        webSocket.close()
-      })
+  const reader = new WebSocketMessageReader(socket)
+  const writer = new WebSocketMessageWriter(socket)
 
-      resolve(webSocketConnection)
-    }
-
-    webSocket.onerror = () => {
-      reject(new Error('Unable to connect to server'))
-    }
+  await new Promise((resolve, reject) => {
+    webSocket.addEventListener('open', resolve)
+    webSocket.addEventListener('error', reject)
   })
+
+  return {
+    reader,
+    writer
+  }
 }
 
 export abstract class CodinGameInfrastructure implements Infrastructure {
@@ -120,7 +117,7 @@ export abstract class CodinGameInfrastructure implements Infrastructure {
    */
   protected abstract getSecurityToken(): Promise<string>
 
-  public async openConnection (id: LanguageClientId): Promise<MessageConnection> {
+  public async openConnection (id: LanguageClientId): Promise<MessageTransports> {
     const url = new URL(this.sessionId != null ? `run/${this.sessionId}/${id}` : `run/${id}`, this.serverAddress)
     this.libraryUrls?.forEach(libraryUrl => url.searchParams.append('libraryUrl', libraryUrl))
     url.searchParams.append('token', await this.getSecurityToken())

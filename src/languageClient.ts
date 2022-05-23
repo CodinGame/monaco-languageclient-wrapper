@@ -22,6 +22,8 @@ export interface StatusChangeEvent {
   status: Status
 }
 
+const RETRY_CONNECTION_DELAY = 3000
+
 export class LanguageClientManager implements LanguageClient {
   languageClient?: MonacoLanguageClient
   private disposed: boolean = false
@@ -96,11 +98,9 @@ export class LanguageClientManager implements LanguageClient {
   }
 
   private handleClose = () => {
-    if (this.isDisposed()) {
-      return CloseAction.DoNotRestart
+    return {
+      action: CloseAction.DoNotRestart
     }
-
-    return CloseAction.Restart
   }
 
   private handleError = (error: Error) => {
@@ -110,7 +110,9 @@ export class LanguageClientManager implements LanguageClient {
     this.onErrorEmitter.fire(error)
     this.updateStatus('error')
 
-    return ErrorAction.Continue
+    return {
+      action: ErrorAction.Shutdown
+    }
   }
 
   public async start (): Promise<void> {
@@ -121,12 +123,21 @@ export class LanguageClientManager implements LanguageClient {
         cause: error as Error
       }))
     }
-    if (!this.isDisposed()) {
-      this._start()
+    let started = false
+    while (!this.isDisposed() && !started) {
+      try {
+        await this._start()
+        started = true
+      } catch (error) {
+        monaco.errorHandler.onUnexpectedError(new Error(`[LSP] Unable to start language client, retrying in ${RETRY_CONNECTION_DELAY} ms`, {
+          cause: error as Error
+        }))
+        await delay(RETRY_CONNECTION_DELAY)
+      }
     }
   }
 
-  private _start (): void {
+  private async _start (): Promise<void> {
     const onServerResponse = new Emitter<void>()
 
     const languageClient = createLanguageClient(
@@ -207,7 +218,7 @@ export class LanguageClientManager implements LanguageClient {
       switch (state.newState) {
         case State.Starting: {
           this.updateStatus('connecting')
-          readyPromise = languageClient.onReady().then(async () => {
+          readyPromise = Promise.resolve().then(async () => {
             const disposableCollection = new DisposableCollection()
 
             let readyPromise: Promise<void>
@@ -248,6 +259,15 @@ export class LanguageClientManager implements LanguageClient {
         }
         case State.Stopped: {
           this.updateStatus('closed')
+
+          if (state.oldState === State.Running && !this.isDisposed()) {
+            console.info('[LSP] Restarting language client', state)
+            this.start().catch(error => {
+              monaco.errorHandler.onUnexpectedError(new Error('[LSP] Language client stopped', {
+                cause: error as Error
+              }))
+            })
+          }
           break
         }
       }
@@ -261,11 +281,11 @@ export class LanguageClientManager implements LanguageClient {
       this.languageClient.registerFeature(new InitializeTextDocumentFeature(this))
     }
 
-    this.languageClient.start()
+    await this.languageClient.start()
   }
 
-  sendNotification<P> (type: NotificationType<P>, params?: P): void {
-    this.languageClient!.sendNotification(type, params)
+  async sendNotification<P> (type: NotificationType<P>, params?: P): Promise<void> {
+    await this.languageClient!.sendNotification(type, params)
   }
 
   sendRequest<P, R, E> (type: RequestType<P, R, E>, params: P): Promise<R> {
