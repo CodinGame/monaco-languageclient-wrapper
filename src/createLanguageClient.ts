@@ -9,7 +9,7 @@ import { WillCreateFilesFeature, WillRenameFilesFeature, WillDeleteFilesFeature,
 import { CallHierarchyFeature } from 'vscode-languageclient/lib/common/callHierarchy'
 import { TypeHierarchyFeature } from 'vscode-languageclient/lib/common/typeHierarchy'
 import { NotebookDocumentSyncFeature } from 'vscode-languageclient/lib/common/notebook'
-import { DynamicFeature, StaticFeature } from 'vscode-languageclient'
+import { DynamicFeature, StaticFeature } from 'vscode-languageclient/lib/common/api'
 import { registerExtensionFeatures } from './extensions'
 import { LanguageClientId } from './languageClientOptions'
 import { Infrastructure } from './infrastructure'
