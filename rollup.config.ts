@@ -46,7 +46,8 @@ export default rollup.defineConfig({
       include: ['**/*.ts']
     }),
     nodeResolve({
-      extensions
+      extensions,
+      browser: true
     }),
     commonjs({
       esmExternals: (id) => id.match(/^vscode-languageserver-protocol(\/.*)?/) != null // required for monaco-emacs with use import monaco-editor esm code from commonjs code

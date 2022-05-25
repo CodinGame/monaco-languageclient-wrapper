@@ -4,7 +4,7 @@ import {
   ServerCapabilities, DocumentSelector, MonacoLanguageClient, Services,
   TextDocumentSyncOptions, TextDocument, DidSaveTextDocumentNotification, Emitter, DisposableCollection
 } from 'monaco-languageclient'
-import { StaticFeature, FeatureState, ProtocolRequestType } from 'vscode-languageclient'
+import { StaticFeature, FeatureState, ProtocolRequestType } from 'vscode-languageclient/lib/common/api'
 import { updateFile, willShutdownNotificationType, WillShutdownParams } from './customRequests'
 import { Infrastructure } from './infrastructure'
 import { LanguageClient, LanguageClientManager } from './languageClient'
