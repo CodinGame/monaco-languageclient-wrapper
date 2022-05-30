@@ -7,6 +7,7 @@ import { WillSaveWaitUntilFeature } from 'vscode-languageclient/lib/common/textS
 import { FileSystemWatcherFeature } from 'vscode-languageclient/lib/common/fileSystemWatcher'
 import { WillCreateFilesFeature, WillRenameFilesFeature, WillDeleteFilesFeature, DidRenameFilesFeature, DidCreateFilesFeature, DidDeleteFilesFeature } from 'vscode-languageclient/lib/common/fileOperations'
 import { CallHierarchyFeature } from 'vscode-languageclient/lib/common/callHierarchy'
+import { WorkspaceSymbolFeature } from 'vscode-languageclient/lib/common/workspaceSymbol'
 import { TypeHierarchyFeature } from 'vscode-languageclient/lib/common/typeHierarchy'
 import { NotebookDocumentSyncFeature } from 'vscode-languageclient/lib/common/notebook'
 import { DynamicFeature, StaticFeature } from 'vscode-languageclient/lib/common/api'
@@ -152,7 +153,8 @@ const IGNORED_DYNAMIC_FEATURES: Function[] = [
   DidCreateFilesFeature,
   DidDeleteFilesFeature,
   TypeHierarchyFeature,
-  CallHierarchyFeature
+  CallHierarchyFeature,
+  WorkspaceSymbolFeature
 ]
 class CodinGameMonacoLanguageClient extends MonacoLanguageClient {
   override registerFeature (feature: StaticFeature | DynamicFeature<unknown>): void {
