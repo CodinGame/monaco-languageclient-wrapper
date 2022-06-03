@@ -24,6 +24,13 @@ export interface StatusChangeEvent {
 
 const RETRY_CONNECTION_DELAY = 3000
 
+export interface LanguageClientManagerOptions {
+  /**
+   * The language client will stop trying to start after `maxStartAttemptCount` failed attempts
+   */
+   maxStartAttemptCount?: number
+}
+
 export class LanguageClientManager implements LanguageClient {
   languageClient?: MonacoLanguageClient
   private disposed: boolean = false
@@ -37,7 +44,8 @@ export class LanguageClientManager implements LanguageClient {
   constructor (
     private id: LanguageClientId,
     private clientOptions: LanguageClientOptions,
-    private infrastructure: Infrastructure
+    private infrastructure: Infrastructure,
+    private managerOptions: LanguageClientManagerOptions = {}
   ) {
     this.useMutualizedProxy = this.infrastructure.useMutualizedProxy(this.id, this.clientOptions)
   }
@@ -124,7 +132,14 @@ export class LanguageClientManager implements LanguageClient {
       }))
     }
     let started = false
-    while (!this.isDisposed() && !started) {
+    let attempt = 0
+    while (
+      !this.isDisposed() &&
+      !started && (
+        this.managerOptions.maxStartAttemptCount == null ||
+        attempt < this.managerOptions.maxStartAttemptCount
+      )
+    ) {
       try {
         await this._start()
         started = true
@@ -134,6 +149,7 @@ export class LanguageClientManager implements LanguageClient {
         }))
         await delay(RETRY_CONNECTION_DELAY)
       }
+      ++attempt
     }
   }
 

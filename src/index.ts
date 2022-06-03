@@ -5,7 +5,7 @@ import { CodinGameInfrastructure, Infrastructure } from './infrastructure'
 import { WillShutdownParams } from './customRequests'
 import { loadExtensionConfigurations } from './extensionConfiguration'
 import './hacks'
-import { createLanguageClientManager, LanguageClientManager, StatusChangeEvent } from './languageClient'
+import { createLanguageClientManager, LanguageClientManager, LanguageClientManagerOptions, StatusChangeEvent } from './languageClient'
 import { LanguageClientId, LanguageClientOptions, registerLanguageClient } from './languageClientOptions'
 import { StaticLanguageClientId } from './staticOptions'
 
@@ -27,5 +27,6 @@ export type {
   TextDocument,
   TextDocumentSaveReason,
   LanguageClientOptions,
+  LanguageClientManagerOptions,
   MessageTransports
 }
