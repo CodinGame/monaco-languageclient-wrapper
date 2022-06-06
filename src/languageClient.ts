@@ -45,7 +45,7 @@ export class LanguageClientManager implements LanguageClient {
     private id: LanguageClientId,
     private clientOptions: LanguageClientOptions,
     private infrastructure: Infrastructure,
-    private managerOptions: LanguageClientManagerOptions = {}
+    private managerOptions: LanguageClientManagerOptions
   ) {
     this.useMutualizedProxy = this.infrastructure.useMutualizedProxy(this.id, this.clientOptions)
   }
@@ -318,7 +318,8 @@ export class LanguageClientManager implements LanguageClient {
 function createLanguageClientManager (
   id: LanguageClientId,
   infrastructure: Infrastructure,
-  clientOptions: LanguageClientOptions = getLanguageClientOptions(id)
+  clientOptions: LanguageClientOptions = getLanguageClientOptions(id),
+  managerOptions: LanguageClientManagerOptions = {}
 ): LanguageClientManager {
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
   if (clientOptions == null) {
@@ -336,7 +337,7 @@ function createLanguageClientManager (
 
   updateServices(infrastructure)
 
-  return new LanguageClientManager(id, clientOptions, infrastructure)
+  return new LanguageClientManager(id, clientOptions, infrastructure, managerOptions)
 }
 
 export {
