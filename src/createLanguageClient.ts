@@ -3,14 +3,6 @@ import { Uri } from 'monaco-editor'
 import {
   MonacoLanguageClient, Middleware, ErrorHandler, IConnectionProvider, InitializeParams, RegistrationRequest, RegistrationParams, UnregistrationRequest, UnregistrationParams, LanguageClientOptions, MessageTransports, InitializeRequest
 } from 'monaco-languageclient'
-import { WillSaveWaitUntilFeature } from 'vscode-languageclient/lib/common/textSynchronization'
-import { FileSystemWatcherFeature } from 'vscode-languageclient/lib/common/fileSystemWatcher'
-import { WillCreateFilesFeature, WillRenameFilesFeature, WillDeleteFilesFeature, DidRenameFilesFeature, DidCreateFilesFeature, DidDeleteFilesFeature } from 'vscode-languageclient/lib/common/fileOperations'
-import { CallHierarchyFeature } from 'vscode-languageclient/lib/common/callHierarchy'
-import { WorkspaceSymbolFeature } from 'vscode-languageclient/lib/common/workspaceSymbol'
-import { TypeHierarchyFeature } from 'vscode-languageclient/lib/common/typeHierarchy'
-import { NotebookDocumentSyncFeature } from 'vscode-languageclient/lib/common/notebook'
-import { DynamicFeature, StaticFeature } from 'vscode-languageclient/lib/common/api'
 import { registerExtensionFeatures } from './extensions'
 import { LanguageClientId } from './languageClientOptions'
 import { Infrastructure } from './infrastructure'
@@ -142,30 +134,6 @@ class CGLSPConnectionProvider implements IConnectionProvider {
   }
 }
 
-const IGNORED_DYNAMIC_FEATURES: Function[] = [
-  FileSystemWatcherFeature,
-  WillSaveWaitUntilFeature,
-  NotebookDocumentSyncFeature,
-  WillCreateFilesFeature,
-  WillRenameFilesFeature,
-  WillDeleteFilesFeature,
-  DidRenameFilesFeature,
-  DidCreateFilesFeature,
-  DidDeleteFilesFeature,
-  TypeHierarchyFeature,
-  CallHierarchyFeature,
-  WorkspaceSymbolFeature
-]
-class CodinGameMonacoLanguageClient extends MonacoLanguageClient {
-  override registerFeature (feature: StaticFeature | DynamicFeature<unknown>): void {
-    if (DynamicFeature.is(feature) && IGNORED_DYNAMIC_FEATURES.includes(feature.constructor)) {
-      // ignore
-      return
-    }
-    super.registerFeature(feature)
-  }
-}
-
 function createLanguageClient (
   id: LanguageClientId,
   infrastructure: Infrastructure,
@@ -177,7 +145,7 @@ function createLanguageClient (
   errorHandler: ErrorHandler,
   middleware?: Middleware
 ): MonacoLanguageClient {
-  const client = new CodinGameMonacoLanguageClient({
+  const client = new MonacoLanguageClient({
     id: `${id}-languageclient`,
     name: `CodinGame ${id} Language Client`,
     clientOptions: {
@@ -191,6 +159,9 @@ function createLanguageClient (
     },
     connectionProvider: new CGLSPConnectionProvider(id, infrastructure)
   })
+  client.registerConfigurationFeatures()
+  client.registerProgressFeatures()
+  client.registerTextDocumentSaveFeatures()
 
   registerExtensionFeatures(client, id)
 
