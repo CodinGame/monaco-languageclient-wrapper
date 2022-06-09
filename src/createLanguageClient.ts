@@ -159,6 +159,9 @@ function createLanguageClient (
     },
     connectionProvider: new CGLSPConnectionProvider(id, infrastructure)
   })
+  client.registerConfigurationFeatures()
+  client.registerProgressFeatures()
+  client.registerTextDocumentSaveFeatures()
 
   registerExtensionFeatures(client, id)
 
