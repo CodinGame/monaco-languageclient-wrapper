@@ -24,7 +24,7 @@ export default rollup.defineConfig({
     if (isResolved) {
       return false
     }
-    if (externals.some(external => source.startsWith(external))) {
+    if (externals.some(external => source === external || source.startsWith(`${external}/`))) {
       return true
     }
     return false
