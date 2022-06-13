@@ -29,7 +29,7 @@
     "vscode-languageserver-protocol": "^3.17.1"
   },
   "devDependencies": {
-    "@babel/core": "7.18.2",
+    "@babel/core": "7.18.5",
     "@babel/plugin-proposal-class-properties": "7.17.12",
     "@babel/plugin-proposal-optional-chaining": "7.17.12",
     "@babel/plugin-transform-modules-commonjs": "^7.18.2",
@@ -43,7 +43,7 @@
     "@rollup/plugin-eslint": "8.0.2",
     "@rollup/plugin-json": "4.1.0",
     "@rollup/plugin-node-resolve": "13.3.0",
-    "@rollup/plugin-typescript": "^8.3.2",
+    "@rollup/plugin-typescript": "^8.3.3",
     "@types/jest": "^28.1.1",
     "@types/once": "^1.4.0",
     "@types/rollup-plugin-node-builtins": "^2.1.2",
