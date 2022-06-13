@@ -109,7 +109,6 @@
       ]
     },
     "moduleNameMapper": {
-      "^vscode$": "monaco-languageclient/vscode-compatibility",
       "^monaco-editor$": "monaco-editor/esm/vs/editor/editor.api",
       "^monaco-editor-core$": "monaco-editor/esm/vs/editor/editor.api"
     }
