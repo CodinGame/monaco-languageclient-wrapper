@@ -1,8 +1,10 @@
 import * as monaco from 'monaco-editor'
 import {
-  CloseAction, ErrorAction, MonacoLanguageClient, Emitter, Event, TextDocument, Services, State, DisposableCollection, CancellationToken, RequestType, NotificationType, LogMessageNotification
+  CloseAction, ErrorAction, MonacoLanguageClient, State, DisposableCollection
 } from 'monaco-languageclient'
 import delay from 'delay'
+import { CancellationToken, Emitter, NotificationType, RequestType, Event, LogMessageNotification } from 'vscode-languageserver-protocol'
+import * as vscode from 'vscode'
 import { updateServices } from './services'
 import createLanguageClient from './createLanguageClient'
 import { WillShutdownParams } from './customRequests'
@@ -12,7 +14,7 @@ import { getLanguageClientOptions, LanguageClientId, LanguageClientOptions } fro
 import { Infrastructure } from './infrastructure'
 
 export interface LanguageClient {
-  sendNotification<P>(type: NotificationType<P>, params?: P): void
+  sendNotification<P>(type: NotificationType<P>, params?: P): Promise<void>
   sendRequest<P, R, E> (request: RequestType<P, R, E>, params: P, token?: CancellationToken): Promise<R>
 }
 
@@ -94,11 +96,11 @@ export class LanguageClientManager implements LanguageClient {
     return this.onErrorEmitter.event
   }
 
-  isModelManaged (document: TextDocument): boolean {
+  isModelManaged (document: vscode.TextDocument): boolean {
     if (this.clientOptions.documentSelector == null) {
       return false
     }
-    return Services.get().languages.match(this.clientOptions.documentSelector, document)
+    return vscode.languages.match(this.clientOptions.documentSelector, document) > 0
   }
 
   isDisposed (): boolean {

@@ -1,5 +1,9 @@
 import {
-  Configurations, ConfigurationChangeEvent, WorkspaceConfiguration, Event, Emitter, Disposable, DisposableCollection
+  ConfigurationChangeEvent, Event, EventEmitter, Disposable, WorkspaceConfiguration
+} from 'vscode'
+import * as vscode from 'vscode'
+import {
+  DisposableCollection
 } from 'monaco-languageclient'
 import * as monaco from 'monaco-editor'
 
@@ -14,7 +18,7 @@ function lookUp (tree: any, key: string) {
   return node
 }
 
-class MemoryWorkspaceConfiguration implements WorkspaceConfiguration {
+export class MemoryWorkspaceConfiguration implements WorkspaceConfiguration {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   constructor (config: any) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -24,28 +28,37 @@ class MemoryWorkspaceConfiguration implements WorkspaceConfiguration {
     }
   }
 
-  get<T> (section: string, defaultValue?: T) {
+  inspect<T> (): { key: string, defaultValue?: T | undefined, globalValue?: T | undefined, workspaceValue?: T | undefined, workspaceFolderValue?: T | undefined, defaultLanguageValue?: T | undefined, globalLanguageValue?: T | undefined, workspaceLanguageValue?: T | undefined, workspaceFolderLanguageValue?: T | undefined, languageIds?: string[] | undefined } | undefined {
+    throw new Error('Method not implemented.')
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  update (): Promise<void> {
+    throw new Error('Method not implemented.')
+  }
+
+  get<T> (section: string, defaultValue?: T): T {
     return lookUp(this, section) ?? defaultValue
   }
 
-  has (section: string) {
+  has (section: string): boolean {
     return section in this
-  }
-
-  toJSON () {
-    return this
   }
 }
 
 const simpleConfigurationService = monaco.extra.StandaloneServices.get(monaco.extra.IConfigurationService) as monaco.extra.StandaloneConfigurationService
-class Configuration implements Configurations, Disposable {
-  protected readonly onDidChangeConfigurationEmitter = new Emitter<ConfigurationChangeEvent>()
+class Configuration implements Disposable {
+  protected readonly onDidChangeConfigurationEmitter = new EventEmitter<vscode.ConfigurationChangeEvent>()
   private disposableCollection = new DisposableCollection()
 
   constructor () {
     this.disposableCollection.push(this.onDidChangeConfigurationEmitter)
     this.disposableCollection.push(simpleConfigurationService.onDidChangeConfiguration((event) => {
-      this.onDidChangeConfigurationEmitter.fire(event)
+      this.onDidChangeConfigurationEmitter.fire({
+        affectsConfiguration (section) {
+          return event.affectsConfiguration(section)
+        }
+      })
     }))
   }
 

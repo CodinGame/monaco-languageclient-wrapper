@@ -1,10 +1,10 @@
 import { monaco, registerTextModelContentProvider } from '@codingame/monaco-editor-wrapper'
 import {
-  Disposable,
-  ServerCapabilities, DocumentSelector, MonacoLanguageClient, Services,
-  TextDocumentSyncOptions, TextDocument, DidSaveTextDocumentNotification, Emitter, DisposableCollection
+  Disposable, MonacoLanguageClient, DisposableCollection
 } from 'monaco-languageclient'
 import { StaticFeature, FeatureState, ProtocolRequestType } from 'vscode-languageclient/lib/common/api'
+import { DidSaveTextDocumentNotification, DocumentSelector, Emitter, ServerCapabilities, TextDocumentSyncOptions } from 'vscode-languageserver-protocol'
+import * as vscode from 'vscode'
 import { updateFile, willShutdownNotificationType, WillShutdownParams } from './customRequests'
 import { Infrastructure } from './infrastructure'
 import { LanguageClient, LanguageClientManager } from './languageClient'
@@ -28,22 +28,22 @@ export class InitializeTextDocumentFeature implements StaticFeature {
     }
 
     const languageClient = this.languageClient
-    async function saveFile (textDocument: TextDocument) {
-      if (Services.get().languages.match(documentSelector!, textDocument)) {
-        await updateFile(textDocument.uri, textDocument.getText(), languageClient)
+    async function saveFile (textDocument: vscode.TextDocument) {
+      if (documentSelector != null && vscode.languages.match(documentSelector, textDocument) > 0) {
+        await updateFile(textDocument.uri.toString(), textDocument.getText(), languageClient)
 
         // Always send notification even if the server doesn't support it (because csharp register the didSave feature too late)
-        languageClient.sendNotification(DidSaveTextDocumentNotification.type, {
+        await languageClient.sendNotification(DidSaveTextDocumentNotification.type, {
           textDocument: {
-            uri: textDocument.uri
+            uri: textDocument.uri.toString()
           },
           text: textDocument.getText()
         })
       }
     }
 
-    this.didOpenTextDocumentDisposable = Services.get().workspace.onDidOpenTextDocument(saveFile)
-    Services.get().workspace.textDocuments.forEach(saveFile)
+    this.didOpenTextDocumentDisposable = vscode.workspace.onDidOpenTextDocument(saveFile)
+    vscode.workspace.textDocuments.forEach(saveFile)
   }
 
   getState (): FeatureState {
@@ -66,18 +66,18 @@ class CobolResolveSubroutineFeature implements StaticFeature {
   fillClientCapabilities (): void {}
 
   initialize (capabilities: ServerCapabilities, documentSelector: DocumentSelector): void {
-    this.onRequestDisposable = this.languageClient.onRequest(ResolveCobolSubroutineRequestType, (routineName: string) => {
+    this.onRequestDisposable = this.languageClient.onRequest(ResolveCobolSubroutineRequestType, (routineName: string): string => {
       const constantRoutinePaths: Partial<Record<string, string>> = {
-        'assert-equals': `${Services.get().workspace.rootUri ?? 'file:/tmp/project'}/deps/assert-equals.cbl`
+        'assert-equals': `file:${vscode.workspace.rootPath ?? '/tmp/project'}/deps/assert-equals.cbl`
       }
       const contantRoutinePath = constantRoutinePaths[routineName.toLowerCase()]
       if (contantRoutinePath != null) {
         return contantRoutinePath
       }
-      return Services.get().workspace.textDocuments
-        .filter(textDocument => Services.get().languages.match(documentSelector, textDocument))
+      return vscode.workspace.textDocuments
+        .filter(textDocument => vscode.languages.match(documentSelector, textDocument))
         .filter(document => document.getText().match(new RegExp(`PROGRAM-ID\\.\\W+${routineName}\\.`, 'gi')))
-        .sort((a, b) => a.uri.localeCompare(b.uri))[0]?.uri
+        .sort((a, b) => a.uri.toString().localeCompare(b.uri.toString()))[0]?.uri.toString()
     })
   }
 
@@ -131,9 +131,9 @@ export class FileSystemFeature implements StaticFeature {
       }
     }))
     disposableCollection.push(getServices().workspace.registerSaveDocumentHandler({
-      async saveTextContent (textDocument, reason) {
-        if (languageClientManager.isModelManaged(textDocument)) {
-          await infrastructure.saveFileContent?.(textDocument, reason, languageClientManager)
+      async saveTextContent (document, reason) {
+        if (languageClientManager.isModelManaged(document)) {
+          await infrastructure.saveFileContent?.(document, reason, languageClientManager)
         }
       }
     }))

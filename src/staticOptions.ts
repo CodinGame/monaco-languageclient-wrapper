@@ -1,4 +1,5 @@
-import { Services } from 'monaco-languageclient'
+import * as vscode from 'vscode'
+import * as monaco from 'monaco-editor'
 import type { LanguageClientOptions } from './languageClientOptions'
 
 type LanguageClientOptionsById<T extends string> = Record<T, LanguageClientOptions>
@@ -191,7 +192,7 @@ const staticOptions = asLanguageClientOptionsById({
     initializationOptions: () => ({
       configuration: {
         uris: [
-          Services.get().workspace.rootUri
+          monaco.Uri.file(vscode.workspace.rootPath!).toString()
         ],
         phpVersion: 7.3,
         fileExtensions: [

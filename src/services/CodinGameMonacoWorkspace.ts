@@ -1,32 +1,36 @@
 import {
-  MonacoWorkspace, TextDocument, TextDocumentSaveReason,
-  ProtocolToMonacoConverter, MonacoToProtocolConverter, Emitter, Event, TextDocumentWillSaveEvent, Disposable, DisposableCollection
+  Disposable, DisposableCollection
 } from 'monaco-languageclient'
 import * as monaco from 'monaco-editor'
-import type * as vscode from 'vscode'
+import * as vscode from 'vscode'
+import { Workspace } from 'vscode/services'
+import { Event, Emitter, TextDocumentSaveReason } from 'vscode-languageserver-protocol'
 import Configuration from './Configuration'
 
 export interface ITextModelContentSaveHandler {
-  saveTextContent(document: TextDocument, reason: TextDocumentSaveReason): Promise<void>
+  saveTextContent(document: vscode.TextDocument, reason: TextDocumentSaveReason): Promise<void>
 }
 
-export default class CodinGameMonacoWorkspace extends MonacoWorkspace {
-  protected readonly onWillSaveTextDocumentEmitter = new Emitter<TextDocumentWillSaveEvent>()
+export default class CodinGameMonacoWorkspace implements Workspace {
+  protected readonly onWillSaveTextDocumentEmitter = new Emitter<vscode.TextDocumentWillSaveEvent>()
   private readonly savehandlers: ITextModelContentSaveHandler[] = []
-  protected readonly onDidSaveTextDocumentEmitter = new Emitter<TextDocument>()
+  protected readonly onDidSaveTextDocumentEmitter = new Emitter<vscode.TextDocument>()
 
-  configurations = new Configuration()
+  private configuration = new Configuration()
+
+  getConfiguration = (section?: string | undefined): vscode.WorkspaceConfiguration => {
+    return this.configuration.getConfiguration(section)
+  }
+
+  onDidChangeConfiguration = this.configuration.onDidChangeConfiguration
 
   private autoSaveModelDisposable: Disposable | undefined
 
   public workspaceFolders: typeof vscode.workspace.workspaceFolders
 
   constructor (
-    p2m: ProtocolToMonacoConverter,
-    m2p: MonacoToProtocolConverter,
-    rootUri: string | null = null
+    public readonly rootUri: string | null = null
   ) {
-    super(monaco, p2m, m2p, rootUri)
   }
 
   public initialize (
@@ -34,7 +38,6 @@ export default class CodinGameMonacoWorkspace extends MonacoWorkspace {
     workspaceFolders: typeof vscode.workspace.workspaceFolders,
     autoSaveModels: boolean
   ): void {
-    this._rootUri = rootUri
     if (workspaceFolders != null) {
       this.workspaceFolders = workspaceFolders
     } else if (rootUri != null) {
@@ -53,11 +56,11 @@ export default class CodinGameMonacoWorkspace extends MonacoWorkspace {
     }
   }
 
-  get onWillSaveTextDocument (): Event<TextDocumentWillSaveEvent> {
+  get onWillSaveTextDocument (): Event<vscode.TextDocumentWillSaveEvent> {
     return this.onWillSaveTextDocumentEmitter.event
   }
 
-  get onDidSaveTextDocument (): Event<TextDocument> {
+  get onDidSaveTextDocument (): Event<vscode.TextDocument> {
     return this.onDidSaveTextDocumentEmitter.event
   }
 
@@ -71,10 +74,13 @@ export default class CodinGameMonacoWorkspace extends MonacoWorkspace {
     })
   }
 
-  async saveDocument (document: TextDocument, reason: TextDocumentSaveReason): Promise<void> {
+  async saveDocument (document: vscode.TextDocument, reason: TextDocumentSaveReason): Promise<void> {
     this.onWillSaveTextDocumentEmitter.fire({
-      textDocument: document,
-      reason
+      document,
+      reason,
+      waitUntil () {
+        // Ignored
+      }
     })
 
     try {
@@ -93,16 +99,17 @@ export default class CodinGameMonacoWorkspace extends MonacoWorkspace {
   private autoSaveModels (): Disposable {
     const disposableCollection = new DisposableCollection()
     const timeoutMap = new Map<string, number>()
-    disposableCollection.push(this.onDidChangeTextDocument(e => {
-      const timeout = timeoutMap.get(e.textDocument.uri)
+    disposableCollection.push(vscode.workspace.onDidChangeTextDocument(e => {
+      const uri = e.document.uri.toString()
+      const timeout = timeoutMap.get(uri)
       if (timeout != null) {
         window.clearTimeout(timeout)
-        timeoutMap.delete(e.textDocument.uri)
+        timeoutMap.delete(uri)
       }
-      timeoutMap.set(e.textDocument.uri, window.setTimeout(() => {
-        timeoutMap.delete(e.textDocument.uri)
-        this.saveDocument(e.textDocument, TextDocumentSaveReason.AfterDelay).catch((error: Error) => {
-          monaco.errorHandler.onUnexpectedError(new Error(`[LSP] Unable to save the document ${e.textDocument.uri.toString()}`, {
+      timeoutMap.set(uri, window.setTimeout(() => {
+        timeoutMap.delete(uri)
+        this.saveDocument(e.document, TextDocumentSaveReason.AfterDelay).catch((error: Error) => {
+          monaco.errorHandler.onUnexpectedError(new Error(`[LSP] Unable to save the document ${uri}`, {
             cause: error
           }))
         })
@@ -116,10 +123,9 @@ export default class CodinGameMonacoWorkspace extends MonacoWorkspace {
     return disposableCollection
   }
 
-  override dispose (): void {
-    super.dispose()
+  dispose (): void {
     this.autoSaveModelDisposable?.dispose()
-    this.configurations.dispose()
+    this.configuration.dispose()
     this.onWillSaveTextDocumentEmitter.dispose()
     this.onDidSaveTextDocumentEmitter.dispose()
   }
