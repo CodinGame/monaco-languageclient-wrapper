@@ -1,23 +1,35 @@
 import * as monaco from 'monaco-editor'
-import { MessageType, OutputChannel, Window, MessageActionItem, Emitter, Event, CancellationToken, CancellationTokenSource } from 'monaco-languageclient'
+import { Window, Severity } from 'vscode/services'
 import swal from 'sweetalert'
 import type * as vscode from 'vscode'
 
-class WatchableOutputChannel implements OutputChannel {
+class WatchableOutputChannel implements vscode.OutputChannel {
   logs: string = ''
   readonly name: string
-  protected readonly onWillCloseEmitter = new Emitter<void>()
-  protected readonly onDidChangeLogEmitter = new Emitter<void>()
+  protected readonly onWillCloseEmitter = new monaco.Emitter<void>()
+  protected readonly onDidChangeLogEmitter = new monaco.Emitter<void>()
 
   constructor (name: string) {
     this.name = name
   }
 
-  get onWillClose (): Event<void> {
+  replace (): void {
+    throw new Error('Method not implemented.')
+  }
+
+  clear (): void {
+    throw new Error('Method not implemented.')
+  }
+
+  hide (): void {
+    throw new Error('Method not implemented.')
+  }
+
+  get onWillClose (): monaco.IEvent<void> {
     return this.onWillCloseEmitter.event
   }
 
-  get onDidChangeLog (): Event<void> {
+  get onDidChangeLog (): monaco.IEvent<void> {
     return this.onDidChangeLogEmitter.event
   }
 
@@ -41,24 +53,20 @@ class WatchableOutputChannel implements OutputChannel {
 }
 
 export default class WatchableConsoleWindow implements Window {
-  protected readonly onDidChangeChannelsEmitter = new Emitter<void>()
+  protected readonly onDidChangeChannelsEmitter = new monaco.Emitter<void>()
   protected readonly channels = new Map<string, WatchableOutputChannel>()
 
-  async showMessage<T extends MessageActionItem> (type: MessageType, message: string, ...actions: T[]): Promise<T | undefined> {
-    const displayedMessage = message + '\n' + actions.map(action => `- ${action.title}`).join('\n')
+  async showMessage<T extends vscode.MessageOptions | string | vscode.MessageItem> (type: Severity, message: string, ...actions: T[]): Promise<T | undefined> {
+    const displayedMessage = message + '\n' + actions.map(action => `- ${(action as vscode.MessageItem).title}`).join('\n')
 
-    if (type === MessageType.Error) {
+    if (type === Severity.Error) {
       console.error('[LSP]', displayedMessage)
     }
-    if (type === MessageType.Warning) {
+    if (type === Severity.Warning) {
       console.warn('[LSP]', displayedMessage)
     }
-    if (type === MessageType.Info) {
+    if (type === Severity.Info) {
       console.info('[LSP]', displayedMessage)
-    }
-    if (type === MessageType.Log) {
-      // eslint-disable-next-line no-console
-      console.log('[LSP]', displayedMessage)
     }
 
     if (actions.length > 1) {
@@ -67,7 +75,7 @@ export default class WatchableConsoleWindow implements Window {
         buttons: actions.reduce((acc, action, index) => ({
           ...acc,
           [`option-${index}`]: {
-            text: action.title,
+            text: (action as vscode.MessageItem).title,
             value: action
           }
         }), {})
@@ -77,7 +85,7 @@ export default class WatchableConsoleWindow implements Window {
     return actions[0]
   }
 
-  createOutputChannel (name: string): OutputChannel {
+  createOutputChannel (name: string): vscode.OutputChannel {
     let channel = this.channels.get(name)
     if (channel == null) {
       channel = new WatchableOutputChannel(name)
@@ -92,18 +100,18 @@ export default class WatchableConsoleWindow implements Window {
     return channel
   }
 
-  get onDidChangeChannels (): Event<void> {
+  get onDidChangeChannels (): monaco.IEvent<void> {
     return this.onDidChangeChannelsEmitter.event
   }
 
-  withProgress: Window['withProgress'] = async <R> (options: vscode.ProgressOptions, task: (progress: vscode.Progress<{ message?: string, increment?: number }>, token: CancellationToken) => PromiseLike<R>): Promise<R> => {
+  withProgress: Window['withProgress'] = async <R> (options: vscode.ProgressOptions, task: (progress: vscode.Progress<{ message?: string, increment?: number }>, token: monaco.CancellationToken) => PromiseLike<R>): Promise<R> => {
     console.info('[LSP]', 'Starting task with progress:', options.location, options.title)
     try {
       return await task({
         report: (params) => {
           console.info('[LSP]', `Task progress: ${params.increment}%:`, params.message)
         }
-      }, new CancellationTokenSource().token)
+      }, new monaco.CancellationTokenSource().token)
     } finally {
       console.info('[LSP]', 'Task completed:', options.title)
     }

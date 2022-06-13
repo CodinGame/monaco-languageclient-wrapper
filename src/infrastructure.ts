@@ -1,7 +1,9 @@
 import { IWebSocket, WebSocketMessageReader, WebSocketMessageWriter, toSocket } from '@codingame/monaco-jsonrpc'
-import { MessageTransports, TextDocument, TextDocumentSaveReason } from 'monaco-languageclient'
+import { MessageTransports } from 'monaco-languageclient'
 import * as monaco from 'monaco-editor'
 import type * as vscode from 'vscode'
+import { TextDocument } from 'vscode-languageserver-textdocument'
+import { TextDocumentSaveReason } from 'vscode-languageserver-protocol'
 import { getFile, updateFile } from './customRequests'
 import { LanguageClientManager } from './languageClient'
 import { LanguageClientId, LanguageClientOptions } from './languageClientOptions'
@@ -33,7 +35,7 @@ export interface Infrastructure {
    * @param reason The reason of the save
    * @param languageClient The languageclient we're trying to save the file to
    */
-  saveFileContent? (document: TextDocument, reason: TextDocumentSaveReason, languageClient: LanguageClientManager): Promise<void>
+  saveFileContent? (document: vscode.TextDocument, reason: vscode.TextDocumentSaveReason, languageClient: LanguageClientManager): Promise<void>
   /**
    * Get a text file content as a model
    * @param resource the Uri of the file
@@ -96,7 +98,7 @@ export abstract class CodinGameInfrastructure implements Infrastructure {
     name: 'main'
   }]
 
-  public async saveFileContent (document: TextDocument, reason: TextDocumentSaveReason, languageClient: LanguageClientManager): Promise<void> {
+  public async saveFileContent (document: vscode.TextDocument, reason: TextDocumentSaveReason, languageClient: LanguageClientManager): Promise<void> {
     if (languageClient.isConnected()) {
       await updateFile(document.uri.toString(), document.getText(), languageClient)
     }

@@ -25,6 +25,7 @@
     "@codingame/monaco-editor-wrapper": "^1.14.5",
     "@codingame/monaco-jsonrpc": "^0.4.0",
     "sweetalert": "^2.1.2",
+    "vscode": "npm:@codingame/monaco-vscode-api@^1.68.2",
     "vscode-languageserver-protocol": "^3.17.1"
   },
   "devDependencies": {
@@ -46,7 +47,7 @@
     "@types/jest": "^28.1.1",
     "@types/once": "^1.4.0",
     "@types/rollup-plugin-node-builtins": "^2.1.2",
-    "@types/vscode": "^1.67.0",
+    "@types/vscode": "^1.68.0",
     "@typescript-eslint/eslint-plugin": "5.27.1",
     "@typescript-eslint/parser": "5.27.1",
     "canvas": "^2.9.1",
@@ -62,7 +63,7 @@
     "eslint-plugin-unused-imports": "2.0.0",
     "jest": "^28.1.1",
     "jest-environment-jsdom": "^28.1.1",
-    "monaco-languageclient": "^1.1.0",
+    "monaco-languageclient": "^2.0.0-dev.0",
     "proxy-polyfill": "^0.3.2",
     "rollup": "2.75.6",
     "rollup-plugin-dts": "^4.2.2",
@@ -108,7 +109,6 @@
       ]
     },
     "moduleNameMapper": {
-      "^vscode$": "monaco-languageclient/vscode-compatibility",
       "^monaco-editor$": "monaco-editor/esm/vs/editor/editor.api",
       "^monaco-editor-core$": "monaco-editor/esm/vs/editor/editor.api"
     }

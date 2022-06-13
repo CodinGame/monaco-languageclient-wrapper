@@ -1,6 +1,6 @@
 import {
   Env
-} from 'monaco-languageclient'
+} from 'vscode/services'
 
 /**
  * This function comes from vscode: https://github.com/microsoft/vscode/blob/85bf8af5b9661b0c7f9587d33b3cb61499f6e4b8/src/vs/base/browser/dom.ts#L1282

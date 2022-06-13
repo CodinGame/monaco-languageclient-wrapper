@@ -1,8 +1,9 @@
 import { MessageReader, MessageWriter, Message, Event, DataCallback, Disposable, PartialMessageInfo } from 'vscode-jsonrpc'
 import { Uri } from 'monaco-editor'
 import {
-  MonacoLanguageClient, Middleware, ErrorHandler, IConnectionProvider, InitializeParams, RegistrationRequest, RegistrationParams, UnregistrationRequest, UnregistrationParams, LanguageClientOptions, MessageTransports, InitializeRequest
+  MonacoLanguageClient, Middleware, ErrorHandler, IConnectionProvider, LanguageClientOptions, MessageTransports
 } from 'monaco-languageclient'
+import { InitializeParams, InitializeRequest, RegistrationParams, RegistrationRequest, UnregistrationParams, UnregistrationRequest } from 'vscode-languageserver-protocol'
 import { registerExtensionFeatures } from './extensions'
 import { LanguageClientId } from './languageClientOptions'
 import { Infrastructure } from './infrastructure'

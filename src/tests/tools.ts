@@ -8,8 +8,9 @@ import {
 } from 'vscode-languageserver/lib/common/api'
 import { monaco } from '@codingame/monaco-editor-wrapper'
 import { MessageTransports } from 'monaco-languageclient'
+import * as vscode from 'vscode'
 import { getFile, updateFile } from '../customRequests'
-import { Infrastructure, LanguageClientId, LanguageClientManager, LanguageClientOptions, TextDocument, TextDocumentSaveReason } from '../'
+import { Infrastructure, LanguageClientId, LanguageClientManager, LanguageClientOptions } from '../'
 
 class PipedMessageReader extends AbstractMessageReader {
   private callback: DataCallback | undefined
@@ -141,7 +142,7 @@ export class TestInfrastructure implements Infrastructure {
   }
 
   // use same method as CodinGameInfrastructure to be able to simply catch it
-  public async saveFileContent (document: TextDocument, reason: TextDocumentSaveReason, languageClient: LanguageClientManager): Promise<void> {
+  public async saveFileContent (document: vscode.TextDocument, reason: vscode.TextDocumentSaveReason, languageClient: LanguageClientManager): Promise<void> {
     if (languageClient.isConnected()) {
       await updateFile(document.uri.toString(), document.getText(), languageClient)
     }

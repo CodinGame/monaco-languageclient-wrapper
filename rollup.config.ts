@@ -75,9 +75,6 @@ export default rollup.defineConfig({
       }, {
         find: /^(monaco-editor|monaco-editor-core)$/,
         replacement: 'monaco-editor/esm/vs/editor/editor.api'
-      }, {
-        find: 'vscode',
-        replacement: require.resolve('monaco-languageclient/vscode-compatibility')
       }]
     }),
     {
