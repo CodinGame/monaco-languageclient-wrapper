@@ -50,3 +50,10 @@ Object.defineProperty(window, 'ResizeObserver', {
     observe() {}
   }
 })
+
+Object.defineProperty(window, 'TextEncoder', {
+  value: class TextObserver {
+    constructor(stringUrl) {}
+    encode(src) { return src }
+  }
+})
