@@ -15,13 +15,13 @@
     "url": "https://github.com/CodinGame/monaco-languageclient-wrapper"
   },
   "moduleResolution": "node",
-  "main": "dist/index.js",
-  "module": "dist/index.js",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
   "files": [
     "dist/",
     "stats.html"
   ],
-  "types": "dist/index.d.ts",
+  "types": "./dist/index.d.ts",
   "dependencies": {
     "@codingame/monaco-editor-wrapper": "^1.14.5",
     "@codingame/monaco-jsonrpc": "^0.4.0",
