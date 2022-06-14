@@ -50,7 +50,15 @@ export default rollup.defineConfig({
       browser: true
     }),
     commonjs({
-      esmExternals: (id) => id.match(/^vscode-languageserver-protocol(\/.*)?/) != null // required for monaco-emacs with use import monaco-editor esm code from commonjs code
+      esmExternals: (id) => {
+        if (id === 'vscode/services' || id === 'vscode') {
+          return true
+        }
+        if (id.match(/^vscode-languageserver-protocol(\/.*)?/) != null) {
+          return true
+        }
+        return false
+      }
     }),
     babel({
       extensions,
