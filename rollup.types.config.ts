@@ -19,7 +19,7 @@ export default rollup.defineConfig({
     if (/^proxy-polyfill/.test(source)) {
       return true
     }
-    if (externals.some(external => source.startsWith(external))) {
+    if (externals.some(external => source === external || source.startsWith(`${external}/`))) {
       return true
     }
     return false
