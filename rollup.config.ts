@@ -51,7 +51,7 @@ export default rollup.defineConfig({
     }),
     commonjs({
       esmExternals: (id) => {
-        if (id === 'vscode/services' || id === 'vscode') {
+        if (id === 'vscode') {
           return true
         }
         if (id.match(/^vscode-languageserver-protocol(\/.*)?/) != null) {
