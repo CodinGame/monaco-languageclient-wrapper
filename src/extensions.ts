@@ -9,7 +9,6 @@ import { updateFile, willShutdownNotificationType, WillShutdownParams } from './
 import { Infrastructure } from './infrastructure'
 import { LanguageClient, LanguageClientManager } from './languageClient'
 import { getServices } from './services'
-import { CobolResolveSubroutineFeature } from './extensions/cobol'
 
 interface ResolvedTextDocumentSyncCapabilities {
   resolvedTextDocumentSync?: TextDocumentSyncOptions
@@ -55,12 +54,6 @@ export class InitializeTextDocumentFeature implements StaticFeature {
 
   dispose (): void {
     this.didOpenTextDocumentDisposable?.dispose()
-  }
-}
-
-export function registerExtensionFeatures (client: MonacoLanguageClient, language: string): void {
-  if (language === 'cobol') {
-    client.registerFeature(new CobolResolveSubroutineFeature(client))
   }
 }
 
