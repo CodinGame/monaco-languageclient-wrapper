@@ -2,6 +2,7 @@ import * as vscode from 'vscode'
 import * as monaco from 'monaco-editor'
 import type { LanguageClientOptions } from './languageClientOptions'
 import { CobolResolveSubroutineFeature } from './extensions/cobol'
+import { JavaExtensionFeature } from './extensions/java'
 
 type LanguageClientOptionsById<T extends string> = Record<T, LanguageClientOptions>
 const asLanguageClientOptionsById = <K extends string> (options: LanguageClientOptionsById<K>): LanguageClientOptionsById<K> => options
@@ -117,7 +118,12 @@ const staticOptions = asLanguageClientOptionsById({
       configurationSection: ['java', 'editor.insertSpaces', 'editor.tabSize']
     },
     mutualizable: true,
-    vscodeExtensionIds: ['java']
+    vscodeExtensionIds: ['java'],
+    createAdditionalFeatures (client) {
+      return [
+        new JavaExtensionFeature(client)
+      ]
+    }
   },
   javascript: {
     documentSelector: [
