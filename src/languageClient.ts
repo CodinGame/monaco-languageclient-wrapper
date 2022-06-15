@@ -1,6 +1,9 @@
 import * as monaco from 'monaco-editor'
 import {
-  CloseAction, ErrorAction, MonacoLanguageClient, State, DisposableCollection
+  CloseAction, ErrorAction, State
+} from 'vscode-languageclient'
+import {
+  MonacoLanguageClient, DisposableCollection
 } from 'monaco-languageclient'
 import delay from 'delay'
 import { CancellationToken, Emitter, NotificationType, RequestType, Event, LogMessageNotification } from 'vscode-languageserver-protocol'
