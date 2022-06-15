@@ -6,13 +6,14 @@ import { WillShutdownParams } from './customRequests'
 import { loadExtensionConfigurations } from './extensionConfiguration'
 import './hacks'
 import { createLanguageClientManager, LanguageClientManager, LanguageClientManagerOptions, StatusChangeEvent } from './languageClient'
-import { LanguageClientId, LanguageClientOptions, registerLanguageClient } from './languageClientOptions'
+import { getLanguageClientOptions, LanguageClientId, LanguageClientOptions, registerLanguageClient } from './languageClientOptions'
 import { StaticLanguageClientId } from './staticOptions'
 
 export {
   loadExtensionConfigurations,
   createLanguageClientManager,
   registerLanguageClient,
+  getLanguageClientOptions,
   LanguageClientManager,
   CodinGameInfrastructure
 }
