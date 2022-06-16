@@ -1,11 +1,10 @@
 import { MessageReader, MessageWriter, Message, Event, DataCallback, Disposable, PartialMessageInfo } from 'vscode-jsonrpc'
 import { Uri } from 'monaco-editor'
 import {
-  MonacoLanguageClient, Middleware, ErrorHandler, IConnectionProvider, LanguageClientOptions, MessageTransports
+  MonacoLanguageClient, Middleware, ErrorHandler, IConnectionProvider, MessageTransports
 } from 'monaco-languageclient'
 import { InitializeParams, InitializeRequest, RegistrationParams, RegistrationRequest, UnregistrationParams, UnregistrationRequest } from 'vscode-languageserver-protocol'
-import { registerExtensionFeatures } from './extensions'
-import { LanguageClientId } from './languageClientOptions'
+import { LanguageClientId, LanguageClientOptions } from './languageClientOptions'
 import { Infrastructure } from './infrastructure'
 
 interface MessageMiddleware {
@@ -141,7 +140,8 @@ function createLanguageClient (
   {
     documentSelector,
     synchronize,
-    initializationOptions
+    initializationOptions,
+    createAdditionalFeatures
   }: LanguageClientOptions,
   errorHandler: ErrorHandler,
   middleware?: Middleware
@@ -164,7 +164,9 @@ function createLanguageClient (
   client.registerProgressFeatures()
   client.registerTextDocumentSaveFeatures()
 
-  registerExtensionFeatures(client, id)
+  if (createAdditionalFeatures != null) {
+    client.registerFeatures(createAdditionalFeatures(client))
+  }
 
   return client
 }

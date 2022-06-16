@@ -7,7 +7,7 @@ import {
 } from 'vscode-languageserver/lib/common/api'
 import pDefer, { TestInfrastructure, waitClientNotification, waitClientRequest } from './tools'
 import { GetTextDocumentParams, getTextDocumentRequestType, GetTextDocumentResult, SaveTextDocumentParams, saveTextDocumentRequestType } from '../customRequests'
-import { createLanguageClientManager, LanguageClientId, LanguageClientManager } from '..'
+import { createLanguageClientManager, LanguageClientId, LanguageClientManager, getLanguageClientOptions } from '..'
 
 async function initializeLanguageClientAndGetConnection (
   languageClientId: LanguageClientId,
@@ -17,7 +17,10 @@ async function initializeLanguageClientAndGetConnection (
 ): Promise<[LanguageClientManager, _Connection<_, _, _, _, _, _, _>]> {
   const infrastructure = new TestInfrastructure(automaticTextDocumentUpdate, useMutualizedProxy)
 
-  const languageClient = createLanguageClientManager(languageClientId, infrastructure)
+  const languageClient = createLanguageClientManager(languageClientId, infrastructure, {
+    ...getLanguageClientOptions(languageClientId),
+    createAdditionalFeatures: undefined
+  })
   const startPromise = languageClient.start()
 
   const connection = await infrastructure.getConnection()

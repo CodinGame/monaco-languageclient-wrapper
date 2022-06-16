@@ -1,4 +1,5 @@
-import { Disposable, LanguageClientOptions as MonacoLanguageClientOptions } from 'monaco-languageclient'
+import { Disposable, LanguageClientOptions as MonacoLanguageClientOptions, MonacoLanguageClient } from 'monaco-languageclient'
+import { StaticFeature, DynamicFeature } from 'vscode-languageclient/lib/common/api'
 import staticOptions, { StaticLanguageClientId } from './staticOptions'
 
 export type LanguageClientOptions = Pick<MonacoLanguageClientOptions, 'documentSelector' | 'synchronize' | 'initializationOptions' | 'middleware'> & {
@@ -17,6 +18,8 @@ export type LanguageClientOptions = Pick<MonacoLanguageClientOptions, 'documentS
    * The language server will only be considered ready after this log message was received
    */
   readinessMessageMatcher?: RegExp
+
+  createAdditionalFeatures?(client: MonacoLanguageClient): (StaticFeature | DynamicFeature<unknown>)[]
 }
 
 const dynamicOptions: Partial<Record<string, LanguageClientOptions>> = {}
