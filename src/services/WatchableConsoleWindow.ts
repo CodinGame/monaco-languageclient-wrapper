@@ -52,12 +52,35 @@ class WatchableOutputChannel implements vscode.OutputChannel {
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function isMessageItem (item: any): item is vscode.MessageItem {
+  return item != null && item.title
+}
+
+function getMessage (item: string | vscode.MessageItem) {
+  return isMessageItem(item) ? item.title : item
+}
+
 export default class WatchableConsoleWindow implements Window {
   protected readonly onDidChangeChannelsEmitter = new monaco.Emitter<void>()
   protected readonly channels = new Map<string, WatchableOutputChannel>()
 
   async showMessage<T extends vscode.MessageOptions | string | vscode.MessageItem> (type: Severity, message: string, ...actions: T[]): Promise<T | undefined> {
-    const displayedMessage = message + '\n' + actions.map(action => `- ${(action as vscode.MessageItem).title}`).join('\n')
+    const optionsOrFirstItem = actions[0]
+    let items: (string | vscode.MessageItem)[]
+
+    let options: vscode.MessageOptions | undefined
+    if (typeof optionsOrFirstItem === 'string' || isMessageItem(optionsOrFirstItem)) {
+      items = actions as (string | vscode.MessageItem)[]
+    } else {
+      options = optionsOrFirstItem
+      items = actions.slice(1) as (string | vscode.MessageItem)[]
+    }
+
+    let displayedMessage = message
+    if (items.length > 0) {
+      displayedMessage = `${displayedMessage}\nActions:\n${items.map(action => `- ${getMessage(action)}`).join('\n')}`
+    }
 
     if (type === Severity.Error) {
       console.error('[LSP]', displayedMessage)
@@ -69,20 +92,25 @@ export default class WatchableConsoleWindow implements Window {
       console.info('[LSP]', displayedMessage)
     }
 
-    if (actions.length > 1) {
-      return swal({
-        text: message,
-        buttons: actions.reduce((acc, action, index) => ({
+    const defaultAction = items.find(item => isMessageItem(item) && (item.isCloseAffordance ?? false)) as T | undefined ?? actions[0]
+
+    if (items.length > 1) {
+      return (await swal({
+        title: message,
+        text: options?.detail,
+        closeOnEsc: true,
+        closeOnClickOutside: true,
+        buttons: items.reduce((acc, action, index) => ({
           ...acc,
           [`option-${index}`]: {
-            text: (action as vscode.MessageItem).title,
+            text: getMessage(action),
             value: action
           }
         }), {})
-      })
+      })) ?? defaultAction
     }
 
-    return actions[0]
+    return defaultAction
   }
 
   createOutputChannel (name: string): vscode.OutputChannel {
