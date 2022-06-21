@@ -1,4 +1,4 @@
-import { IWebSocket, WebSocketMessageReader, WebSocketMessageWriter, toSocket } from '@codingame/monaco-jsonrpc'
+import { IWebSocket, WebSocketMessageReader, WebSocketMessageWriter, toSocket } from 'vscode-ws-jsonrpc'
 import { MessageTransports } from 'monaco-languageclient'
 import * as monaco from 'monaco-editor'
 import type * as vscode from 'vscode'
