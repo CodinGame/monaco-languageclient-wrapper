@@ -14,7 +14,7 @@ const plugin: PluginImpl<{}> = () => {
         lines.splice(index, 1)
         for (; lines[index] !== '}'; index++) {
           // unindent
-          lines[index] = lines[index].slice(4)
+          lines[index] = lines[index]!.slice(4)
         }
         lines.splice(index, 1)
 
