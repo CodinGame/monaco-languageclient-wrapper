@@ -2,7 +2,6 @@ import { IWebSocket, WebSocketMessageReader, WebSocketMessageWriter, toSocket } 
 import { MessageTransports } from 'monaco-languageclient'
 import * as monaco from 'monaco-editor'
 import type * as vscode from 'vscode'
-import { TextDocument } from 'vscode-languageserver-textdocument'
 import { TextDocumentSaveReason } from 'vscode-languageserver-protocol'
 import { getFile, updateFile } from './customRequests'
 import { LanguageClientManager } from './languageClient'
