@@ -5,7 +5,7 @@ import { StaticFeature, FeatureState, ProtocolRequestType } from 'vscode-languag
 import { DocumentSelector, ServerCapabilities } from 'vscode-languageserver-protocol'
 import * as vscode from 'vscode'
 
-export const ResolveCobolSubroutineRequestType = new ProtocolRequestType<string, string, never, void, void>('cobol/resolveSubroutine')
+export const ResolveCobolSubroutineRequestType = new ProtocolRequestType<string, string | undefined, never, void, void>('cobol/resolveSubroutine')
 export class CobolResolveSubroutineFeature implements StaticFeature {
   private onRequestDisposable: Disposable | undefined
   constructor (private languageClient: MonacoLanguageClient) {
@@ -14,7 +14,7 @@ export class CobolResolveSubroutineFeature implements StaticFeature {
   fillClientCapabilities (): void {}
 
   initialize (capabilities: ServerCapabilities, documentSelector: DocumentSelector): void {
-    this.onRequestDisposable = this.languageClient.onRequest(ResolveCobolSubroutineRequestType, (routineName: string): string => {
+    this.onRequestDisposable = this.languageClient.onRequest(ResolveCobolSubroutineRequestType, (routineName: string): string | undefined => {
       const constantRoutinePaths: Partial<Record<string, string>> = {
         'assert-equals': `file:${vscode.workspace.rootPath ?? '/tmp/project'}/deps/assert-equals.cbl`
       }

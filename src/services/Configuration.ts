@@ -13,7 +13,7 @@ function lookUp (tree: any, key: string) {
   const parts = key.split('.')
   let node = tree
   for (let i = 0; node != null && i < parts.length; i++) {
-    node = node[parts[i]]
+    node = node[parts[i]!]
   }
   return node
 }
