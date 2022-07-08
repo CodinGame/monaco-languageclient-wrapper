@@ -13,6 +13,9 @@
     "paths": {
       "app/*": [
         "*"
+      ],
+      "extensions/*": [
+        "../extensions/*"
       ]
     },
     "sourceMap": true

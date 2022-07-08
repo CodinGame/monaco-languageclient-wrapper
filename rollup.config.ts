@@ -5,7 +5,7 @@ import { nodeResolve } from '@rollup/plugin-node-resolve'
 import eslint from '@rollup/plugin-eslint'
 import { babel } from '@rollup/plugin-babel'
 import * as rollup from 'rollup'
-import builtins from 'rollup-plugin-node-builtins'
+import path from 'path'
 import pkg from './package.json'
 
 const externals = [
@@ -22,6 +22,9 @@ export default rollup.defineConfig({
   },
   external: function isExternal (source, importer, isResolved) {
     if (isResolved) {
+      return false
+    }
+    if (source.startsWith('extensions/')) {
       return false
     }
     if (externals.some(external => source === external || source.startsWith(`${external}/`))) {
@@ -49,6 +52,14 @@ export default rollup.defineConfig({
       extensions,
       browser: true
     }),
+    {
+      name: 'resolve-extensions',
+      resolveId (id) {
+        if (id.startsWith('extensions/')) {
+          return path.resolve(__dirname, `${id}.js`)
+        }
+      }
+    },
     commonjs({
       esmExternals: (id) => {
         if (id === 'vscode') {
