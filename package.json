@@ -8,7 +8,8 @@
     "test:watch": "jest --watch",
     "build": "npm run test && npm run compile && npm run generate-types",
     "compile": "rollup --config rollup.config.ts --configPlugin typescript",
-    "generate-types": "tsc --project tsconfig.types.json && rollup --config rollup.types.config.ts --configPlugin typescript && rm -rf ./dist/types"
+    "generate-types": "tsc --project tsconfig.types.json && rollup --config rollup.types.config.ts --configPlugin typescript && rm -rf ./dist/types",
+    "preprepare": "./scripts/install-extensions"
   },
   "repository": {
     "type": "git",
