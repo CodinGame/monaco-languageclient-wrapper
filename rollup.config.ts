@@ -42,6 +42,7 @@ export default rollup.defineConfig({
   },
   output: [{
     chunkFileNames: '[name].js',
+    hoistTransitiveImports: false,
     dir: 'dist',
     format: 'esm',
     paths: {
