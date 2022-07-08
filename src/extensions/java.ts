@@ -1,9 +1,7 @@
-import {
-  DisposableCollection, MonacoLanguageClient
-} from 'monaco-languageclient'
-import { StaticFeature, FeatureState } from 'vscode-languageclient/lib/common/api'
+import { MonacoLanguageClient } from 'monaco-languageclient'
 import { InlayHint, InlayHintParams, InlayHintRefreshRequest, InlayHintRequest, WorkspaceEdit } from 'vscode-languageserver-protocol'
 import * as vscode from 'vscode'
+import { ExtensionFeature } from './tools'
 
 async function asInlayHints (values: InlayHint[] | undefined | null, client: MonacoLanguageClient): Promise<vscode.InlayHint[] | undefined> {
   if (!Array.isArray(values)) {
@@ -50,31 +48,20 @@ class JavaInlayHintsProvider implements vscode.InlayHintsProvider {
   }
 }
 
-export class JavaExtensionFeature implements StaticFeature {
-  private disposables: DisposableCollection
+export class JavaExtensionFeature extends ExtensionFeature {
   constructor (private languageClient: MonacoLanguageClient) {
-    this.disposables = new DisposableCollection()
+    super()
   }
 
   fillClientCapabilities (): void {}
 
-  initialize (): void {
+  activate (context: vscode.ExtensionContext): void {
     // Comes from https://github.com/redhat-developer/vscode-java/blob/9b6046eecc65fd47507f309a3ccc9add45c6d3be/src/standardLanguageClient.ts#L321
-    this.disposables.push(vscode.commands.registerCommand('java.apply.workspaceEdit', async (obj: WorkspaceEdit) => {
+    context.subscriptions.push(vscode.commands.registerCommand('java.apply.workspaceEdit', async (obj: WorkspaceEdit) => {
       const edit = await this.languageClient.protocol2CodeConverter.asWorkspaceEdit(obj)
       return vscode.workspace.applyEdit(edit)
     }))
 
-    this.disposables.push(vscode.languages.registerInlayHintsProvider(this.languageClient.clientOptions.documentSelector!, new JavaInlayHintsProvider(this.languageClient)))
-  }
-
-  getState (): FeatureState {
-    return {
-      kind: 'static'
-    }
-  }
-
-  dispose (): void {
-    this.disposables.dispose()
+    context.subscriptions.push(vscode.languages.registerInlayHintsProvider(this.languageClient.clientOptions.documentSelector!, new JavaInlayHintsProvider(this.languageClient)))
   }
 }
