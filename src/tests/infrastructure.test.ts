@@ -155,7 +155,8 @@ async function testLanguageClient (
 
   // Test go to declaration + getTextDocument
   const definitionRequestPromise = waitClientRequest(connection.onDefinition)
-  editor.trigger('me', 'editor.action.goToDeclaration', {})
+  editor.getAction('editor.action.revealDefinition').run().catch(console.error)
+
   const [, sendDefinitionRequestResponse] = await definitionRequestPromise
   sendDefinitionRequestResponse({
     uri: 'file:///tmp/project/src/main/Otherfile.java',
@@ -167,6 +168,9 @@ async function testLanguageClient (
     // do nothing
     const editor = createEditor(document.createElement('div'), {
       model
+    })
+    editor.onDidDispose(() => {
+      model.dispose()
     })
     setTimeout(() => {
       editorOpenDeferred.resolve(editor)
