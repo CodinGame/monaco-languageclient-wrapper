@@ -71,7 +71,7 @@ const staticOptions = asLanguageClientOptionsById({
     },
     mutualizable: false,
     vscodeExtensionIds: ['cobol'],
-    createAdditionalFeatures (client) {
+    async createAdditionalFeatures (client) {
       return [
         new CobolResolveSubroutineFeature(client)
       ]
@@ -119,7 +119,7 @@ const staticOptions = asLanguageClientOptionsById({
     },
     mutualizable: true,
     vscodeExtensionIds: ['java'],
-    createAdditionalFeatures (client) {
+    async createAdditionalFeatures (client) {
       return [
         new JavaExtensionFeature(client)
       ]

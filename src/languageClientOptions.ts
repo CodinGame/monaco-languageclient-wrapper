@@ -19,7 +19,7 @@ export type LanguageClientOptions = Pick<MonacoLanguageClientOptions, 'documentS
    */
   readinessMessageMatcher?: RegExp
 
-  createAdditionalFeatures?(client: MonacoLanguageClient): (StaticFeature | DynamicFeature<unknown>)[]
+  createAdditionalFeatures?(client: MonacoLanguageClient): Promise<(StaticFeature | DynamicFeature<unknown>)[]>
 }
 
 const dynamicOptions: Partial<Record<string, LanguageClientOptions>> = {}

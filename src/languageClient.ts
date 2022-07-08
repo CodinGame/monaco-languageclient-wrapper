@@ -161,7 +161,7 @@ export class LanguageClientManager implements LanguageClient {
   private async _start (): Promise<void> {
     const onServerResponse = new Emitter<void>()
 
-    const languageClient = createLanguageClient(
+    const languageClient = await createLanguageClient(
       this.id,
       this.infrastructure,
       this.clientOptions, {
