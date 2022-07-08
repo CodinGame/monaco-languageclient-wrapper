@@ -25,6 +25,7 @@
   "types": "./dist/index.d.ts",
   "dependencies": {
     "@codingame/monaco-editor-wrapper": "^1.14.8",
+    "recast": "^0.21.1",
     "vscode": "npm:@codingame/monaco-vscode-api@~1.67.9",
     "vscode-languageserver-protocol": "^3.17.1",
     "vscode-ws-jsonrpc": "^1.0.0"
@@ -48,7 +49,6 @@
     "@rollup/plugin-typescript": "^8.3.3",
     "@types/jest": "^28.1.2",
     "@types/once": "^1.4.0",
-    "@types/rollup-plugin-node-builtins": "^2.1.2",
     "@types/vscode": "^1.68.0",
     "@typescript-eslint/eslint-plugin": "5.29.0",
     "@typescript-eslint/parser": "5.29.0",
@@ -69,7 +69,6 @@
     "proxy-polyfill": "^0.3.2",
     "rollup": "2.75.7",
     "rollup-plugin-dts": "^4.2.2",
-    "rollup-plugin-node-builtins": "^2.1.2",
     "rollup-plugin-postcss": "4.0.2",
     "rollup-plugin-visualizer": "5.6.0",
     "rollup-plugin-web-worker-loader": "1.6.1",
