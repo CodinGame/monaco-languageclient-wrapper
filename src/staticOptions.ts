@@ -123,6 +123,18 @@ const staticOptions = asLanguageClientOptionsById({
       return [
         new JavaExtensionFeature(client)
       ]
+    },
+    initializationOptions: {
+      extendedClientCapabilities: {
+        classFileContentsSupport: true,
+        overrideMethodsPromptSupport: true,
+        hashCodeEqualsPromptSupport: true,
+        advancedOrganizeImportsSupport: true,
+        generateToStringPromptSupport: true,
+        advancedGenerateAccessorsSupport: true,
+        generateConstructorsPromptSupport: true,
+        generateDelegateMethodsPromptSupport: true
+      }
     }
   },
   javascript: {
