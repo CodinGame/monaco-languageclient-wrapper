@@ -10,10 +10,9 @@ interface CgMonacoServices extends Services {
   window: WatchableConsoleWindow
 }
 
-const services = {
+const services: CgMonacoServices = {
   workspace: new CodinGameMonacoWorkspace('file:///tmp/project'),
-  window: new WatchableConsoleWindow(),
-  env: new CodinGameMonacoEnv()
+  window: new WatchableConsoleWindow()
 }
 
 Services.install(services)
