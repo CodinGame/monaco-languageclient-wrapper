@@ -1,0 +1,38 @@
+#!/bin/bash
+set -e
+
+# In java, the vscode extension contains a lot of code to implements advanced features (jdt files provider, inlay hints, source action commands...)
+# Instead of copy-pasting this code, let's download it, build it and import it from our code
+
+output_directory="`pwd`/extensions/java"
+
+build_directory=`mktemp -d`
+echo "Downloading extension in $build_directory..."
+
+curl -L --max-redirs 5 https://github.com/redhat-developer/vscode-java/tarball/v1.8.0 | tar -xz -C $build_directory --strip-components=1 redhat-developer-vscode-java-a0ac341
+cd $build_directory
+
+echo "Installing dependencies..."
+npm install -y
+
+# Remove useless files
+rm -rf test
+
+echo "Patching code..."
+cd src
+
+# Change import syntax so it builds to ESM
+find . -type f -exec sed -E -i 's/import (.*) = require\((.*)\)/import * as \1 from \2/g' {} \;
+
+# Import from vscode-languageclient/lib/common/api instead of vscode-languageclient/node
+sed -i -E 's/import \{ (.*)LanguageClient(.*) \} from [\x27"]vscode-languageclient\/node[\x27"];/import { \1BaseLanguageClient as LanguageClient\2 } from \x27vscode-languageclient\/lib\/common\/api\x27;/g' sourceAction.ts inlayHintsProvider.ts
+
+# Change syntax due to incompatibility between vscode-languageclient versions
+sed -i -E 's/languageClient.protocol2CodeConverter.asWorkspaceEdit\(/await languageClient.protocol2CodeConverter.asWorkspaceEdit(/g' sourceAction.ts extension.ts
+sed -i 's/function applyWorkspaceEdit(obj, languageClient): Thenable<boolean>/async function applyWorkspaceEdit(obj, languageClient): Promise<boolean>/g' extension.ts
+
+echo "Building extension..."
+tsc --declaration --importHelpers --module es2020 --outDir "$output_directory/"
+
+echo "Cleaning..."
+rm -rf $build_directory
