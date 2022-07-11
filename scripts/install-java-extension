@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-# In java, the vscode extension contains a lot of code to implements advanced features (jdt files provider, inlay hints, source action commands...)
+# In java, the vscode extension contains a lot of code to implement advanced features (jdt file provider, inlay hints, source action commands...)
 # Instead of copy-pasting this code, let's download it, build it and import it from our code
 
 output_directory="`pwd`/extensions/java"
