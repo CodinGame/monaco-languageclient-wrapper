@@ -1,80 +1,47 @@
-import {
-  DisposableCollection, MonacoLanguageClient
-} from 'monaco-languageclient'
-import { StaticFeature, FeatureState } from 'vscode-languageclient/lib/common/api'
-import { InlayHint, InlayHintParams, InlayHintRefreshRequest, InlayHintRequest, WorkspaceEdit } from 'vscode-languageserver-protocol'
-import * as vscode from 'vscode'
+import { MonacoLanguageClient } from 'monaco-languageclient'
+import { commands, Uri, languages, ExtensionContext, workspace, CancellationToken } from 'vscode'
+import { Position as LSPosition, Location as LSLocation } from 'vscode-languageclient'
+import { JavaInlayHintsProvider } from 'extensions/java/inlayHintsProvider'
+import { registerCommands as registerJavaCommands } from 'extensions/java/sourceAction'
+import { Commands } from 'extensions/java/commands'
+import { applyWorkspaceEdit } from 'extensions/java/extension'
+import { ClassFileContentsRequest } from 'extensions/java/protocol'
+import { ExtensionFeature } from './tools'
 
-async function asInlayHints (values: InlayHint[] | undefined | null, client: MonacoLanguageClient): Promise<vscode.InlayHint[] | undefined> {
-  if (!Array.isArray(values)) {
-    return undefined
-  }
-  return values.map(lsHint => asInlayHint(lsHint, client))
-}
-
-function asInlayHint (value: InlayHint, client: MonacoLanguageClient): vscode.InlayHint {
-  const label = value.label as string
-  const result = new vscode.InlayHint(client.protocol2CodeConverter.asPosition(value.position), label)
-  result.paddingRight = true
-  result.kind = vscode.InlayHintKind.Parameter
-  return result
-}
-
-/**
- * Comes from https://github.com/redhat-developer/vscode-java/blob/9b6046eecc65fd47507f309a3ccc9add45c6d3be/src/inlayHintsProvider.ts#L5
- */
-class JavaInlayHintsProvider implements vscode.InlayHintsProvider {
-  private onDidChange = new vscode.EventEmitter<void>()
-  public onDidChangeInlayHints = this.onDidChange.event
-
-  constructor (private client: MonacoLanguageClient) {
-    this.client.onRequest(InlayHintRefreshRequest.type, async () => {
-      this.onDidChange.fire()
-    })
-  }
-
-  public async provideInlayHints (document: vscode.TextDocument, range: vscode.Range, token: vscode.CancellationToken): Promise<vscode.InlayHint[] | undefined> {
-    const requestParams: InlayHintParams = {
-      textDocument: this.client.code2ProtocolConverter.asTextDocumentIdentifier(document),
-      range: this.client.code2ProtocolConverter.asRange(range)
-    }
-    try {
-      const values = await this.client.sendRequest(InlayHintRequest.type, requestParams, token)
-      if (token.isCancellationRequested) {
-        return []
-      }
-      return asInlayHints(values, this.client)
-    } catch (error) {
-      return this.client.handleFailedRequest(InlayHintRequest.type, token, error, [])
-    }
-  }
-}
-
-export class JavaExtensionFeature implements StaticFeature {
-  private disposables: DisposableCollection
+export class JavaExtensionFeature extends ExtensionFeature {
   constructor (private languageClient: MonacoLanguageClient) {
-    this.disposables = new DisposableCollection()
+    super()
   }
 
-  fillClientCapabilities (): void {}
-
-  initialize (): void {
-    // Comes from https://github.com/redhat-developer/vscode-java/blob/9b6046eecc65fd47507f309a3ccc9add45c6d3be/src/standardLanguageClient.ts#L321
-    this.disposables.push(vscode.commands.registerCommand('java.apply.workspaceEdit', async (obj: WorkspaceEdit) => {
-      const edit = await this.languageClient.protocol2CodeConverter.asWorkspaceEdit(obj)
-      return vscode.workspace.applyEdit(edit)
+  activate (context: ExtensionContext): void {
+    /**
+     * The next 3 commands come from https://github.com/redhat-developer/vscode-java/blob/4810edd542cecb654ac1152985b4a9da0f921c08/src/standardLanguageClient.ts#L328
+     * They can't be imported because they are in the middle of a complex function
+     * Only those 3 are important to us
+     */
+    context.subscriptions.push(commands.registerCommand(Commands.SHOW_JAVA_REFERENCES, (uri: string, position: LSPosition, locations: LSLocation[]) => {
+      void commands.executeCommand(Commands.SHOW_REFERENCES, Uri.parse(uri), this.languageClient.protocol2CodeConverter.asPosition(position), locations.map(this.languageClient.protocol2CodeConverter.asLocation))
+    }))
+    context.subscriptions.push(commands.registerCommand(Commands.SHOW_JAVA_IMPLEMENTATIONS, (uri: string, position: LSPosition, locations: LSLocation[]) => {
+      void commands.executeCommand(Commands.SHOW_REFERENCES, Uri.parse(uri), this.languageClient.protocol2CodeConverter.asPosition(position), locations.map(this.languageClient.protocol2CodeConverter.asLocation))
+    }))
+    context.subscriptions.push(commands.registerCommand(Commands.APPLY_WORKSPACE_EDIT, (obj) => {
+      void applyWorkspaceEdit(obj, this.languageClient)
     }))
 
-    this.disposables.push(vscode.languages.registerInlayHintsProvider(this.languageClient.clientOptions.documentSelector!, new JavaInlayHintsProvider(this.languageClient)))
-  }
+    context.subscriptions.push(languages.registerInlayHintsProvider(this.languageClient.clientOptions.documentSelector!, new JavaInlayHintsProvider(this.languageClient)))
 
-  getState (): FeatureState {
-    return {
-      kind: 'static'
-    }
-  }
+    registerJavaCommands(this.languageClient, context)
 
-  dispose (): void {
-    this.disposables.dispose()
+    /**
+     * It comes from https://github.com/redhat-developer/vscode-java/blob/cf8b8bcce9b4bf1691fa3dd89bcd40db0ca093bd/src/providerDispatcher.ts#L30
+     */
+    context.subscriptions.push(workspace.registerTextDocumentContentProvider('jdt', {
+      provideTextDocumentContent: async (uri: Uri, token: CancellationToken): Promise<string> => {
+        return this.languageClient.sendRequest(ClassFileContentsRequest.type, { uri: uri.toString() }, token).then((v: string | undefined): string => {
+          return v ?? ''
+        })
+      }
+    }))
   }
 }

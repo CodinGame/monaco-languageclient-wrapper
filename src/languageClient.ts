@@ -161,7 +161,7 @@ export class LanguageClientManager implements LanguageClient {
   private async _start (): Promise<void> {
     const onServerResponse = new Emitter<void>()
 
-    const languageClient = createLanguageClient(
+    const languageClient = await createLanguageClient(
       this.id,
       this.infrastructure,
       this.clientOptions, {
@@ -332,11 +332,10 @@ function createLanguageClientManager (
   }
 
   if (infrastructure.useMutualizedProxy(id, clientOptions) && clientOptions.mutualizable) {
-    // When using the mutualized proxy, we don't need to synchronize the configuration nor send the initialization options
+    // When using the mutualized proxy, we don't need to synchronize the configuration
     clientOptions = {
       ...clientOptions,
-      synchronize: undefined,
-      initializationOptions: undefined
+      synchronize: undefined
     }
   }
 

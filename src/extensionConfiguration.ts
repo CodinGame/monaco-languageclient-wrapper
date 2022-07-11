@@ -1,4 +1,4 @@
-import { loadConfigurationForExtension } from '@codingame/monaco-editor-wrapper/dist/features/extensionConfigurations'
+import { loadConfigurationForExtension } from '@codingame/monaco-editor-wrapper/features/extensionConfigurations'
 import { getLanguageClientOptions, LanguageClientId } from './languageClientOptions'
 
 /**

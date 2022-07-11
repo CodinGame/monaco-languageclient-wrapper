@@ -1,19 +1,17 @@
 
 import { Services } from 'vscode/services'
-import WatchableConsoleWindow from './services/WatchableConsoleWindow'
+import PopupConsoleWindow from './services/PopupConsoleWindow'
 import CodinGameMonacoWorkspace from './services/CodinGameMonacoWorkspace'
 import { Infrastructure } from './infrastructure'
-import CodinGameMonacoEnv from './services/CodinGameMonacoEnv'
 
 interface CgMonacoServices extends Services {
   workspace: CodinGameMonacoWorkspace
-  window: WatchableConsoleWindow
+  window: PopupConsoleWindow
 }
 
-const services = {
+const services: CgMonacoServices = {
   workspace: new CodinGameMonacoWorkspace('file:///tmp/project'),
-  window: new WatchableConsoleWindow(),
-  env: new CodinGameMonacoEnv()
+  window: new PopupConsoleWindow()
 }
 
 Services.install(services)

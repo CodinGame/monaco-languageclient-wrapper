@@ -119,11 +119,18 @@ export abstract class CodinGameInfrastructure implements Infrastructure {
   protected abstract getSecurityToken(): Promise<string>
 
   public async openConnection (id: LanguageClientId): Promise<MessageTransports> {
-    const url = new URL(this.sessionId != null ? `run/${this.sessionId}/${id}` : `run/${id}`, this.serverAddress)
-    this.libraryUrls?.forEach(libraryUrl => url.searchParams.append('libraryUrl', libraryUrl))
-    url.searchParams.append('token', await this.getSecurityToken())
+    try {
+      const url = new URL(this.sessionId != null ? `run/${this.sessionId}/${id}` : `run/${id}`, this.serverAddress)
+      this.libraryUrls?.forEach(libraryUrl => url.searchParams.append('libraryUrl', libraryUrl))
+      url.searchParams.append('token', await this.getSecurityToken())
 
-    const connection = await openWebsocketConnection(url)
-    return connection
+      const connection = await openWebsocketConnection(url)
+      return connection
+    } catch (error) {
+      if (error instanceof Error) {
+        throw error
+      }
+      throw new Error('Unable to connect to server')
+    }
   }
 }

@@ -13,9 +13,13 @@
     "paths": {
       "app/*": [
         "*"
+      ],
+      "extensions/*": [
+        "../extensions/*"
       ]
     },
-    "sourceMap": true
+    "sourceMap": true,
+    "resolveJsonModule": true
   },
   "include": ["src", "rollup", "update-extensions.ts", "rollup.config.ts", "rollup.types.config.ts"],
   "exclude": [

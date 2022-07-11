@@ -134,7 +134,7 @@ class CGLSPConnectionProvider implements IConnectionProvider {
   }
 }
 
-function createLanguageClient (
+async function createLanguageClient (
   id: LanguageClientId,
   infrastructure: Infrastructure,
   {
@@ -145,7 +145,7 @@ function createLanguageClient (
   }: LanguageClientOptions,
   errorHandler: ErrorHandler,
   middleware?: Middleware
-): MonacoLanguageClient {
+): Promise<MonacoLanguageClient> {
   const client = new MonacoLanguageClient({
     id: `${id}-languageclient`,
     name: `CodinGame ${id} Language Client`,
@@ -165,7 +165,7 @@ function createLanguageClient (
   client.registerTextDocumentSaveFeatures()
 
   if (createAdditionalFeatures != null) {
-    client.registerFeatures(createAdditionalFeatures(client))
+    client.registerFeatures(await createAdditionalFeatures(client))
   }
 
   return client

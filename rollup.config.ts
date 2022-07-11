@@ -5,8 +5,12 @@ import { nodeResolve } from '@rollup/plugin-node-resolve'
 import eslint from '@rollup/plugin-eslint'
 import { babel } from '@rollup/plugin-babel'
 import * as rollup from 'rollup'
-import builtins from 'rollup-plugin-node-builtins'
+import * as recast from 'recast'
+import path from 'path'
 import pkg from './package.json'
+
+const PURE_ANNO = '#__PURE__'
+const EXTENSION_DIR = path.resolve(__dirname, 'extensions')
 
 const externals = [
   ...Object.keys(pkg.dependencies),
@@ -20,8 +24,15 @@ export default rollup.defineConfig({
   input: {
     index: 'src/index.ts'
   },
+  treeshake: {
+    annotations: true,
+    moduleSideEffects: false
+  },
   external: function isExternal (source, importer, isResolved) {
     if (isResolved) {
+      return false
+    }
+    if (source.startsWith('extensions/')) {
       return false
     }
     if (externals.some(external => source === external || source.startsWith(`${external}/`))) {
@@ -31,6 +42,7 @@ export default rollup.defineConfig({
   },
   output: [{
     chunkFileNames: '[name].js',
+    hoistTransitiveImports: false,
     dir: 'dist',
     format: 'esm',
     paths: {
@@ -39,7 +51,6 @@ export default rollup.defineConfig({
     }
   }],
   plugins: [
-    builtins() as rollup.Plugin,
     eslint({
       throwOnError: true,
       throwOnWarning: true,
@@ -49,6 +60,15 @@ export default rollup.defineConfig({
       extensions,
       browser: true
     }),
+    {
+      name: 'resolve-extensions',
+      resolveId (id) {
+        if (id.startsWith('extensions/')) {
+          return path.resolve(__dirname, `${id}.js`)
+        }
+        return undefined
+      }
+    },
     commonjs({
       esmExternals: (id) => {
         if (id === 'vscode') {
@@ -92,6 +112,57 @@ export default rollup.defineConfig({
           left: 'import(',
           right: ').then(module => module)'
         }
+      }
+    },
+    {
+      name: 'improve-extension-treeshaking',
+      transform (code, id) {
+        if (id.startsWith(EXTENSION_DIR)) {
+          const ast = recast.parse(code, {
+            parser: require('recast/parsers/babylon')
+          })
+          let transformed: boolean = false
+          function addComment (node: recast.types.namedTypes.Expression) {
+            if (!(node.comments ?? []).some(comment => comment.value === PURE_ANNO)) {
+              transformed = true
+              node.comments = [recast.types.builders.commentBlock(PURE_ANNO, true)]
+            }
+          }
+          recast.visit(ast.program.body, {
+            visitNewExpression (path) {
+              const node = path.node
+              if (node.callee.type === 'Identifier') {
+                addComment(node)
+              }
+              this.traverse(path)
+            },
+            visitCallExpression (path) {
+              const node = path.node
+              if (node.callee.type === 'Identifier') {
+                addComment(node)
+              } else if (node.callee.type === 'FunctionExpression') {
+                // Mark IIFE as pure, because typescript compile enums as IIFE
+                addComment(node)
+              }
+              this.traverse(path)
+              return undefined
+            },
+            visitFunctionDeclaration () {
+              // Do not treeshake code inside functions, only at root
+              return false
+            },
+            visitThrowStatement () {
+              return false
+            }
+          })
+          // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+          if (transformed) {
+            code = recast.print(ast).code
+            code = code.replace(/\/\*#__PURE__\*\/\s+/g, '/*#__PURE__*/ ') // Remove space after PURE comment
+            return code
+          }
+        }
+        return undefined
       }
     }
   ]

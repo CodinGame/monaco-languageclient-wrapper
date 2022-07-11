@@ -1,8 +1,6 @@
 import * as vscode from 'vscode'
 import * as monaco from 'monaco-editor'
 import type { LanguageClientOptions } from './languageClientOptions'
-import { CobolResolveSubroutineFeature } from './extensions/cobol'
-import { JavaExtensionFeature } from './extensions/java'
 
 type LanguageClientOptionsById<T extends string> = Record<T, LanguageClientOptions>
 const asLanguageClientOptionsById = <K extends string> (options: LanguageClientOptionsById<K>): LanguageClientOptionsById<K> => options
@@ -71,7 +69,8 @@ const staticOptions = asLanguageClientOptionsById({
     },
     mutualizable: false,
     vscodeExtensionIds: ['cobol'],
-    createAdditionalFeatures (client) {
+    async createAdditionalFeatures (client) {
+      const { CobolResolveSubroutineFeature } = await import('./extensions/cobol')
       return [
         new CobolResolveSubroutineFeature(client)
       ]
@@ -119,10 +118,23 @@ const staticOptions = asLanguageClientOptionsById({
     },
     mutualizable: true,
     vscodeExtensionIds: ['java'],
-    createAdditionalFeatures (client) {
+    async createAdditionalFeatures (client) {
+      const { JavaExtensionFeature } = await import('./extensions/java')
       return [
         new JavaExtensionFeature(client)
       ]
+    },
+    initializationOptions: {
+      extendedClientCapabilities: {
+        classFileContentsSupport: true,
+        overrideMethodsPromptSupport: true,
+        hashCodeEqualsPromptSupport: true,
+        advancedOrganizeImportsSupport: true,
+        generateToStringPromptSupport: true,
+        advancedGenerateAccessorsSupport: true,
+        generateConstructorsPromptSupport: true,
+        generateDelegateMethodsPromptSupport: true
+      }
     }
   },
   javascript: {

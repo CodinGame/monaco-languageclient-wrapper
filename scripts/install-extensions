@@ -1,0 +1,7 @@
+#!/bin/bash
+set -e
+
+rm -rf "`pwd`/extensions"
+mkdir -p "`pwd`/extensions"
+
+./scripts/install-java-extension
