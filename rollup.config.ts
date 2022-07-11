@@ -66,6 +66,7 @@ export default rollup.defineConfig({
         if (id.startsWith('extensions/')) {
           return path.resolve(__dirname, `${id}.js`)
         }
+        return undefined
       }
     },
     commonjs({
