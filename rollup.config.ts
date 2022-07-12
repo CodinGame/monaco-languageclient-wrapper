@@ -4,6 +4,7 @@ import alias from '@rollup/plugin-alias'
 import { nodeResolve } from '@rollup/plugin-node-resolve'
 import eslint from '@rollup/plugin-eslint'
 import { babel } from '@rollup/plugin-babel'
+import cleanup from 'js-cleanup'
 import * as rollup from 'rollup'
 import * as recast from 'recast'
 import nodePolyfills from 'rollup-plugin-polyfill-node'
@@ -173,6 +174,16 @@ export default rollup.defineConfig({
           }
         }
         return undefined
+      }
+    }, {
+      name: 'cleanup',
+      renderChunk (code) {
+        // Remove comments, and #__PURE__ comments in enum IIFE in particular because webpack will treeshake them out
+        // While rollup doesn't if the parameter is used
+        return cleanup(code, null, {
+          comments: 'none',
+          sourcemap: false
+        }).code
       }
     }
   ]
