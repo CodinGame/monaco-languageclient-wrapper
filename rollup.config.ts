@@ -6,6 +6,7 @@ import eslint from '@rollup/plugin-eslint'
 import { babel } from '@rollup/plugin-babel'
 import * as rollup from 'rollup'
 import * as recast from 'recast'
+import nodePolyfills from 'rollup-plugin-polyfill-node'
 import path from 'path'
 import pkg from './package.json'
 
@@ -19,6 +20,11 @@ const externals = [
 
 const extensions = ['.js', '.ts']
 
+// Ignore those polyfills by marking them as external, rollup will treeshake-out the imports for us
+// We ignore them because it's imported by a code which isn't included in the final bundle
+// But the polyfill doesn't export all required fields and make the build crash
+const IGNORED_NODE_POLYFILLS = new Set(['os', 'fs'])
+
 export default rollup.defineConfig({
   cache: false,
   input: {
@@ -29,6 +35,9 @@ export default rollup.defineConfig({
     moduleSideEffects: false
   },
   external: function isExternal (source, importer, isResolved) {
+    if (IGNORED_NODE_POLYFILLS.has(source)) {
+      return true
+    }
     if (isResolved) {
       return false
     }
@@ -51,6 +60,7 @@ export default rollup.defineConfig({
     }
   }],
   plugins: [
+    nodePolyfills(),
     eslint({
       throwOnError: true,
       throwOnWarning: true,
