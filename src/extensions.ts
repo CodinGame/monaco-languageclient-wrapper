@@ -29,7 +29,7 @@ export class InitializeTextDocumentFeature implements StaticFeature {
 
     const languageClient = this.languageClient
     async function saveFile (textDocument: vscode.TextDocument) {
-      if (documentSelector != null && vscode.languages.match(documentSelector, textDocument) > 0) {
+      if (documentSelector != null && vscode.languages.match(documentSelector, textDocument) > 0 && textDocument.uri.scheme === 'file') {
         await updateFile(textDocument.uri.toString(), textDocument.getText(), languageClient)
 
         // Always send notification even if the server doesn't support it (because csharp register the didSave feature too late)
