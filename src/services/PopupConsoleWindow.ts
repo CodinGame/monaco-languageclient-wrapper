@@ -70,6 +70,7 @@ class PopupOutputChannel implements vscode.OutputChannel {
     contentEl.style.width = '80%'
     contentEl.style.height = '80%'
     contentEl.style.background = 'white'
+    contentEl.style.color = 'black'
     container.style.cursor = 'auto'
     contentEl.innerText = this.logs
     const watcherDisposable = this.onDidChangeLog(() => {

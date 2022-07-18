@@ -37,10 +37,33 @@ const staticOptions = asLanguageClientOptionsById({
   },
   csharp: {
     documentSelector: [
-      { language: 'csharp' }
+      { scheme: 'file', language: 'csharp' }
     ],
     mutualizable: true,
-    vscodeExtensionIds: ['omnisharp']
+    vscodeExtensionIds: ['omnisharp'],
+    middleware: {
+      async provideDefinition (document, position, token, next) {
+        const definition = await next(document, position, token)
+        // Transform file:/$metadata$/... uris to omnisharp-metadata:/... so we can register a text document content provider
+        // See https://github.com/OmniSharp/omnisharp-roslyn/issues/2238
+        if (definition != null && !Array.isArray(definition)) {
+          const metadataMatch = /^\/\$metadata\$(.*)$/.exec(definition.uri.fsPath)
+          if (metadataMatch != null) {
+            return {
+              ...definition,
+              uri: vscode.Uri.from({ scheme: 'omnisharp-metadata', path: metadataMatch[1] })
+            }
+          }
+        }
+        return definition
+      }
+    },
+    async createAdditionalFeatures (client) {
+      const { CsharpExtensionFeature } = await import('./extensions/csharp')
+      return [
+        new CsharpExtensionFeature(client)
+      ]
+    }
   },
   cpp: {
     documentSelector: [
