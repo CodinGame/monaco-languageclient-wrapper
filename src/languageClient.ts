@@ -299,7 +299,7 @@ export class LanguageClientManager implements LanguageClient {
     this.languageClient.registerFeature(new FileSystemFeature(this.infrastructure, this))
 
     if (!this.infrastructure.automaticTextDocumentUpdate) {
-      this.languageClient.registerFeature(new InitializeTextDocumentFeature(this))
+      this.languageClient.registerFeature(new InitializeTextDocumentFeature(this, this.infrastructure))
     }
 
     await this.languageClient.start()

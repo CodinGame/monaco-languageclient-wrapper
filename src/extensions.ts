@@ -5,9 +5,9 @@ import {
 import { StaticFeature, FeatureState } from 'vscode-languageclient/lib/common/api'
 import { DidSaveTextDocumentNotification, DocumentSelector, Emitter, ServerCapabilities, TextDocumentSyncOptions } from 'vscode-languageserver-protocol'
 import * as vscode from 'vscode'
-import { updateFile, willShutdownNotificationType, WillShutdownParams } from './customRequests'
+import { willShutdownNotificationType, WillShutdownParams } from './customRequests'
 import { Infrastructure } from './infrastructure'
-import { LanguageClient, LanguageClientManager } from './languageClient'
+import { LanguageClientManager } from './languageClient'
 import { getServices } from './services'
 
 interface ResolvedTextDocumentSyncCapabilities {
@@ -17,7 +17,7 @@ interface ResolvedTextDocumentSyncCapabilities {
 // Initialize the file content into the lsp server for implementations that don't support open/close notifications
 export class InitializeTextDocumentFeature implements StaticFeature {
   private didOpenTextDocumentDisposable: Disposable | undefined
-  constructor (private languageClient: LanguageClient) {}
+  constructor (private languageClient: LanguageClientManager, private infrastructure: Infrastructure) {}
 
   fillClientCapabilities (): void {}
 
@@ -27,10 +27,11 @@ export class InitializeTextDocumentFeature implements StaticFeature {
       return
     }
 
+    const infrastructure = this.infrastructure
     const languageClient = this.languageClient
     async function saveFile (textDocument: vscode.TextDocument) {
       if (documentSelector != null && vscode.languages.match(documentSelector, textDocument) > 0 && textDocument.uri.scheme === 'file') {
-        await updateFile(textDocument.uri.toString(), textDocument.getText(), languageClient)
+        await infrastructure.saveFileContent?.(textDocument, vscode.TextDocumentSaveReason.Manual, languageClient)
 
         // Always send notification even if the server doesn't support it (because csharp register the didSave feature too late)
         await languageClient.sendNotification(DidSaveTextDocumentNotification.type, {
