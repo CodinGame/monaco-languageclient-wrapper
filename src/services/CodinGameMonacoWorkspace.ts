@@ -5,7 +5,6 @@ import * as monaco from 'monaco-editor'
 import * as vscode from 'vscode'
 import { Workspace } from 'vscode/services'
 import { Event, Emitter, TextDocumentSaveReason } from 'vscode-languageserver-protocol'
-import Configuration from './Configuration'
 
 export interface ITextModelContentSaveHandler {
   saveTextContent(document: vscode.TextDocument, reason: TextDocumentSaveReason): Promise<void>
@@ -15,14 +14,6 @@ export default class CodinGameMonacoWorkspace implements Workspace {
   protected readonly onWillSaveTextDocumentEmitter = new Emitter<vscode.TextDocumentWillSaveEvent>()
   private readonly savehandlers: ITextModelContentSaveHandler[] = []
   protected readonly onDidSaveTextDocumentEmitter = new Emitter<vscode.TextDocument>()
-
-  private configuration = new Configuration()
-
-  getConfiguration = (section?: string | undefined): vscode.WorkspaceConfiguration => {
-    return this.configuration.getConfiguration(section)
-  }
-
-  onDidChangeConfiguration = this.configuration.onDidChangeConfiguration
 
   private autoSaveModelDisposable: Disposable | undefined
 
@@ -125,7 +116,6 @@ export default class CodinGameMonacoWorkspace implements Workspace {
 
   dispose (): void {
     this.autoSaveModelDisposable?.dispose()
-    this.configuration.dispose()
     this.onWillSaveTextDocumentEmitter.dispose()
     this.onDidSaveTextDocumentEmitter.dispose()
   }
