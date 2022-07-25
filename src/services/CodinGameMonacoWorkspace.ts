@@ -91,6 +91,10 @@ export default class CodinGameMonacoWorkspace implements Workspace {
     const disposableCollection = new DisposableCollection()
     const timeoutMap = new Map<string, number>()
     disposableCollection.push(vscode.workspace.onDidChangeTextDocument(e => {
+      if (e.document.uri.scheme !== 'file') {
+        // Ignore non-file models
+        return
+      }
       const uri = e.document.uri.toString()
       const timeout = timeoutMap.get(uri)
       if (timeout != null) {
