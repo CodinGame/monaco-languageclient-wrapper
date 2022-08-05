@@ -1,9 +1,24 @@
 import * as vscode from 'vscode'
 import * as monaco from 'monaco-editor'
+import { Middleware } from 'monaco-languageclient'
 import type { LanguageClientOptions } from './languageClientOptions'
 
 type LanguageClientOptionsById<T extends string> = Record<T, LanguageClientOptions>
 const asLanguageClientOptionsById = <K extends string> (options: LanguageClientOptionsById<K>): LanguageClientOptionsById<K> => options
+
+const clangdHotfixMiddleware: Middleware = {
+  async provideCompletionItem (document, position, context, token, next) {
+    const list = await next(document, position, context, token)
+    // Hotfix (see https://github.com/clangd/vscode-clangd/blob/df56a9a058fca773eb4c096d0f6a5a31b71b79d7/src/clangd-context.ts#L124)
+    const items = Array.isArray(list) ? list : list?.items
+    if (items != null) {
+      for (const item of items) {
+        item.commitCharacters = []
+      }
+    }
+    return list
+  }
+}
 
 const staticOptions = asLanguageClientOptionsById({
   angular: {
@@ -31,6 +46,7 @@ const staticOptions = asLanguageClientOptionsById({
       { scheme: 'file', language: 'c' },
       { scheme: 'file', language: 'cpp' }
     ],
+    middleware: clangdHotfixMiddleware,
     mutualizable: false
     // The extension is cpptools BUT the language server is unable to use the client configuration (it requires client code)
     // vscodeExtensionIds: ['cpptools']
@@ -71,6 +87,7 @@ const staticOptions = asLanguageClientOptionsById({
       { scheme: 'file', language: 'cpp' },
       { scheme: 'file', language: 'cuda-cpp' }
     ],
+    middleware: clangdHotfixMiddleware,
     mutualizable: false
     // The extension is cpptools BUT the language server is unable to use the client configuration (it requires client code)
     // vscodeExtensionIds: ['cpptools']
@@ -221,6 +238,7 @@ const staticOptions = asLanguageClientOptionsById({
       { scheme: 'file', language: 'cpp' },
       { scheme: 'file', language: 'objective-c' }
     ],
+    middleware: clangdHotfixMiddleware,
     mutualizable: false
     // The extension is cpptools BUT the language server is unable to use the client configuration (it requires client code)
     // vscodeExtensionIds: ['cpptools']
