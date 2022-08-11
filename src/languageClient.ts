@@ -303,8 +303,12 @@ export class LanguageClientManager implements LanguageClient {
         }
         case State.Stopped: {
           this.updateStatus('closed')
-
-          if (state.oldState === State.Running && !this.isDisposed()) {
+          setTimeout(() => {
+            // setTimeout is required or the dispose() fails (Client is stopping but no stop promise available.)
+            void languageClient.dispose()
+          })
+          if (state.oldState === State.Running && !this.isDisposed() && this.languageClient === languageClient) {
+            this.languageClient = undefined
             console.info('[LSP] Restarting language client', state)
             this.start().catch(error => {
               monaco.errorHandler.onUnexpectedError(new Error('[LSP] Language client stopped', {
