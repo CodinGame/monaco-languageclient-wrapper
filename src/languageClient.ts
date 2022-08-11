@@ -141,13 +141,14 @@ export class LanguageClientManager implements LanguageClient {
   public async start (): Promise<void> {
     let started = false
     let attempt = 0
+    const maxStartAttemptCount = this.managerOptions.maxStartAttemptCount
     while (
       !this.isDisposed() &&
-      !started && (
-        this.managerOptions.maxStartAttemptCount == null ||
-        attempt < this.managerOptions.maxStartAttemptCount
-      )
+      !started
     ) {
+      if (maxStartAttemptCount != null && attempt >= maxStartAttemptCount) {
+        throw new Error(`Max connection attempt count exceeded: ${maxStartAttemptCount}`)
+      }
       try {
         this.startPromise = this._start()
         await this.startPromise
