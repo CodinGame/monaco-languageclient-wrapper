@@ -152,6 +152,10 @@ export class LanguageClientManager implements LanguageClient {
       try {
         this.startPromise = this._start()
         await this.startPromise
+        // If the initialize request fails, the start method still returns a resolve promise due to a vscode-languageclient bug
+        if (!(this.languageClient?.isRunning() ?? false)) {
+          throw new Error('Language server not running')
+        }
         started = true
       } catch (error) {
         this.languageClient = undefined
