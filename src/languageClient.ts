@@ -8,6 +8,7 @@ import {
 import delay from 'delay'
 import { CancellationToken, Emitter, NotificationType, RequestType, Event, LogMessageNotification } from 'vscode-languageserver-protocol'
 import * as vscode from 'vscode'
+import once from 'once'
 import { updateServices } from './services'
 import createLanguageClient from './createLanguageClient'
 import { WillShutdownParams } from './customRequests'
@@ -138,13 +139,6 @@ export class LanguageClientManager implements LanguageClient {
   }
 
   public async start (): Promise<void> {
-    try {
-      await loadExtensionConfigurations([this.id], this.useMutualizedProxy)
-    } catch (error) {
-      monaco.errorHandler.onUnexpectedError(new Error('[LSP] Unable to load extension configuration', {
-        cause: error as Error
-      }))
-    }
     let started = false
     let attempt = 0
     while (
@@ -170,7 +164,19 @@ export class LanguageClientManager implements LanguageClient {
     }
   }
 
+  private prepare = once(async () => {
+    try {
+      await loadExtensionConfigurations([this.id], this.useMutualizedProxy)
+    } catch (error) {
+      monaco.errorHandler.onUnexpectedError(new Error('[LSP] Unable to load extension configuration', {
+        cause: error as Error
+      }))
+    }
+  })
+
   private async _start (): Promise<void> {
+    await this.prepare()
+
     const onServerResponse = new Emitter<void>()
 
     const languageClient = await createLanguageClient(
