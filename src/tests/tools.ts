@@ -116,7 +116,8 @@ export class TestInfrastructure implements Infrastructure {
 
   constructor (
     public automaticTextDocumentUpdate: boolean,
-    public _useMutualizedProxy: boolean
+    public _useMutualizedProxy: boolean,
+    public connectionCreationDelay: number = 0
   ) {}
 
   useMutualizedProxy (languageClientId: LanguageClientId, options: LanguageClientOptions): boolean {
@@ -160,6 +161,7 @@ export class TestInfrastructure implements Infrastructure {
       exit: function (): void {}
     }
     const clientConnection = createConnection(() => c2, watchDog)
+    await new Promise(resolve => setTimeout(resolve, this.connectionCreationDelay))
     this.connectionDeferred.resolve(clientConnection)
     c2.listen()
 

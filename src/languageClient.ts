@@ -8,6 +8,7 @@ import {
 import delay from 'delay'
 import { CancellationToken, Emitter, NotificationType, RequestType, Event, LogMessageNotification } from 'vscode-languageserver-protocol'
 import * as vscode from 'vscode'
+import once from 'once'
 import { updateServices } from './services'
 import createLanguageClient from './createLanguageClient'
 import { WillShutdownParams } from './customRequests'
@@ -45,6 +46,7 @@ export class LanguageClientManager implements LanguageClient {
   protected readonly onWillShutdownEmitter = new Emitter<WillShutdownParams>()
   protected currentStatus: Status = 'connecting'
   private useMutualizedProxy: boolean
+  private startPromise: Promise<void> | undefined
 
   constructor (
     private id: LanguageClientId,
@@ -70,13 +72,21 @@ export class LanguageClientManager implements LanguageClient {
     return ['connected', 'ready'].includes(this.currentStatus)
   }
 
-  async dispose (): Promise<void> {
+  async dispose (timeout?: number): Promise<void> {
     this.disposed = true
     try {
+      if (this.startPromise != null) {
+        // Wait for language client to be started or it throws and error
+        try {
+          await this.startPromise
+        } catch (error) {
+          // ignore
+        }
+      }
       if (this.languageClient != null) {
         const languageClient = this.languageClient
         this.languageClient = undefined
-        await languageClient.stop()
+        await languageClient.dispose(timeout)
       }
     } finally {
       this.onDidCloseEmitter.fire()
@@ -129,26 +139,23 @@ export class LanguageClientManager implements LanguageClient {
   }
 
   public async start (): Promise<void> {
-    try {
-      await loadExtensionConfigurations([this.id], this.useMutualizedProxy)
-    } catch (error) {
-      monaco.errorHandler.onUnexpectedError(new Error('[LSP] Unable to load extension configuration', {
-        cause: error as Error
-      }))
-    }
     let started = false
     let attempt = 0
+    const maxStartAttemptCount = this.managerOptions.maxStartAttemptCount
     while (
       !this.isDisposed() &&
-      !started && (
-        this.managerOptions.maxStartAttemptCount == null ||
-        attempt < this.managerOptions.maxStartAttemptCount
-      )
+      !started
     ) {
+      if (maxStartAttemptCount != null && attempt >= maxStartAttemptCount) {
+        throw new Error(`Max connection attempt count exceeded: ${maxStartAttemptCount}`)
+      }
       try {
-        await this._start()
+        this.startPromise = this._start()
+        await this.startPromise
         started = true
       } catch (error) {
+        this.languageClient = undefined
+        this.startPromise = undefined
         monaco.errorHandler.onUnexpectedError(new Error(`[LSP] Unable to start language client, retrying in ${RETRY_CONNECTION_DELAY} ms`, {
           cause: error as Error
         }))
@@ -158,7 +165,19 @@ export class LanguageClientManager implements LanguageClient {
     }
   }
 
+  private prepare = once(async () => {
+    try {
+      await loadExtensionConfigurations([this.id], this.useMutualizedProxy)
+    } catch (error) {
+      monaco.errorHandler.onUnexpectedError(new Error('[LSP] Unable to load extension configuration', {
+        cause: error as Error
+      }))
+    }
+  })
+
   private async _start (): Promise<void> {
+    await this.prepare()
+
     const onServerResponse = new Emitter<void>()
 
     const languageClient = await createLanguageClient(
