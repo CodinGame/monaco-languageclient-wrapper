@@ -45,6 +45,7 @@ export class LanguageClientManager implements LanguageClient {
   protected readonly onWillShutdownEmitter = new Emitter<WillShutdownParams>()
   protected currentStatus: Status = 'connecting'
   private useMutualizedProxy: boolean
+  private startPromise: Promise<void> | undefined
 
   constructor (
     private id: LanguageClientId,
@@ -70,13 +71,21 @@ export class LanguageClientManager implements LanguageClient {
     return ['connected', 'ready'].includes(this.currentStatus)
   }
 
-  async dispose (): Promise<void> {
+  async dispose (timeout?: number): Promise<void> {
     this.disposed = true
     try {
+      if (this.startPromise != null) {
+        // Wait for language client to be started or it throws and error
+        try {
+          await this.startPromise
+        } catch (error) {
+          // ignore
+        }
+      }
       if (this.languageClient != null) {
         const languageClient = this.languageClient
         this.languageClient = undefined
-        await languageClient.stop()
+        await languageClient.dispose(timeout)
       }
     } finally {
       this.onDidCloseEmitter.fire()
@@ -146,9 +155,12 @@ export class LanguageClientManager implements LanguageClient {
       )
     ) {
       try {
-        await this._start()
+        this.startPromise = this._start()
+        await this.startPromise
         started = true
       } catch (error) {
+        this.languageClient = undefined
+        this.startPromise = undefined
         monaco.errorHandler.onUnexpectedError(new Error(`[LSP] Unable to start language client, retrying in ${RETRY_CONNECTION_DELAY} ms`, {
           cause: error as Error
         }))
