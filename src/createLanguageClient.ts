@@ -1,5 +1,4 @@
 import { MessageReader, MessageWriter, Message, Event, DataCallback, Disposable, PartialMessageInfo } from 'vscode-jsonrpc'
-import { Uri } from 'monaco-editor'
 import {
   MonacoLanguageClient, Middleware, ErrorHandler, IConnectionProvider, MessageTransports
 } from 'monaco-languageclient'
@@ -106,11 +105,10 @@ function hackTransports (transports: MessageTransports): MessageTransports {
       if (Message.isRequest(message) && message.method === InitializeRequest.type.method) {
         const params = message.params as InitializeParams
         // Hack to fix url converted from /toto/tata to \\toto\tata in windows
-        const rootPath = params.rootPath?.replace(/\\/g, '/')
         const fixedParams: InitializeParams = {
           ...params,
-          rootPath,
-          rootUri: rootPath != null ? Uri.from({ scheme: 'file', path: rootPath }).toString() : null
+          rootPath: params.rootPath?.replace(/\\/g, '/'),
+          rootUri: params.rootUri?.replace(/\\/g, '/') ?? null
         }
         return {
           ...message,
