@@ -1,5 +1,4 @@
 import * as vscode from 'vscode'
-import * as monaco from 'monaco-editor'
 import { Middleware } from 'monaco-languageclient'
 import type { LanguageClientOptions } from './languageClientOptions'
 
@@ -256,9 +255,7 @@ const staticOptions = asLanguageClientOptionsById({
     },
     initializationOptions: () => ({
       configuration: {
-        uris: [
-          monaco.Uri.file(vscode.workspace.rootPath!).toString()
-        ],
+        uris: vscode.workspace.workspaceFolders?.map(folder => folder.uri.toString()),
         phpVersion: 7.3,
         fileExtensions: [
           'php'

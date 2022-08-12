@@ -13,7 +13,7 @@ export class CobolResolveSubroutineFeature extends ExtensionFeature {
   activate (context: vscode.ExtensionContext, capabilities: ServerCapabilities, documentSelector: DocumentSelector): void {
     context.subscriptions.push(this.languageClient.onRequest(ResolveCobolSubroutineRequestType, (routineName: string): string | undefined => {
       const constantRoutinePaths: Partial<Record<string, string>> = {
-        'assert-equals': `file:${vscode.workspace.rootPath ?? '/tmp/project'}/deps/assert-equals.cbl`
+        'assert-equals': `file:${vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? '/tmp/project'}/deps/assert-equals.cbl`
       }
       const contantRoutinePath = constantRoutinePaths[routineName.toLowerCase()]
       if (contantRoutinePath != null) {
