@@ -3,6 +3,7 @@ import {
 } from 'monaco-languageclient'
 import * as monaco from 'monaco-editor'
 import * as vscode from 'vscode'
+import { errorHandler } from 'vscode/monaco'
 import { Workspace } from 'vscode/services'
 import { Event, Emitter, TextDocumentSaveReason } from 'vscode-languageserver-protocol'
 
@@ -81,7 +82,7 @@ export default class CodinGameMonacoWorkspace implements Workspace {
 
       this.onDidSaveTextDocumentEmitter.fire(document)
     } catch (err) {
-      monaco.errorHandler.onUnexpectedError(new Error(`[LSP] Unable to save file on language server: ${document.uri.toString()}`, {
+      errorHandler.onUnexpectedError(new Error(`[LSP] Unable to save file on language server: ${document.uri.toString()}`, {
         cause: err as Error
       }))
     }
@@ -104,7 +105,7 @@ export default class CodinGameMonacoWorkspace implements Workspace {
       timeoutMap.set(uri, window.setTimeout(() => {
         timeoutMap.delete(uri)
         this.saveDocument(e.document, TextDocumentSaveReason.AfterDelay).catch((error: Error) => {
-          monaco.errorHandler.onUnexpectedError(new Error(`[LSP] Unable to save the document ${uri}`, {
+          errorHandler.onUnexpectedError(new Error(`[LSP] Unable to save the document ${uri}`, {
             cause: error
           }))
         })

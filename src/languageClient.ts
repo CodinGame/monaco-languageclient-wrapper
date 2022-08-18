@@ -1,4 +1,3 @@
-import * as monaco from 'monaco-editor'
 import {
   CloseAction, ErrorAction, State
 } from 'vscode-languageclient'
@@ -8,6 +7,7 @@ import {
 import delay from 'delay'
 import { CancellationToken, Emitter, NotificationType, RequestType, Event, LogMessageNotification } from 'vscode-languageserver-protocol'
 import * as vscode from 'vscode'
+import { errorHandler } from 'vscode/monaco'
 import once from 'once'
 import { updateServices } from './services'
 import createLanguageClient from './createLanguageClient'
@@ -127,7 +127,7 @@ export class LanguageClientManager implements LanguageClient {
   }
 
   private handleError = (error: Error) => {
-    monaco.errorHandler.onUnexpectedError(new Error('[LSP] Language client error', {
+    errorHandler.onUnexpectedError(new Error('[LSP] Language client error', {
       cause: error
     }))
     this.onErrorEmitter.fire(error)
@@ -160,7 +160,7 @@ export class LanguageClientManager implements LanguageClient {
       } catch (error) {
         this.languageClient = undefined
         this.startPromise = undefined
-        monaco.errorHandler.onUnexpectedError(new Error(`[LSP] Unable to start language client, retrying in ${RETRY_CONNECTION_DELAY} ms`, {
+        errorHandler.onUnexpectedError(new Error(`[LSP] Unable to start language client, retrying in ${RETRY_CONNECTION_DELAY} ms`, {
           cause: error as Error
         }))
         await delay(RETRY_CONNECTION_DELAY)
@@ -173,7 +173,7 @@ export class LanguageClientManager implements LanguageClient {
     try {
       await loadExtensionConfigurations([this.id], this.useMutualizedProxy)
     } catch (error) {
-      monaco.errorHandler.onUnexpectedError(new Error('[LSP] Unable to load extension configuration', {
+      errorHandler.onUnexpectedError(new Error('[LSP] Unable to load extension configuration', {
         cause: error as Error
       }))
     }
@@ -287,7 +287,7 @@ export class LanguageClientManager implements LanguageClient {
             ])
             disposableCollection.dispose()
           }, (error: Error) => {
-            monaco.errorHandler.onUnexpectedError(new Error(`[LSP] Error while waiting for the ${this.id} language client to be ready`, {
+            errorHandler.onUnexpectedError(new Error(`[LSP] Error while waiting for the ${this.id} language client to be ready`, {
               cause: error
             }))
           })
@@ -311,7 +311,7 @@ export class LanguageClientManager implements LanguageClient {
             this.languageClient = undefined
             console.info('[LSP] Restarting language client', state)
             this.start().catch(error => {
-              monaco.errorHandler.onUnexpectedError(new Error('[LSP] Language client stopped', {
+              errorHandler.onUnexpectedError(new Error('[LSP] Language client stopped', {
                 cause: error as Error
               }))
             })
