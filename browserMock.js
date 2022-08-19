@@ -51,6 +51,7 @@ Object.defineProperty(window, 'ResizeObserver', {
   }
 })
 
+// These 2 classes come from https://gist.github.com/Yaffle/5458286
 Object.defineProperty(window, 'TextEncoder', {
   value: class TextEncoder {
     encode (string) {
