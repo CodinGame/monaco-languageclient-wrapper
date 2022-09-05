@@ -9,7 +9,7 @@ output_directory="`pwd`/extensions/java"
 build_directory=`mktemp -d`
 echo "Downloading extension in $build_directory..."
 
-curl -L --max-redirs 5 https://github.com/redhat-developer/vscode-java/tarball/v1.8.0 | tar -xz -C $build_directory --strip-components=1 redhat-developer-vscode-java-a0ac341
+curl -L --max-redirs 5 https://github.com/redhat-developer/vscode-java/tarball/v1.10.0 | tar -xz -C $build_directory --strip-components=1 redhat-developer-vscode-java-226f526
 cd $build_directory
 
 echo "Installing dependencies..."
