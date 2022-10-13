@@ -92,7 +92,7 @@ export class FileSystemFeature implements StaticFeature {
     }))
     disposableCollection.push(getServices().workspace.registerSaveDocumentHandler({
       async saveTextContent (document, reason) {
-        if (languageClientManager.isModelManaged(document)) {
+        if (languageClientManager.isModelManaged(document) && document.uri.scheme === 'file') {
           await infrastructure.saveFileContent?.(document, reason, languageClientManager)
         }
       }
