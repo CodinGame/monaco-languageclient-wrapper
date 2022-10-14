@@ -102,7 +102,7 @@ const staticOptions = asLanguageClientOptionsById({
     mutualizable: true
   },
   cobol: {
-    documentSelector: ['COBOL'],
+    documentSelector: [{ scheme: 'file', language: 'COBOL' }],
     synchronize: {
       configurationSection: 'cobol-lsp'
     },
@@ -179,10 +179,12 @@ const staticOptions = asLanguageClientOptionsById({
   javascript: {
     documentSelector: [
       {
+        scheme: 'file',
         pattern: '**/*.{js}',
         language: 'javascript'
       },
       {
+        scheme: 'file',
         pattern: '**/**.{js,jsx}',
         language: 'javascript'
       }
@@ -214,6 +216,7 @@ const staticOptions = asLanguageClientOptionsById({
   },
   mysql: {
     documentSelector: [{
+      scheme: 'file',
       language: 'sql'
     }],
     // Disable code actions
@@ -271,6 +274,7 @@ const staticOptions = asLanguageClientOptionsById({
   php: {
     documentSelector: [
       {
+        scheme: 'file',
         pattern: '**/*.php',
         language: 'php'
       }
@@ -279,6 +283,7 @@ const staticOptions = asLanguageClientOptionsById({
   },
   postgresql: {
     documentSelector: [{
+      scheme: 'file',
       language: 'postgres'
     }],
     // Disable code actions
@@ -291,7 +296,7 @@ const staticOptions = asLanguageClientOptionsById({
   },
   python: {
     documentSelector: [
-      { language: 'python' }
+      { scheme: 'file', language: 'python' }
     ],
     synchronize: {
       configurationSection: 'python'
@@ -314,6 +319,7 @@ const staticOptions = asLanguageClientOptionsById({
   react: {
     documentSelector: [
       {
+        scheme: 'file',
         pattern: '**/*.{tsx,jsx}'
       }
     ],
@@ -354,6 +360,7 @@ const staticOptions = asLanguageClientOptionsById({
   sql: {
     documentSelector: [
       {
+        scheme: 'file',
         language: 'sql'
       }
     ],
@@ -366,20 +373,14 @@ const staticOptions = asLanguageClientOptionsById({
     mutualizable: false
   },
   swift: {
-    // https://github.com/apple/sourcekit-lsp/blob/59b5e68f7f8408b5bc44bd47f71ef1afdc63e7a6/Editors/vscode/src/extension.ts#L22
-    documentSelector: [
-      'swift',
-      'cpp',
-      'c',
-      'objective-c',
-      'objective-cpp'
-    ],
+    documentSelector: [{ scheme: 'file', language: 'swift' }],
     synchronize: {},
     mutualizable: true
   },
   typescript: {
     documentSelector: [
       {
+        scheme: 'file',
         pattern: '**/*.{ts}',
         language: 'typescript'
       }
@@ -391,6 +392,7 @@ const staticOptions = asLanguageClientOptionsById({
   verilog: {
     documentSelector: [
       {
+        scheme: 'file',
         language: 'verilog'
       }
     ],
@@ -400,6 +402,7 @@ const staticOptions = asLanguageClientOptionsById({
   vue: {
     documentSelector: [
       {
+        scheme: 'file',
         pattern: '**/*.js',
         language: 'javascript'
       }
