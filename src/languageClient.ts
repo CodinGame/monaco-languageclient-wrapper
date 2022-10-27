@@ -171,7 +171,7 @@ export class LanguageClientManager implements LanguageClient {
 
   private prepare = once(async () => {
     try {
-      await loadExtensionConfigurations([this.id], this.useMutualizedProxy)
+      await loadExtensionConfigurations([this.clientOptions], this.useMutualizedProxy)
     } catch (error) {
       errorHandler.onUnexpectedError(new Error('[LSP] Unable to load extension configuration', {
         cause: error as Error
