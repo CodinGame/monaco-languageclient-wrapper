@@ -7,7 +7,7 @@ import { loadExtensionConfigurations } from './extensionConfiguration'
 import './hacks'
 import { createLanguageClientManager, LanguageClientManager, LanguageClientManagerOptions, StatusChangeEvent } from './languageClient'
 import { getLanguageClientOptions, LanguageClientId, LanguageClientOptions, registerLanguageClient } from './languageClientOptions'
-import { StaticLanguageClientId } from './staticOptions'
+import defaultLanguageClientOptions, { StaticLanguageClientId } from './staticOptions'
 
 export {
   loadExtensionConfigurations,
@@ -15,7 +15,8 @@ export {
   registerLanguageClient,
   getLanguageClientOptions,
   LanguageClientManager,
-  CodinGameInfrastructure
+  CodinGameInfrastructure,
+  defaultLanguageClientOptions
 }
 
 export type {
