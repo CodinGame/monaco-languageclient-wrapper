@@ -2,7 +2,7 @@ import { MessageReader, MessageWriter, Message, Event, DataCallback, Disposable,
 import {
   MonacoLanguageClient, Middleware, ErrorHandler, IConnectionProvider, MessageTransports
 } from 'monaco-languageclient'
-import { InitializeParams, InitializeRequest, RegistrationParams, RegistrationRequest, UnregistrationParams, UnregistrationRequest } from 'vscode-languageserver-protocol'
+import { InitializeParams, InitializeRequest } from 'vscode-languageserver-protocol'
 import { LanguageClientId, LanguageClientOptions } from './languageClientOptions'
 import { Infrastructure } from './infrastructure'
 
@@ -61,44 +61,13 @@ class MiddlewareMessageReader implements MessageReader {
 
 /**
  * Add some hacks on transform for:
- * - Dedup server capability registrations (for omnisharp roslyn)
  * - Fix paths on windows
  * @param transports The original transports
  * @returns The transformed transports
  */
 function hackTransports (transports: MessageTransports): MessageTransports {
-  const existingRegistrations = new Set<string>()
   return {
     reader: new MiddlewareMessageReader(transports.reader, message => {
-      if (Message.isRequest(message)) {
-        if (message.method === RegistrationRequest.type.method) {
-          const registrationParams = message.params as RegistrationParams
-          const filteredRegistrations = registrationParams.registrations.filter(registration => {
-            const alreadyExisting = existingRegistrations.has(registration.id)
-            if (alreadyExisting) {
-              console.warn('Registration already existing', registration.id, registration.method)
-            }
-            return !alreadyExisting
-          })
-          registrationParams.registrations.forEach(registration => {
-            existingRegistrations.add(registration.id)
-          })
-          const fixedParams: RegistrationParams = {
-            ...registrationParams,
-            registrations: filteredRegistrations
-          }
-          return {
-            ...message,
-            params: fixedParams
-          }
-        }
-        if (message.method === UnregistrationRequest.type.method) {
-          const unregistrationParams = message.params as UnregistrationParams
-          for (const unregistration of unregistrationParams.unregisterations) {
-            existingRegistrations.delete(unregistration.id)
-          }
-        }
-      }
       return message
     }),
     writer: new MiddlewareMessageWriter(transports.writer, message => {
