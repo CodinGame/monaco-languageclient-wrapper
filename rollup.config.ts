@@ -1,4 +1,4 @@
-import visualizer from 'rollup-plugin-visualizer'
+import { visualizer } from 'rollup-plugin-visualizer'
 import commonjs from '@rollup/plugin-commonjs'
 import alias from '@rollup/plugin-alias'
 import { nodeResolve } from '@rollup/plugin-node-resolve'
@@ -7,9 +7,14 @@ import { babel } from '@rollup/plugin-babel'
 import cleanup from 'js-cleanup'
 import * as rollup from 'rollup'
 import * as recast from 'recast'
+import recastBabylonParser from 'recast/parsers/babylon.js'
 import nodePolyfills from 'rollup-plugin-polyfill-node'
-import path from 'path'
-import pkg from './package.json'
+import path, { dirname } from 'path'
+import { fileURLToPath } from 'url'
+import pkg from './package.json' assert { type: 'json' }
+
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = dirname(__filename)
 
 const PURE_ANNO = '#__PURE__'
 const EXTENSION_DIR = path.resolve(__dirname, 'extensions')
@@ -130,7 +135,7 @@ export default rollup.defineConfig({
       transform (code, id) {
         if (id.startsWith(EXTENSION_DIR)) {
           const ast = recast.parse(code, {
-            parser: require('recast/parsers/babylon')
+            parser: recastBabylonParser
           })
           let transformed: boolean = false
           function addComment (node: recast.types.namedTypes.Expression) {
