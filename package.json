@@ -114,7 +114,8 @@
     },
     "moduleNameMapper": {
       "^monaco-editor$": "monaco-editor/esm/vs/editor/editor.api",
-      "^monaco-editor-core$": "monaco-editor/esm/vs/editor/editor.api"
+      "^monaco-editor-core$": "monaco-editor/esm/vs/editor/editor.api",
+      "^vscode-oniguruma/release/onig.wasm$": "<rootDir>/jest/onig.js"
     }
   },
   "volta": {
