@@ -1,4 +1,5 @@
 import { loadConfigurationForExtension } from '@codingame/monaco-editor-wrapper/features/extensionConfigurations'
+import { registerDefaultConfigurations } from '@codingame/monaco-editor-wrapper'
 import { LanguageClientOptions } from './languageClientOptions'
 
 /**
@@ -17,4 +18,6 @@ export async function loadExtensionConfigurations (clientOptions: LanguageClient
   }
 
   await Promise.all(Array.from(extensionConfigurationToLoad).map(extensionId => loadConfigurationForExtension(extensionId)))
+
+  registerDefaultConfigurations(clientOptions.map(clientOption => clientOption.defaultConfigurationOverride).filter(<T> (v: T): v is Exclude<T, null | undefined> => v != null))
 }
