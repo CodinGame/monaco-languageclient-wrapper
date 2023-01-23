@@ -140,7 +140,9 @@ const staticOptions = asLanguageClientOptionsById({
     mutualizable: true,
     vscodeExtensionIds: ['vscode-go'],
     defaultConfigurationOverride: {
-      'gopls.ui.navigation.importShortcut': 'Definition'
+      gopls: {
+        'ui.navigation.importShortcut': 'Definition'
+      }
     }
   },
   groovy: {
