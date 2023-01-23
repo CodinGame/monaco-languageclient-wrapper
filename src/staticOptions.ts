@@ -108,6 +108,9 @@ const staticOptions = asLanguageClientOptionsById({
     },
     mutualizable: false,
     vscodeExtensionIds: ['cobol'],
+    defaultConfigurationOverride: {
+      'cobol-lsp.subroutine-manager.paths-local': ['/tmp/project']
+    },
     async createAdditionalFeatures (client) {
       const { CobolResolveSubroutineFeature } = await import('./extensions/cobol')
       return [
@@ -212,7 +215,12 @@ const staticOptions = asLanguageClientOptionsById({
       configurationSection: 'Lua'
     },
     mutualizable: true,
-    vscodeExtensionIds: ['lua']
+    vscodeExtensionIds: ['lua'],
+    defaultConfigurationOverride: {
+      'Lua.runtime.version': 'Lua 5.4',
+      'Lua.diagnostics.enable': true,
+      'Lua.diagnostics.disable': ['lowercase-global']
+    }
   },
   mysql: {
     documentSelector: [{
@@ -314,7 +322,10 @@ const staticOptions = asLanguageClientOptionsById({
       configurationSection: 'r.lsp'
     },
     mutualizable: true,
-    vscodeExtensionIds: ['vscode-R']
+    vscodeExtensionIds: ['vscode-R'],
+    defaultConfigurationOverride: {
+      'r.lsp.diagnostics': false
+    }
   },
   react: {
     documentSelector: [
@@ -334,6 +345,10 @@ const staticOptions = asLanguageClientOptionsById({
     ],
     mutualizable: true,
     vscodeExtensionIds: ['solargraph'],
+    defaultConfigurationOverride: {
+      'solargraph.diagnostics': true,
+      'solargraph.formatting': true
+    },
     synchronize: {
       configurationSection: 'solargraph'
     }
@@ -397,7 +412,11 @@ const staticOptions = asLanguageClientOptionsById({
       }
     ],
     mutualizable: false,
-    vscodeExtensionIds: ['svlangserver']
+    vscodeExtensionIds: ['svlangserver'],
+    defaultConfigurationOverride: {
+      'systemverilog.linter': 'icarus',
+      'systemverilog.launchConfiguration': 'iverilog -g2012 -t null'
+    }
   },
   vue: {
     documentSelector: [

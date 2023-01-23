@@ -4,6 +4,7 @@ import staticOptions, { StaticLanguageClientId } from './staticOptions'
 
 export type LanguageClientOptions = Pick<MonacoLanguageClientOptions, 'documentSelector' | 'synchronize' | 'initializationOptions' | 'middleware'> & {
   vscodeExtensionIds?: string[]
+  defaultConfigurationOverride?: Record<string, unknown>
   /**
    * Is this language server mutualizable by the CodinGame mutualized proxy
    */
