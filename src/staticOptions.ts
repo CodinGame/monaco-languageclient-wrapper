@@ -137,7 +137,11 @@ const staticOptions = asLanguageClientOptionsById({
       { language: 'go.work', scheme: 'file' },
       { language: 'tmpl', scheme: 'file' }
     ],
-    mutualizable: true
+    mutualizable: true,
+    vscodeExtensionIds: ['vscode-go'],
+    defaultConfigurationOverride: {
+      'gopls.ui.navigation.importShortcut': 'Definition'
+    }
   },
   groovy: {
     documentSelector: [
