@@ -1,11 +1,11 @@
 import {
-  Disposable, DisposableCollection
+  DisposableCollection
 } from 'monaco-languageclient'
 import * as monaco from 'monaco-editor'
 import * as vscode from 'vscode'
 import { errorHandler } from 'vscode/monaco'
 import { Workspace } from 'vscode/services'
-import { Event, Emitter, TextDocumentSaveReason } from 'vscode-languageserver-protocol'
+import { Event, Emitter, TextDocumentSaveReason, Disposable } from 'vscode-languageserver-protocol'
 
 export interface ITextModelContentSaveHandler {
   saveTextContent(document: vscode.TextDocument, reason: TextDocumentSaveReason): Promise<void>

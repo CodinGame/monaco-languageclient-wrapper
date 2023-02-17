@@ -1,5 +1,6 @@
-import { Disposable, LanguageClientOptions as MonacoLanguageClientOptions, MonacoLanguageClient } from 'monaco-languageclient'
+import { LanguageClientOptions as MonacoLanguageClientOptions, MonacoLanguageClient } from 'monaco-languageclient'
 import { StaticFeature, DynamicFeature } from 'vscode-languageclient/lib/common/api'
+import { Disposable } from 'vscode-languageserver-protocol'
 import staticOptions, { StaticLanguageClientId } from './staticOptions'
 
 export type LanguageClientOptions = Pick<MonacoLanguageClientOptions, 'documentSelector' | 'synchronize' | 'initializationOptions' | 'middleware'> & {

@@ -1,9 +1,9 @@
 import { monaco, registerTextModelContentProvider } from '@codingame/monaco-editor-wrapper'
 import {
-  Disposable, MonacoLanguageClient, DisposableCollection
+  MonacoLanguageClient, DisposableCollection
 } from 'monaco-languageclient'
 import { StaticFeature, FeatureState } from 'vscode-languageclient/lib/common/api'
-import { DidSaveTextDocumentNotification, DocumentSelector, Emitter, ServerCapabilities, TextDocumentSyncOptions } from 'vscode-languageserver-protocol'
+import { DidSaveTextDocumentNotification, Disposable, DocumentSelector, Emitter, ServerCapabilities, TextDocumentSyncOptions } from 'vscode-languageserver-protocol'
 import * as vscode from 'vscode'
 import { willShutdownNotificationType, WillShutdownParams } from './customRequests'
 import { Infrastructure } from './infrastructure'
