@@ -1,8 +1,7 @@
-import {
-  Disposable, DocumentSelector, ServerCapabilities
-} from 'monaco-languageclient'
+
 import { ExtensionContext } from 'vscode'
 import { FeatureState, StaticFeature } from 'vscode-languageclient/lib/browser/main'
+import { Disposable, DocumentSelector, ServerCapabilities } from 'vscode-languageserver-protocol'
 
 export function unsupported (): never {
   throw new Error('unsupported')

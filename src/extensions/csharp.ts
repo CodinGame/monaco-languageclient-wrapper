@@ -1,5 +1,6 @@
-import { MonacoLanguageClient, ProtocolRequestType } from 'monaco-languageclient'
+import { MonacoLanguageClient } from 'monaco-languageclient'
 import { Uri, ExtensionContext, workspace, CancellationToken } from 'vscode'
+import { ProtocolRequestType } from 'vscode-languageserver-protocol'
 import { ExtensionFeature } from './tools'
 
 const OmnisharpMetadataRequestType = new ProtocolRequestType<{
