@@ -135,4 +135,17 @@ export abstract class CodinGameInfrastructure implements Infrastructure {
       throw new Error('Unable to connect to server')
     }
   }
+
+  public getInitializationOptions (): LSPAny {
+    const files = monaco.editor
+      .getModels()
+      .filter((model) => model.uri.scheme === 'file')
+      .reduce((map, model) => {
+        map[model.uri.toString(true)] = model.getValue()
+        return map
+      }, {} as Record<string, string>)
+    return {
+      files
+    }
+  }
 }
