@@ -2,7 +2,7 @@ import { IWebSocket, WebSocketMessageReader, WebSocketMessageWriter, toSocket } 
 import { MessageTransports } from 'monaco-languageclient'
 import * as monaco from 'monaco-editor'
 import type * as vscode from 'vscode'
-import { TextDocumentSaveReason } from 'vscode-languageserver-protocol'
+import { TextDocumentSaveReason, LSPAny } from 'vscode-languageserver-protocol'
 import { getFile, updateFile } from './customRequests'
 import { LanguageClientManager } from './languageClient'
 import { LanguageClientId, LanguageClientOptions } from './languageClientOptions'
@@ -47,6 +47,8 @@ export interface Infrastructure {
    * @param id The language server id
    */
   openConnection (id: LanguageClientId): Promise<MessageTransports>
+
+  getInitializationOptions? (): LSPAny
 }
 
 async function openWebsocketConnection (url: URL | string): Promise<MessageTransports> {
