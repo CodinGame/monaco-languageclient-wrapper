@@ -137,6 +137,10 @@ export abstract class CodinGameInfrastructure implements Infrastructure {
   }
 
   public getInitializationOptions (): LSPAny {
+    // Provide all open model content to the backend so it's able to write them on the disk
+    // BEFORE starting the server or registering the workspace folders
+    // The didOpen notification already contain the file content but some LSP (like gopls)
+    // don't use it and needs the file to be up-to-date on the disk before the workspace folder is added
     const files = monaco.editor
       .getModels()
       .filter((model) => model.uri.scheme === 'file')
