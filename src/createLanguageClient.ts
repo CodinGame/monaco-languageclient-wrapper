@@ -113,6 +113,18 @@ async function createLanguageClient (
   errorHandler: ErrorHandler,
   middleware?: Middleware
 ): Promise<MonacoLanguageClient> {
+  const allInitializationOptions = () => {
+    const infrastructureInitOptions = infrastructure.getInitializationOptions?.()
+    const languageInitOptions = typeof initializationOptions === 'function' ? initializationOptions() : initializationOptions
+    if (infrastructureInitOptions != null || languageInitOptions != null) {
+      return {
+        ...(infrastructureInitOptions ?? {}),
+        ...(languageInitOptions ?? {})
+      }
+    }
+    return undefined
+  }
+
   const client = new MonacoLanguageClient({
     id: `${id}-languageclient`,
     name: `CodinGame ${id} Language Client`,
@@ -123,7 +135,7 @@ async function createLanguageClient (
       errorHandler,
       middleware,
       synchronize,
-      initializationOptions
+      initializationOptions: allInitializationOptions
     },
     connectionProvider: new CGLSPConnectionProvider(id, infrastructure)
   })

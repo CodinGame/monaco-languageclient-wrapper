@@ -2,7 +2,7 @@ import { IWebSocket, WebSocketMessageReader, WebSocketMessageWriter, toSocket } 
 import { MessageTransports } from 'monaco-languageclient'
 import * as monaco from 'monaco-editor'
 import type * as vscode from 'vscode'
-import { TextDocumentSaveReason } from 'vscode-languageserver-protocol'
+import { TextDocumentSaveReason, LSPAny } from 'vscode-languageserver-protocol'
 import { getFile, updateFile } from './customRequests'
 import { LanguageClientManager } from './languageClient'
 import { LanguageClientId, LanguageClientOptions } from './languageClientOptions'
@@ -47,6 +47,8 @@ export interface Infrastructure {
    * @param id The language server id
    */
   openConnection (id: LanguageClientId): Promise<MessageTransports>
+
+  getInitializationOptions? (): LSPAny
 }
 
 async function openWebsocketConnection (url: URL | string): Promise<MessageTransports> {
@@ -131,6 +133,23 @@ export abstract class CodinGameInfrastructure implements Infrastructure {
         throw error
       }
       throw new Error('Unable to connect to server')
+    }
+  }
+
+  public getInitializationOptions (): LSPAny {
+    // Provide all open model content to the backend so it's able to write them on the disk
+    // BEFORE starting the server or registering the workspace folders
+    // The didOpen notification already contain the file content but some LSP (like gopls)
+    // don't use it and needs the file to be up-to-date on the disk before the workspace folder is added
+    const files = monaco.editor
+      .getModels()
+      .filter((model) => model.uri.scheme === 'file')
+      .reduce((map, model) => {
+        map[model.uri.toString(true)] = model.getValue()
+        return map
+      }, {} as Record<string, string>)
+    return {
+      files
     }
   }
 }
