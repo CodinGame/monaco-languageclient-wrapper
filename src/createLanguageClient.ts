@@ -125,7 +125,25 @@ async function createLanguageClient (
     return undefined
   }
 
-  const client = new MonacoLanguageClient({
+  // Hack to force close the connection when the language client stops
+  // Even if the `shutdown` request failed
+  class _MonacoLanguageClient extends MonacoLanguageClient {
+    override async stop (timeout: number): Promise<void> {
+      // eslint-disable-next-line dot-notation
+      const connection = this['_connection']
+      try {
+        await super.stop(timeout)
+      } finally {
+        try {
+          connection.dispose()
+        } catch (err) {
+          // ignore
+        }
+      }
+    }
+  }
+
+  const client = new _MonacoLanguageClient({
     id: `${id}-languageclient`,
     name: `CodinGame ${id} Language Client`,
     clientOptions: {
