@@ -51,11 +51,18 @@ export interface Infrastructure {
   getInitializationOptions? (): LSPAny
 }
 
+class CloseOnDisposeWebSocketMessageReader extends WebSocketMessageReader {
+  override dispose () {
+    super.dispose()
+    this.socket.dispose()
+  }
+}
+
 async function openWebsocketConnection (url: URL | string): Promise<MessageTransports> {
   const webSocket = new WebSocket(url)
   const socket: IWebSocket = toSocket(webSocket)
 
-  const reader = new WebSocketMessageReader(socket)
+  const reader = new CloseOnDisposeWebSocketMessageReader(socket)
   const writer = new WebSocketMessageWriter(socket)
 
   await new Promise((resolve, reject) => {
