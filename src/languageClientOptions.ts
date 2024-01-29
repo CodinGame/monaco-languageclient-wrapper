@@ -1,9 +1,10 @@
-import { LanguageClientOptions as MonacoLanguageClientOptions, MonacoLanguageClient } from 'monaco-languageclient'
+import { LanguageClientOptions as BaseLanguageClientOptions } from 'vscode-languageclient'
 import { StaticFeature, DynamicFeature } from 'vscode-languageclient/lib/common/api'
 import { Disposable } from 'vscode-languageserver-protocol'
 import staticOptions, { StaticLanguageClientId } from './staticOptions'
+import { MonacoLanguageClient } from './createLanguageClient'
 
-export type LanguageClientOptions = Pick<MonacoLanguageClientOptions, 'documentSelector' | 'synchronize' | 'initializationOptions' | 'middleware'> & {
+export type LanguageClientOptions = Pick<BaseLanguageClientOptions, 'documentSelector' | 'synchronize' | 'initializationOptions' | 'middleware' | 'errorHandler'> & {
   vscodeExtensionIds?: string[]
   defaultConfigurationOverride?: Record<string, unknown>
   /**
@@ -38,6 +39,8 @@ export function registerLanguageClient (id: string, options: LanguageClientOptio
 
 export type LanguageClientId = StaticLanguageClientId | string
 
-export function getLanguageClientOptions (id: LanguageClientId): LanguageClientOptions {
+export function getLanguageClientOptions (id: StaticLanguageClientId): LanguageClientOptions
+export function getLanguageClientOptions (id: string): LanguageClientOptions | undefined
+export function getLanguageClientOptions (id: LanguageClientId): LanguageClientOptions | undefined {
   return dynamicOptions[id] ?? staticOptions[id as StaticLanguageClientId]
 }

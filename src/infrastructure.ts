@@ -1,8 +1,8 @@
 import { IWebSocket, WebSocketMessageReader, WebSocketMessageWriter, toSocket } from 'vscode-ws-jsonrpc'
-import { MessageTransports } from 'monaco-languageclient'
+import { MessageTransports } from 'vscode-languageclient'
 import * as monaco from 'monaco-editor'
 import type * as vscode from 'vscode'
-import { TextDocumentSaveReason, LSPAny } from 'vscode-languageserver-protocol'
+import { LSPAny } from 'vscode-languageserver-protocol'
 import { getFile, updateFile } from './customRequests'
 import { LanguageClientManager } from './languageClient'
 import { LanguageClientId, LanguageClientOptions } from './languageClientOptions'
@@ -34,13 +34,13 @@ export interface Infrastructure {
    * @param reason The reason of the save
    * @param languageClient The languageclient we're trying to save the file to
    */
-  saveFileContent? (document: vscode.TextDocument, reason: vscode.TextDocumentSaveReason, languageClient: LanguageClientManager): Promise<void>
+  saveFileContent? (document: monaco.Uri, content: string, languageClient: LanguageClientManager): Promise<void>
   /**
    * Get a text file content as a model
    * @param resource the Uri of the file
    * @param languageClient The languageclient we're trying to get the file from
    */
-  getFileContent (resource: monaco.Uri, languageClient: LanguageClientManager): Promise<monaco.editor.ITextModel | null>
+  getFileContent? (resource: monaco.Uri, languageClient: LanguageClientManager): Promise<string | undefined>
 
   /**
    * Open a connection to the language server
@@ -106,19 +106,18 @@ export abstract class CodinGameInfrastructure implements Infrastructure {
     name: 'main'
   }]
 
-  public async saveFileContent (document: vscode.TextDocument, reason: TextDocumentSaveReason, languageClient: LanguageClientManager): Promise<void> {
+  public async saveFileContent (document: monaco.Uri, content: string, languageClient: LanguageClientManager): Promise<void> {
     if (languageClient.isConnected()) {
-      await updateFile(document.uri.toString(), document.getText(), languageClient)
+      await updateFile(document.toString(), content, languageClient)
     }
   }
 
-  public async getFileContent (resource: monaco.Uri, languageClient: LanguageClientManager): Promise<monaco.editor.ITextModel | null> {
+  public async getFileContent (resource: monaco.Uri, languageClient: LanguageClientManager): Promise<string | undefined> {
     try {
-      const content = (await getFile(resource.toString(true), languageClient)).text
-      return monaco.editor.createModel(content, undefined, resource)
+      return (await getFile(resource.toString(true), languageClient)).text
     } catch (error) {
       console.error('File not found', resource.toString())
-      return null
+      return undefined
     }
   }
 

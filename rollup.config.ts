@@ -111,7 +111,7 @@ export default rollup.defineConfig({
         '@babel/plugin-proposal-optional-chaining'
       ],
       babelHelpers: 'bundled',
-      exclude: /node_modules\/(?!monaco-languageclient|vscode-languageserver-types|vscode-languageclient)/
+      exclude: /node_modules\/(?!vscode-languageserver-types|vscode-languageclient)/
     }),
     visualizer(),
     alias({
