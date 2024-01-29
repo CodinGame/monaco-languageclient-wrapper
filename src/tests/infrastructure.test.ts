@@ -1,16 +1,19 @@
-
-import { createEditor, monaco, registerEditorOpenHandler } from '@codingame/monaco-editor-wrapper'
+import { createEditor, initializePromise, monaco, registerEditorOpenHandler } from '@codingame/monaco-editor-wrapper'
 import { CompletionTriggerKind, ServerCapabilities, TextDocumentSyncKind, Range } from 'vscode-languageserver-protocol'
 import {
   _Connection,
   _
 } from 'vscode-languageserver/lib/common/api'
+import { createModelReference } from 'vscode/monaco'
+import * as vscode from 'vscode'
+import { RegisteredFileSystemProvider, RegisteredMemoryFile, registerFileSystemOverlay } from '@codingame/monaco-vscode-files-service-override'
+import { ExtensionHostKind, registerExtension } from 'vscode/extensions'
 import pDefer, { TestInfrastructure, waitClientNotification, waitClientRequest } from './tools'
-import { GetTextDocumentParams, getTextDocumentRequestType, GetTextDocumentResult, SaveTextDocumentParams, saveTextDocumentRequestType } from '../customRequests'
-import { createLanguageClientManager, LanguageClientId, LanguageClientManager, getLanguageClientOptions } from '..'
+import { GetTextDocumentParams, getTextDocumentRequestType, GetTextDocumentResult, saveTextDocumentRequestType } from '../customRequests'
+import { createLanguageClientManager, LanguageClientManager, getLanguageClientOptions, StaticLanguageClientId } from '..'
 
 async function initializeLanguageClientAndGetConnection (
-  languageClientId: LanguageClientId,
+  languageClientId: StaticLanguageClientId,
   capabilities: ServerCapabilities<unknown>,
   automaticTextDocumentUpdate: boolean = false,
   useMutualizedProxy: boolean = false
@@ -73,16 +76,26 @@ async function testLanguageClient (
   await initializedNotifPromise
 
   // Creating a java model which will be open in the language client
-  const model = monaco.editor.createModel('public class Toto {}', 'java', monaco.Uri.file('/tmp/project/src/main/Toto.java'))
+  const mainFileUri = monaco.Uri.file('/tmp/project/src/main/Toto.java')
+  const fs = new RegisteredFileSystemProvider(false)
+  const fileContent = 'public class Toto {}'
 
-  const editor = createEditor(document.createElement('div'), {
+  fs.registerFile(new RegisteredMemoryFile(mainFileUri, fileContent))
+  const fileSystemDisposable = registerFileSystemOverlay(1, fs)
+
+  const modelRef = await createModelReference(mainFileUri)
+  const model = modelRef.object.textEditorModel!
+
+  const el = document.createElement('div')
+  document.body.append(el)
+  const editor = createEditor(el, {
     model
   })
 
   // Expect the model to be open
   expect(await waitClientNotification(connection.onDidOpenTextDocument)).toEqual({
     textDocument: {
-      uri: 'file:///tmp/project/src/main/Toto.java',
+      uri: mainFileUri.toString(),
       languageId: 'java',
       version: 1,
       text: 'public class Toto {}'
@@ -103,7 +116,7 @@ async function testLanguageClient (
   // ... and expect the changed to be sent to the server
   expect(await waitClientNotification(connection.onDidChangeTextDocument)).toEqual({
     textDocument: {
-      uri: 'file:///tmp/project/src/main/Toto.java',
+      uri: mainFileUri.toString(),
       version: 2
     },
     contentChanges: [{
@@ -116,29 +129,18 @@ async function testLanguageClient (
     }]
   })
 
-  if (!automaticTextDocumentUpdate) {
-    // expect the document to being saved after 500ms
-    await Promise.all([
-      waitClientNotification(connection.onWillSaveTextDocument),
-      waitClientRequest<SaveTextDocumentParams, void, never>(handler => connection.onRequest(saveTextDocumentRequestType, handler)).then(([params, sendResponse]) => {
-        sendResponse()
-        return params
-      }),
-      waitClientNotification(connection.onDidSaveTextDocument)
-    ])
-  } else {
-    // wait 1sec to be sure no request is sent during this interval
-    await new Promise(resolve => setTimeout(resolve, 1000))
-  }
+  // wait 1sec to be sure no request is sent during this interval
+  await new Promise(resolve => setTimeout(resolve, 1000))
 
   // Test a completion request
   const completionRequestPromise = waitClientRequest(connection.onCompletion)
   editor.setPosition(new monaco.Position(1, 20))
   editor.trigger('me', 'editor.action.triggerSuggest', {})
+  editor.focus()
 
   const [completionRequest, sendCompletionRequestResponse] = await completionRequestPromise
   expect(completionRequest).toEqual({
-    textDocument: { uri: 'file:///tmp/project/src/main/Toto.java' },
+    textDocument: { uri: mainFileUri.toString() },
     position: { line: 0, character: 19 },
     context: {
       triggerKind: CompletionTriggerKind.Invoked,
@@ -149,13 +151,14 @@ async function testLanguageClient (
 
   // Test a hover request
   const hoverRequestPromise = waitClientRequest(connection.onHover)
-  await editor.getAction('editor.action.showHover').run()
+  await editor.getAction('editor.action.showHover')!.run()
   const [, sendHoverRequestResponse] = await hoverRequestPromise
   sendHoverRequestResponse(null)
 
   // Test go to declaration + getTextDocument
   const definitionRequestPromise = waitClientRequest(connection.onDefinition)
-  editor.getAction('editor.action.revealDefinition').run().catch(console.error)
+
+  void vscode.commands.executeCommand('editor.action.revealDefinition')
 
   const [, sendDefinitionRequestResponse] = await definitionRequestPromise
   sendDefinitionRequestResponse({
@@ -164,13 +167,13 @@ async function testLanguageClient (
   })
 
   const editorOpenDeferred = pDefer<monaco.editor.IStandaloneCodeEditor>()
-  const editorHandlerDisposable = registerEditorOpenHandler(async (model) => {
+  const editorHandlerDisposable = registerEditorOpenHandler(async (modelRef) => {
     // do nothing
     const editor = createEditor(document.createElement('div'), {
-      model
+      model: modelRef.object.textEditorModel
     })
     editor.onDidDispose(() => {
-      model.dispose()
+      modelRef.dispose()
     })
     setTimeout(() => {
       editorOpenDeferred.resolve(editor)
@@ -185,12 +188,15 @@ async function testLanguageClient (
       uri: 'file:///tmp/project/src/main/Otherfile.java'
     }
   })
+
+  const openNotificationPromise = waitClientNotification(connection.onDidOpenTextDocument)
+
   sendGetDocumentRequestResponse({
     text: 'other file content'
   })
 
   // Expect the model to be open
-  expect(await waitClientNotification(connection.onDidOpenTextDocument)).toEqual({
+  expect(await openNotificationPromise).toEqual({
     textDocument: {
       uri: 'file:///tmp/project/src/main/Otherfile.java',
       languageId: 'java',
@@ -209,15 +215,47 @@ async function testLanguageClient (
     }
   })
 
+  const savePromise = modelRef.object.save()
+
+  // Expect the model to be saved
+  const willSavePromise = waitClientNotification(connection.onWillSaveTextDocument)
+  const saveRequestPromise = waitClientRequest(handler => connection.onRequest(saveTextDocumentRequestType, handler))
+  const didSavePromise = waitClientNotification(connection.onDidSaveTextDocument)
+
+  expect(await willSavePromise).toEqual({
+    textDocument: {
+      uri: mainFileUri.toString()
+    },
+    reason: vscode.TextDocumentSaveReason.Manual
+  })
+  const [saveRequest, sendSaveRequestResponse] = await saveRequestPromise
+  expect(await saveRequest).toEqual({
+    textDocument: {
+      uri: mainFileUri.toString(),
+      text: modelRef.object.textEditorModel!.getValue()
+    }
+  })
+  sendSaveRequestResponse(null)
+
+  expect(await didSavePromise).toEqual({
+    textDocument: {
+      uri: mainFileUri.toString()
+    }
+  })
+
+  await savePromise
+
   editor.dispose()
-  model.dispose()
+  modelRef.dispose()
 
   // Expect the model to be closed
   expect(await waitClientNotification(connection.onDidCloseTextDocument)).toEqual({
     textDocument: {
-      uri: 'file:///tmp/project/src/main/Toto.java'
+      uri: mainFileUri.toString()
     }
   })
+
+  fileSystemDisposable.dispose()
 
   const disposePromise = languageClient.dispose()
 
@@ -231,6 +269,31 @@ async function testLanguageClient (
   expect(onRemainingRequest).not.toHaveBeenCalled()
   expect(onRemainingNotification).not.toHaveBeenCalled()
 }
+
+beforeAll(async () => {
+  await initializePromise
+
+  // wait for java vscode extension to be ready as we use it to test the configuration update
+  const { getApi } = registerExtension({
+    name: 'test',
+    publisher: 'codingame',
+    version: '1.0.0',
+    engines: {
+      vscode: '*'
+    },
+    enabledApiProposals: ['extensionsAny']
+  }, ExtensionHostKind.LocalProcess)
+  const api = await getApi()
+
+  await new Promise<void>((resolve) => {
+    const disposable = vscode.extensions.onDidChange(() => {
+      if (api.extensions.allAcrossExtensionHosts.some(ext => ext.id === 'redhat.java')) {
+        disposable.dispose()
+        resolve()
+      }
+    })
+  })
+})
 
 describe('Infrastructure', () => {
   test('Codingame behavior without mutualization', async () => {

@@ -1,1 +1,1 @@
-module.exports = "vscode-oniguruma/release/onig.wasm"
+module.exports = "node_modules/vscode-oniguruma/release/onig.wasm"

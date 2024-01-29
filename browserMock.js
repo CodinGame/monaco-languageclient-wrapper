@@ -1,4 +1,6 @@
 const fs = require('fs/promises')
+const { performance } = require('perf_hooks')
+const path = require('path')
 
 Object.defineProperty(document, 'queryCommandSupported', {
   value: jest.fn().mockImplementation(() => true),
@@ -19,20 +21,19 @@ Object.defineProperty(window, 'matchMedia', {
 });
 
 Object.defineProperty(window, 'fetch', {
-  value: jest.fn(async (path) => {
-
-    const content = await fs.readFile(path)
+  value: jest.fn(async (url) => {
+    const content = await fs.readFile(new URL(url).pathname)
     return {
       json: async () => JSON.stringify(JSON.parse(content.toString())),
-      arrayBuffer: async () => content.buffer.slice(content.byteOffset, content.byteOffset + content.byteLength)
+      arrayBuffer: async () => content.buffer.slice(content.byteOffset, content.byteOffset + content.byteLength),
+      status: 200
     }
   })
 })
 
 Object.defineProperty(URL, 'createObjectURL', {
   value: jest.fn((blob) => {
-
-    return null
+    return 'blob:not-working'
   })
 })
 
@@ -90,6 +91,9 @@ Object.defineProperty(window, 'TextEncoder', {
 Object.defineProperty(window, 'TextDecoder', {
   value: class TextDecoder {
     decode (octets) {
+      if (octets == null) {
+        return ''
+      }
       var string = "";
       var i = 0;
       while (i < octets.length) {
@@ -131,3 +135,18 @@ Object.defineProperty(window, 'TextDecoder', {
 Object.defineProperty(window, 'Buffer', {
   value: undefined
 })
+
+// Force override performance, for some reason the implementation is empty otherwise
+let _performance = performance
+Object.defineProperty(global, 'performance', {
+  get () { return _performance },
+  set (v) {
+    // ignore
+  }
+})
+
+global.CSS = {
+  escape: v => v
+}
+
+Element.prototype.scrollIntoView = jest.fn();
