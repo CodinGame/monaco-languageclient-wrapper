@@ -60,6 +60,8 @@ export default rollup.defineConfig({
     hoistTransitiveImports: false,
     dir: 'dist',
     format: 'esm',
+    preserveModules: true,
+    preserveModulesRoot: '/src',
     paths: {
       'monaco-editor': 'monaco-editor/esm/vs/editor/editor.api',
       'monaco-editor-core': 'monaco-editor/esm/vs/editor/editor.api'
