@@ -1,4 +1,3 @@
-import { MonacoLanguageClient } from 'monaco-languageclient'
 import { commands, Uri, languages, ExtensionContext, workspace, CancellationToken } from 'vscode'
 import { Position as LSPosition, Location as LSLocation } from 'vscode-languageclient'
 import { JavaInlayHintsProvider } from 'extensions/java/inlayHintsProvider'
@@ -7,6 +6,7 @@ import { Commands } from 'extensions/java/commands'
 import { applyWorkspaceEdit } from 'extensions/java/extension'
 import { ClassFileContentsRequest } from 'extensions/java/protocol'
 import { ExtensionFeature } from './tools'
+import { MonacoLanguageClient } from '../createLanguageClient'
 
 export class JavaExtensionFeature extends ExtensionFeature {
   constructor (private languageClient: MonacoLanguageClient) {

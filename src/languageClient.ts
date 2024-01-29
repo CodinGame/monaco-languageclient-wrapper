@@ -1,21 +1,21 @@
 import {
   CloseAction, ErrorAction, State
 } from 'vscode-languageclient'
-import {
-  MonacoLanguageClient, DisposableCollection
-} from 'monaco-languageclient'
 import delay from 'delay'
 import { CancellationToken, Emitter, NotificationType, RequestType, Event, LogMessageNotification } from 'vscode-languageserver-protocol'
 import * as vscode from 'vscode'
 import { errorHandler } from 'vscode/monaco'
 import once from 'once'
+import { DisposableCollection } from 'vscode-ws-jsonrpc'
+import { initializePromise } from '@codingame/monaco-editor-wrapper'
 import { updateServices } from './services'
-import createLanguageClient from './createLanguageClient'
+import createLanguageClient, { MonacoLanguageClient } from './createLanguageClient'
 import { WillShutdownParams } from './customRequests'
 import { FileSystemFeature, InitializeTextDocumentFeature, WillDisposeFeature } from './extensions'
 import { loadExtensionConfigurations } from './extensionConfiguration'
 import { getLanguageClientOptions, LanguageClientId, LanguageClientOptions } from './languageClientOptions'
 import { Infrastructure } from './infrastructure'
+import 'vscode/localExtensionHost'
 
 export interface LanguageClient {
   sendNotification<P>(type: NotificationType<P>, params?: P): Promise<void>
@@ -171,7 +171,8 @@ export class LanguageClientManager implements LanguageClient {
 
   private prepare = once(async () => {
     try {
-      await loadExtensionConfigurations([this.clientOptions], this.useMutualizedProxy)
+      await initializePromise
+      await loadExtensionConfigurations([this.clientOptions])
     } catch (error) {
       errorHandler.onUnexpectedError(new Error('[LSP] Unable to load extension configuration', {
         cause: error as Error
@@ -323,7 +324,9 @@ export class LanguageClientManager implements LanguageClient {
 
     this.languageClient.registerFeature(new WillDisposeFeature(this.languageClient, this.onWillShutdownEmitter))
 
-    this.languageClient.registerFeature(new FileSystemFeature(this.infrastructure, this))
+    if (this.infrastructure.getFileContent != null) {
+      this.languageClient.registerFeature(new FileSystemFeature(this.infrastructure, this))
+    }
 
     if (!this.infrastructure.automaticTextDocumentUpdate) {
       this.languageClient.registerFeature(new InitializeTextDocumentFeature(this, this.infrastructure))
@@ -350,10 +353,9 @@ export class LanguageClientManager implements LanguageClient {
 function createLanguageClientManager (
   id: LanguageClientId,
   infrastructure: Infrastructure,
-  clientOptions: LanguageClientOptions = getLanguageClientOptions(id),
+  clientOptions: LanguageClientOptions | undefined = getLanguageClientOptions(id),
   managerOptions: LanguageClientManagerOptions = {}
 ): LanguageClientManager {
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
   if (clientOptions == null) {
     throw new Error(`Unknown ${id} language server`)
   }

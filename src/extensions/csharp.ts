@@ -1,7 +1,7 @@
-import { MonacoLanguageClient } from 'monaco-languageclient'
 import { Uri, ExtensionContext, workspace, CancellationToken } from 'vscode'
 import { ProtocolRequestType } from 'vscode-languageserver-protocol'
 import { ExtensionFeature } from './tools'
+import { MonacoLanguageClient } from '../createLanguageClient'
 
 const OmnisharpMetadataRequestType = new ProtocolRequestType<{
   Timeout: number

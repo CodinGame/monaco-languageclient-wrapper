@@ -1,8 +1,7 @@
-import { MonacoLanguageClient } from 'monaco-languageclient'
-import { ProtocolRequestType } from 'vscode-languageclient/lib/common/api'
-import { DocumentSelector, ServerCapabilities } from 'vscode-languageserver-protocol'
+import { ProtocolRequestType, DocumentSelector, ServerCapabilities } from 'vscode-languageserver-protocol'
 import * as vscode from 'vscode'
 import { ExtensionFeature } from './tools'
+import { MonacoLanguageClient } from '../createLanguageClient'
 
 export const ResolveCobolSubroutineRequestType = new ProtocolRequestType<string, string | undefined, never, void, void>('cobol/resolveSubroutine')
 export class CobolResolveSubroutineFeature extends ExtensionFeature {

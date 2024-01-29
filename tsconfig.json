@@ -2,7 +2,7 @@
   "extends": "@codingame/tsconfig",
   "compilerOptions": {
     "baseUrl": "./src",
-    "isolatedModules": true,
+    "isolatedModules": false,
     "lib": [
       "dom",
       "dom.iterable",
@@ -11,9 +11,6 @@
     "module": "esnext",
     "noEmit": true,
     "paths": {
-      "app/*": [
-        "*"
-      ],
       "extensions/*": [
         "../extensions/*"
       ]

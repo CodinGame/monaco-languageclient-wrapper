@@ -7,8 +7,7 @@ import {
   _
 } from 'vscode-languageserver/lib/common/api'
 import { monaco } from '@codingame/monaco-editor-wrapper'
-import { MessageTransports } from 'monaco-languageclient'
-import * as vscode from 'vscode'
+import { MessageTransports } from 'vscode-languageclient'
 import { getFile, updateFile } from '../customRequests'
 import { Infrastructure, LanguageClientId, LanguageClientManager, LanguageClientOptions } from '../'
 
@@ -132,20 +131,18 @@ export class TestInfrastructure implements Infrastructure {
   }
 
   // use same method as CodinGameInfrastructure to be able to simply catch it
-  async getFileContent (resource: Uri, languageClient: LanguageClientManager): Promise<monaco.editor.ITextModel | null> {
+  async getFileContent (resource: Uri, languageClient: LanguageClientManager): Promise<string | undefined> {
     try {
-      const content = (await getFile(resource.toString(true), languageClient)).text
-      return monaco.editor.createModel(content, undefined, resource)
+      return (await getFile(resource.toString(true), languageClient)).text
     } catch (error) {
-      console.error('File not found', resource.toString())
-      return null
+      return undefined
     }
   }
 
   // use same method as CodinGameInfrastructure to be able to simply catch it
-  public async saveFileContent (document: vscode.TextDocument, reason: vscode.TextDocumentSaveReason, languageClient: LanguageClientManager): Promise<void> {
+  public async saveFileContent (document: monaco.Uri, content: string, languageClient: LanguageClientManager): Promise<void> {
     if (languageClient.isConnected()) {
-      await updateFile(document.uri.toString(), document.getText(), languageClient)
+      await updateFile(document.toString(), content, languageClient)
     }
   }
 
