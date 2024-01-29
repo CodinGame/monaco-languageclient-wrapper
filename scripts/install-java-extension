@@ -22,17 +22,16 @@ echo "Patching code..."
 cd src
 
 # Change import syntax so it builds to ESM
-find . -type f -exec sed -E -i 's/import (.*) = require\((.*)\)/import * as \1 from \2/g' {} \;
+find . -type f -exec sed -i'' -E 's/import (.*) = require\((.*)\)/import * as \1 from \2/g' {} \;
 
 # Import from vscode-languageclient/lib/common/api instead of vscode-languageclient/node
-sed -i -E 's/import \{ (.*)LanguageClient(.*) \} from [\x27"]vscode-languageclient\/node[\x27"];/import { \1BaseLanguageClient as LanguageClient\2 } from \x27vscode-languageclient\/lib\/common\/api\x27;/g' sourceAction.ts inlayHintsProvider.ts
+sed -i'' -E 's/import \{ (.*)LanguageClient(.*) \} from ['\''"]vscode-languageclient\/node['\''"];/import { \1BaseLanguageClient as LanguageClient\2 } from '\''vscode-languageclient\/browser'\'';/g' sourceAction.ts inlayHintsProvider.ts
 
 # Change syntax due to incompatibility between vscode-languageclient versions
-sed -i -E 's/languageClient.protocol2CodeConverter.asWorkspaceEdit\(/await languageClient.protocol2CodeConverter.asWorkspaceEdit(/g' sourceAction.ts extension.ts
-sed -i 's/function applyWorkspaceEdit(obj, languageClient): Thenable<boolean>/async function applyWorkspaceEdit(obj, languageClient): Promise<boolean>/g' extension.ts
+sed -i'' 's/function applyWorkspaceEdit(obj, languageClient): Thenable<boolean>/async function applyWorkspaceEdit(obj, languageClient): Promise<boolean>/g' extension.ts
 
 echo "Building extension..."
-tsc --declaration --importHelpers --module es2020 --outDir "$output_directory/"
+npx tsc --declaration --importHelpers --module es2020 --lib WebWorker --outDir "$output_directory/"
 
 echo "Cleaning..."
 rm -rf $build_directory
