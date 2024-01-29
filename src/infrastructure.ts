@@ -116,7 +116,6 @@ export abstract class CodinGameInfrastructure implements Infrastructure {
     try {
       return (await getFile(resource.toString(true), languageClient)).text
     } catch (error) {
-      console.error('File not found', resource.toString())
       return undefined
     }
   }
