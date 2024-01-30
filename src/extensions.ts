@@ -92,9 +92,6 @@ class InfrastructureTextFileSystemProvider implements IFileSystemProviderWithFil
   }
 
   async readFile (resource: monaco.Uri): Promise<Uint8Array> {
-    if (!resource.toString().startsWith(this.infrastructure.rootUri)) {
-      throw FileSystemProviderError.create('file not found', FileSystemProviderErrorCode.FileNotFound)
-    }
     const content = await this.getFileContent(resource)
     return encoder.encode(content)
   }
@@ -112,9 +109,6 @@ class InfrastructureTextFileSystemProvider implements IFileSystemProviderWithFil
   }
 
   async stat (resource: monaco.Uri): Promise<IStat> {
-    if (!resource.toString().startsWith(this.infrastructure.rootUri)) {
-      throw FileSystemProviderError.create('file not found', FileSystemProviderErrorCode.FileNotFound)
-    }
     try {
       const content = await this.getFileContent(resource)
       if (content != null) {
