@@ -85,7 +85,13 @@ class InfrastructureTextFileSystemProvider implements IFileSystemProviderWithFil
 
   private cachedContent: Map<string, Promise<string | undefined>> = new Map()
   private async getFileContent (resource: monaco.Uri): Promise<string | undefined> {
-    if (!this.cachedContent.has(resource.toString()) && resource.toString().includes('.')) {
+    const REMOTE_FILE_BLACKLIST = ['.git/config', '.vscode', monaco.Uri.parse(this.infrastructure.rootUri).path]
+
+    const blacklisted = REMOTE_FILE_BLACKLIST.some(blacklisted => resource.path.endsWith(blacklisted))
+    if (blacklisted) {
+      return undefined
+    }
+    if (!this.cachedContent.has(resource.toString())) {
       this.cachedContent.set(resource.toString(), this.infrastructure.getFileContent!(resource, this.languageClientManager))
     }
     return await this.cachedContent.get(resource.toString())
