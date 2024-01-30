@@ -4,8 +4,7 @@ import pkg from './package.json' assert { type: 'json' }
 import removeVscodeDeclareModule from './rollup/rollup-plugin-remove-vscode-declare-module'
 
 const externals = [
-  ...Object.keys(pkg.dependencies),
-  'monaco-editor'
+  ...Object.keys(pkg.dependencies)
 ]
 
 export default rollup.defineConfig({

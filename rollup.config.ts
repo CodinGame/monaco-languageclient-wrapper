@@ -20,8 +20,7 @@ const PURE_ANNO = '#__PURE__'
 const EXTENSION_DIR = path.resolve(__dirname, 'extensions')
 
 const externals = [
-  ...Object.keys(pkg.dependencies),
-  'monaco-editor'
+  ...Object.keys(pkg.dependencies)
 ]
 
 const extensions = ['.js', '.ts']
@@ -61,11 +60,7 @@ export default rollup.defineConfig({
     dir: 'dist',
     format: 'esm',
     preserveModules: true,
-    preserveModulesRoot: '/src',
-    paths: {
-      'monaco-editor': 'monaco-editor/esm/vs/editor/editor.api',
-      'monaco-editor-core': 'monaco-editor/esm/vs/editor/editor.api'
-    }
+    preserveModulesRoot: '/src'
   }],
   plugins: [
     nodePolyfills(),
