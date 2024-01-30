@@ -1,7 +1,7 @@
 import { IWebSocket, WebSocketMessageReader, WebSocketMessageWriter, toSocket } from 'vscode-ws-jsonrpc'
 import { MessageTransports } from 'vscode-languageclient'
 import * as monaco from 'monaco-editor'
-import type * as vscode from 'vscode'
+import * as vscode from 'vscode'
 import { LSPAny } from 'vscode-languageserver-protocol'
 import { getFile, updateFile } from './customRequests'
 import { LanguageClientManager } from './languageClient'
@@ -48,7 +48,7 @@ export interface Infrastructure {
    */
   openConnection (id: LanguageClientId): Promise<MessageTransports>
 
-  getInitializationOptions? (): LSPAny
+  getInitializationOptions? (documentSelector?: vscode.DocumentSelector): LSPAny
 }
 
 class CloseOnDisposeWebSocketMessageReader extends WebSocketMessageReader {
@@ -141,18 +141,20 @@ export abstract class CodinGameInfrastructure implements Infrastructure {
     }
   }
 
-  public getInitializationOptions (): LSPAny {
+  public getInitializationOptions (documentSelector?: vscode.DocumentSelector): LSPAny {
     // Provide all open model content to the backend so it's able to write them on the disk
     // BEFORE starting the server or registering the workspace folders
     // The didOpen notification already contain the file content but some LSP (like gopls)
     // don't use it and needs the file to be up-to-date on the disk before the workspace folder is added
-    const files = monaco.editor
-      .getModels()
-      .filter((model) => model.uri.scheme === 'file')
-      .reduce((map, model) => {
-        map[model.uri.toString(true)] = model.getValue()
+    let documents = vscode.workspace.textDocuments.filter(doc => doc.uri.scheme === 'file')
+    if (documentSelector != null) {
+      documents = documents.filter(doc => vscode.languages.match(documentSelector, doc))
+    }
+    const files = documents
+      .reduce((map, doc) => {
+        map[doc.uri.toString(true)] = doc.getText()
         return map
-      }, {} as Record<string, string>)
+      }, <Record<string, string>>{})
     return {
       files
     }
