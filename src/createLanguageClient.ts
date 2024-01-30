@@ -129,7 +129,7 @@ async function createLanguageClient (
   middleware?: Middleware
 ): Promise<MonacoLanguageClient> {
   const allInitializationOptions = () => {
-    const infrastructureInitOptions = infrastructure.getInitializationOptions?.()
+    const infrastructureInitOptions = infrastructure.getInitializationOptions?.(documentSelector)
     const languageInitOptions = typeof initializationOptions === 'function' ? initializationOptions() : initializationOptions
     if (infrastructureInitOptions != null || languageInitOptions != null) {
       return {
