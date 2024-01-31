@@ -1,14 +1,13 @@
 import { visualizer } from 'rollup-plugin-visualizer'
 import commonjs from '@rollup/plugin-commonjs'
-import alias from '@rollup/plugin-alias'
 import { nodeResolve } from '@rollup/plugin-node-resolve'
 import eslint from '@rollup/plugin-eslint'
-import { babel } from '@rollup/plugin-babel'
 import cleanup from 'js-cleanup'
 import * as rollup from 'rollup'
 import * as recast from 'recast'
 import recastBabylonParser from 'recast/parsers/babylon.js'
 import nodePolyfills from 'rollup-plugin-polyfill-node'
+import typescript from '@rollup/plugin-typescript'
 import path, { dirname } from 'path'
 import { fileURLToPath } from 'url'
 import pkg from './package.json' assert { type: 'json' }
@@ -60,9 +59,12 @@ export default rollup.defineConfig({
     dir: 'dist',
     format: 'esm',
     preserveModules: true,
-    preserveModulesRoot: '/src'
+    preserveModulesRoot: 'src'
   }],
   plugins: [
+    typescript({
+      noEmitOnError: true
+    }),
     nodePolyfills(),
     eslint({
       throwOnError: true,
@@ -93,31 +95,7 @@ export default rollup.defineConfig({
         return false
       }
     }),
-    babel({
-      extensions,
-      presets: [
-        ['@babel/preset-env', {
-          modules: false
-        }],
-        '@babel/preset-typescript'
-      ],
-      plugins: [
-        '@babel/plugin-proposal-class-properties',
-        '@babel/plugin-proposal-optional-chaining'
-      ],
-      babelHelpers: 'bundled',
-      exclude: /node_modules\/(?!vscode-languageserver-types|vscode-languageclient)/
-    }),
     visualizer(),
-    alias({
-      entries: [{
-        find: /^monaco-editor-core\//,
-        replacement: 'monaco-editor/esm/vs/editor/editor.api'
-      }, {
-        find: /^(monaco-editor|monaco-editor-core)$/,
-        replacement: 'monaco-editor/esm/vs/editor/editor.api'
-      }]
-    }),
     {
       name: 'dynamic-import-polyfill',
       renderDynamicImport (): { left: string, right: string } {
