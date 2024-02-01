@@ -1,14 +1,14 @@
-import { monaco, registerTextModelContentProvider } from '@codingame/monaco-editor-wrapper'
-import {
-  MonacoLanguageClient, DisposableCollection
-} from 'monaco-languageclient'
+import { monaco } from '@codingame/monaco-editor-wrapper'
+import { FileSystemProviderCapabilities, FileSystemProviderError, FileSystemProviderErrorCode, FileType, IFileSystemProviderWithFileReadWriteCapability, IStat, registerFileSystemOverlay } from '@codingame/monaco-vscode-files-service-override'
 import { StaticFeature, FeatureState } from 'vscode-languageclient/lib/common/api'
 import { DidSaveTextDocumentNotification, Disposable, DocumentSelector, Emitter, ServerCapabilities, TextDocumentSyncOptions } from 'vscode-languageserver-protocol'
 import * as vscode from 'vscode'
+import { IDisposable } from 'monaco-editor'
+import { DisposableStore } from 'vscode/monaco'
 import { willShutdownNotificationType, WillShutdownParams } from './customRequests'
 import { Infrastructure } from './infrastructure'
 import { LanguageClientManager } from './languageClient'
-import { getServices } from './services'
+import { MonacoLanguageClient } from './createLanguageClient'
 
 interface ResolvedTextDocumentSyncCapabilities {
   resolvedTextDocumentSync?: TextDocumentSyncOptions
@@ -31,7 +31,7 @@ export class InitializeTextDocumentFeature implements StaticFeature {
     const languageClient = this.languageClient
     async function saveFile (textDocument: vscode.TextDocument) {
       if (documentSelector != null && vscode.languages.match(documentSelector, textDocument) > 0 && textDocument.uri.scheme === 'file') {
-        await infrastructure.saveFileContent?.(textDocument, vscode.TextDocumentSaveReason.Manual, languageClient)
+        await infrastructure.saveFileContent?.(textDocument.uri, textDocument.getText(), languageClient)
 
         // Always send notification even if the server doesn't support it (because csharp register the didSave feature too late)
         await languageClient.sendNotification(DidSaveTextDocumentNotification.type, {
@@ -53,7 +53,7 @@ export class InitializeTextDocumentFeature implements StaticFeature {
     }
   }
 
-  dispose (): void {
+  clear (): void {
     this.didOpenTextDocumentDisposable?.dispose()
   }
 }
@@ -73,7 +73,78 @@ export class WillDisposeFeature implements StaticFeature {
     }
   }
 
-  dispose (): void {}
+  clear (): void {}
+}
+
+const encoder = new TextEncoder()
+const decoder = new TextDecoder()
+class InfrastructureTextFileSystemProvider implements IFileSystemProviderWithFileReadWriteCapability {
+  capabilities = FileSystemProviderCapabilities.FileReadWrite | FileSystemProviderCapabilities.PathCaseSensitive | FileSystemProviderCapabilities.Readonly
+  constructor (private infrastructure: Infrastructure, private languageClientManager: LanguageClientManager) {
+  }
+
+  private cachedContent: Map<string, Promise<string | undefined>> = new Map()
+  private async getFileContent (resource: monaco.Uri): Promise<string | undefined> {
+    const REMOTE_FILE_BLACKLIST = ['.git/config', '.vscode', monaco.Uri.parse(this.infrastructure.rootUri).path]
+
+    const blacklisted = REMOTE_FILE_BLACKLIST.some(blacklisted => resource.path.endsWith(blacklisted))
+    if (blacklisted) {
+      return undefined
+    }
+    if (!this.cachedContent.has(resource.toString())) {
+      this.cachedContent.set(resource.toString(), this.infrastructure.getFileContent!(resource, this.languageClientManager))
+    }
+    return await this.cachedContent.get(resource.toString())
+  }
+
+  async readFile (resource: monaco.Uri): Promise<Uint8Array> {
+    const content = await this.getFileContent(resource)
+    return encoder.encode(content)
+  }
+
+  async writeFile (): Promise<void> {
+    throw FileSystemProviderError.create('not allowed', FileSystemProviderErrorCode.NoPermissions)
+  }
+
+  onDidChangeCapabilities = new vscode.EventEmitter<never>().event
+  onDidChangeFile = new vscode.EventEmitter<never>().event
+  watch (): IDisposable {
+    return {
+      dispose () {}
+    }
+  }
+
+  async stat (resource: monaco.Uri): Promise<IStat> {
+    try {
+      const content = await this.getFileContent(resource)
+      if (content != null) {
+        return {
+          type: FileType.File,
+          size: encoder.encode(content).length,
+          mtime: Date.now(),
+          ctime: Date.now()
+        }
+      }
+    } catch (err) {
+      throw FileSystemProviderError.create(err as Error, FileSystemProviderErrorCode.Unknown)
+    }
+    throw FileSystemProviderError.create('file not found', FileSystemProviderErrorCode.FileNotFound)
+  }
+
+  async mkdir (): Promise<void> {
+  }
+
+  async readdir () {
+    return []
+  }
+
+  delete (): Promise<void> {
+    throw new Error('Method not implemented.')
+  }
+
+  rename (): Promise<void> {
+    throw new Error('Method not implemented.')
+  }
 }
 
 export class FileSystemFeature implements StaticFeature {
@@ -82,22 +153,27 @@ export class FileSystemFeature implements StaticFeature {
   constructor (private infrastructure: Infrastructure, private languageClientManager: LanguageClientManager) {}
 
   private registerFileHandlers (): Disposable {
-    const disposableCollection = new DisposableCollection()
-    const infrastructure = this.infrastructure
-    const languageClientManager = this.languageClientManager
-    disposableCollection.push(registerTextModelContentProvider('file', {
-      async provideTextContent (resource: monaco.Uri): Promise<monaco.editor.ITextModel | null> {
-        return await infrastructure.getFileContent(resource, languageClientManager)
-      }
-    }))
-    disposableCollection.push(getServices().workspace.registerSaveDocumentHandler({
-      async saveTextContent (document, reason) {
-        if (languageClientManager.isModelManaged(document) && document.uri.scheme === 'file') {
-          await infrastructure.saveFileContent?.(document, reason, languageClientManager)
+    const disposables = new DisposableStore()
+
+    // Register readonly file system overlay to access remote files
+    if (this.infrastructure.getFileContent != null) {
+      disposables.add(registerFileSystemOverlay(-1, new InfrastructureTextFileSystemProvider(this.infrastructure, this.languageClientManager)))
+    }
+
+    if (this.infrastructure.saveFileContent != null) {
+      const watcher = vscode.workspace.createFileSystemWatcher(new vscode.RelativePattern(vscode.Uri.parse(this.infrastructure.rootUri), '**/*'))
+      disposables.add(watcher)
+      const onFileChange = async (uri: vscode.Uri) => {
+        if ((await vscode.workspace.fs.stat(uri)).type === vscode.FileType.File) {
+          const content = await vscode.workspace.fs.readFile(uri)
+          await this.infrastructure.saveFileContent?.(uri, decoder.decode(content), this.languageClientManager)
         }
       }
-    }))
-    return disposableCollection
+      watcher.onDidChange(onFileChange)
+      watcher.onDidCreate(onFileChange)
+    }
+
+    return disposables
   }
 
   fillClientCapabilities (): void {}
@@ -116,5 +192,9 @@ export class FileSystemFeature implements StaticFeature {
   dispose (): void {
     this.disposable?.dispose()
     this.disposable = undefined
+  }
+
+  clear (): void {
+    this.dispose()
   }
 }

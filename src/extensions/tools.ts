@@ -1,4 +1,3 @@
-
 import { ExtensionContext } from 'vscode'
 import { FeatureState, StaticFeature } from 'vscode-languageclient/lib/browser/main'
 import { Disposable, DocumentSelector, ServerCapabilities } from 'vscode-languageserver-protocol'
@@ -46,6 +45,8 @@ class SimpleExtensionContext implements ExtensionContext, Disposable {
   get logPath () { return unsupported() }
   get extensionMode () { return unsupported() }
   get extension () { return unsupported() }
+  get extensionRuntime () { return unsupported() }
+  messagePassingProtocol = undefined
 }
 
 export abstract class ExtensionFeature implements StaticFeature {
@@ -64,7 +65,7 @@ export abstract class ExtensionFeature implements StaticFeature {
 
   protected abstract activate (context: ExtensionContext, capabilities: ServerCapabilities, documentSelector: DocumentSelector): void
 
-  dispose (): void {
+  clear (): void {
     this.context.dispose()
   }
 }

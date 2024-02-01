@@ -1,8 +1,8 @@
 import { IWebSocket, WebSocketMessageReader, WebSocketMessageWriter, toSocket } from 'vscode-ws-jsonrpc'
-import { MessageTransports } from 'monaco-languageclient'
+import { MessageTransports } from 'vscode-languageclient'
 import * as monaco from 'monaco-editor'
-import type * as vscode from 'vscode'
-import { TextDocumentSaveReason, LSPAny } from 'vscode-languageserver-protocol'
+import * as vscode from 'vscode'
+import { LSPAny } from 'vscode-languageserver-protocol'
 import { getFile, updateFile } from './customRequests'
 import { LanguageClientManager } from './languageClient'
 import { LanguageClientId, LanguageClientOptions } from './languageClientOptions'
@@ -34,13 +34,13 @@ export interface Infrastructure {
    * @param reason The reason of the save
    * @param languageClient The languageclient we're trying to save the file to
    */
-  saveFileContent? (document: vscode.TextDocument, reason: vscode.TextDocumentSaveReason, languageClient: LanguageClientManager): Promise<void>
+  saveFileContent? (document: monaco.Uri, content: string, languageClient: LanguageClientManager): Promise<void>
   /**
    * Get a text file content as a model
    * @param resource the Uri of the file
    * @param languageClient The languageclient we're trying to get the file from
    */
-  getFileContent (resource: monaco.Uri, languageClient: LanguageClientManager): Promise<monaco.editor.ITextModel | null>
+  getFileContent? (resource: monaco.Uri, languageClient: LanguageClientManager): Promise<string | undefined>
 
   /**
    * Open a connection to the language server
@@ -48,7 +48,7 @@ export interface Infrastructure {
    */
   openConnection (id: LanguageClientId): Promise<MessageTransports>
 
-  getInitializationOptions? (): LSPAny
+  getInitializationOptions? (documentSelector?: vscode.DocumentSelector): LSPAny
 }
 
 class CloseOnDisposeWebSocketMessageReader extends WebSocketMessageReader {
@@ -106,19 +106,17 @@ export abstract class CodinGameInfrastructure implements Infrastructure {
     name: 'main'
   }]
 
-  public async saveFileContent (document: vscode.TextDocument, reason: TextDocumentSaveReason, languageClient: LanguageClientManager): Promise<void> {
+  public async saveFileContent (document: monaco.Uri, content: string, languageClient: LanguageClientManager): Promise<void> {
     if (languageClient.isConnected()) {
-      await updateFile(document.uri.toString(), document.getText(), languageClient)
+      await updateFile(document.toString(), content, languageClient)
     }
   }
 
-  public async getFileContent (resource: monaco.Uri, languageClient: LanguageClientManager): Promise<monaco.editor.ITextModel | null> {
+  public async getFileContent (resource: monaco.Uri, languageClient: LanguageClientManager): Promise<string | undefined> {
     try {
-      const content = (await getFile(resource.toString(true), languageClient)).text
-      return monaco.editor.createModel(content, undefined, resource)
+      return (await getFile(resource.toString(true), languageClient)).text
     } catch (error) {
-      console.error('File not found', resource.toString())
-      return null
+      return undefined
     }
   }
 
@@ -143,18 +141,20 @@ export abstract class CodinGameInfrastructure implements Infrastructure {
     }
   }
 
-  public getInitializationOptions (): LSPAny {
+  public getInitializationOptions (documentSelector?: vscode.DocumentSelector): LSPAny {
     // Provide all open model content to the backend so it's able to write them on the disk
     // BEFORE starting the server or registering the workspace folders
     // The didOpen notification already contain the file content but some LSP (like gopls)
     // don't use it and needs the file to be up-to-date on the disk before the workspace folder is added
-    const files = monaco.editor
-      .getModels()
-      .filter((model) => model.uri.scheme === 'file')
-      .reduce((map, model) => {
-        map[model.uri.toString(true)] = model.getValue()
+    let documents = vscode.workspace.textDocuments.filter(doc => doc.uri.scheme === 'file')
+    if (documentSelector != null) {
+      documents = documents.filter(doc => vscode.languages.match(documentSelector, doc))
+    }
+    const files = documents
+      .reduce((map, doc) => {
+        map[doc.uri.toString(true)] = doc.getText()
         return map
-      }, {} as Record<string, string>)
+      }, <Record<string, string>>{})
     return {
       files
     }

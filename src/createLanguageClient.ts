@@ -1,7 +1,8 @@
 import { MessageReader, MessageWriter, Message, Event, DataCallback, Disposable, PartialMessageInfo } from 'vscode-jsonrpc'
 import {
-  MonacoLanguageClient, Middleware, ErrorHandler, IConnectionProvider, MessageTransports
-} from 'monaco-languageclient'
+  Middleware, ErrorHandler, MessageTransports, BaseLanguageClient
+  , LanguageClientOptions as BaseLanguageClientOptions
+} from 'vscode-languageclient'
 import { InitializeParams, InitializeRequest } from 'vscode-languageserver-protocol'
 import { LanguageClientId, LanguageClientOptions } from './languageClientOptions'
 import { Infrastructure } from './infrastructure'
@@ -56,6 +57,20 @@ class MiddlewareMessageReader implements MessageReader {
 
   dispose (): void {
     this.delegate.dispose()
+  }
+}
+
+interface IConnectionProvider {
+    get(encoding: string): Promise<MessageTransports>
+}
+
+export class MonacoLanguageClient extends BaseLanguageClient {
+  constructor (id: string, name: string, clientOptions: BaseLanguageClientOptions, protected readonly connectionProvider: IConnectionProvider) {
+    super(id, name, clientOptions)
+  }
+
+  protected override createMessageTransports (encoding: string): Promise<MessageTransports> {
+    return this.connectionProvider.get(encoding)
   }
 }
 
@@ -114,7 +129,7 @@ async function createLanguageClient (
   middleware?: Middleware
 ): Promise<MonacoLanguageClient> {
   const allInitializationOptions = () => {
-    const infrastructureInitOptions = infrastructure.getInitializationOptions?.()
+    const infrastructureInitOptions = infrastructure.getInitializationOptions?.(documentSelector)
     const languageInitOptions = typeof initializationOptions === 'function' ? initializationOptions() : initializationOptions
     if (infrastructureInitOptions != null || languageInitOptions != null) {
       return {
@@ -143,10 +158,9 @@ async function createLanguageClient (
     }
   }
 
-  const client = new _MonacoLanguageClient({
-    id: `${id}-languageclient`,
-    name: `CodinGame ${id} Language Client`,
-    clientOptions: {
+  const client = new _MonacoLanguageClient(
+    `${id}-languageclient`, `CodinGame ${id} Language Client`,
+    {
       // use a language id as a document selector
       documentSelector,
       // disable the default error handler
@@ -155,11 +169,9 @@ async function createLanguageClient (
       synchronize,
       initializationOptions: allInitializationOptions
     },
-    connectionProvider: new CGLSPConnectionProvider(id, infrastructure)
-  })
-  client.registerConfigurationFeatures()
-  client.registerProgressFeatures()
-  client.registerTextDocumentSaveFeatures()
+    new CGLSPConnectionProvider(id, infrastructure)
+  )
+  client.registerProposedFeatures()
 
   if (createAdditionalFeatures != null) {
     client.registerFeatures(await createAdditionalFeatures(client))
