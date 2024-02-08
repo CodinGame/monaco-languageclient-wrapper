@@ -8,7 +8,6 @@ import {
 import { createModelReference } from 'vscode/monaco'
 import * as vscode from 'vscode'
 import { RegisteredFileSystemProvider, RegisteredMemoryFile, registerFileSystemOverlay } from '@codingame/monaco-vscode-files-service-override'
-import { ExtensionHostKind, registerExtension } from 'vscode/extensions'
 import pDefer, { TestInfrastructure, waitClientNotification, waitClientRequest } from './tools'
 import { GetTextDocumentParams, getTextDocumentRequestType, GetTextDocumentResult, saveTextDocumentRequestType } from '../customRequests'
 import { createLanguageClientManager, LanguageClientManager, getLanguageClientOptions, StaticLanguageClientId } from '..'
@@ -273,27 +272,6 @@ async function testLanguageClient (
 
 beforeAll(async () => {
   await initializePromise
-
-  // wait for java vscode extension to be ready as we use it to test the configuration update
-  const { getApi } = registerExtension({
-    name: 'test',
-    publisher: 'codingame',
-    version: '1.0.0',
-    engines: {
-      vscode: '*'
-    },
-    enabledApiProposals: ['extensionsAny']
-  }, ExtensionHostKind.LocalProcess)
-  const api = await getApi()
-
-  await new Promise<void>((resolve) => {
-    const disposable = vscode.extensions.onDidChange(() => {
-      if (api.extensions.allAcrossExtensionHosts.some(ext => ext.id === 'redhat.java')) {
-        disposable.dispose()
-        resolve()
-      }
-    })
-  })
 })
 
 void initUserConfiguration(JSON.stringify({
