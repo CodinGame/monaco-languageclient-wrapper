@@ -42,6 +42,7 @@ Object.defineProperty(window, 'Worker', {
     constructor(stringUrl) {}
     postMessage(msg) {}
     terminate () {}
+    removeEventListener () {}
   }
 })
 
