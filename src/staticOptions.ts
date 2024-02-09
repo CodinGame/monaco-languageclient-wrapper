@@ -185,6 +185,11 @@ const staticOptions = asLanguageClientOptionsById({
         scheme: 'file',
         pattern: '**/**.{js,jsx}',
         language: 'javascript'
+      },
+      {
+        scheme: 'file',
+        pattern: '**/*.{ts}',
+        language: 'typescript'
       }
     ],
     mutualizable: true
@@ -408,6 +413,11 @@ const staticOptions = asLanguageClientOptionsById({
         scheme: 'file',
         pattern: '**/*.js',
         language: 'javascript'
+      },
+      {
+        scheme: 'file',
+        pattern: '**/*.{ts}',
+        language: 'typescript'
       }
     ],
     synchronize: {},
