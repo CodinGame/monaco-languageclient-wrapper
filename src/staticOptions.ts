@@ -27,8 +27,7 @@ const staticOptions = asLanguageClientOptionsById({
         pattern: '**/*.ts'
       }
     ],
-    mutualizable: true,
-    vscodeExtensionIds: ['typescript-language-features', 'angular']
+    mutualizable: true
   },
   bash: {
     documentSelector: [
@@ -47,15 +46,12 @@ const staticOptions = asLanguageClientOptionsById({
     ],
     middleware: clangdHotfixMiddleware,
     mutualizable: false
-    // The extension is cpptools BUT the language server is unable to use the client configuration (it requires client code)
-    // vscodeExtensionIds: ['cpptools']
   },
   csharp: {
     documentSelector: [
       { scheme: 'file', language: 'csharp' }
     ],
     mutualizable: true,
-    vscodeExtensionIds: ['omnisharp'],
     middleware: {
       async provideDefinition (document, position, token, next) {
         const definition = await next(document, position, token)
@@ -88,8 +84,6 @@ const staticOptions = asLanguageClientOptionsById({
     ],
     middleware: clangdHotfixMiddleware,
     mutualizable: false
-    // The extension is cpptools BUT the language server is unable to use the client configuration (it requires client code)
-    // vscodeExtensionIds: ['cpptools']
   },
   clojure: {
     documentSelector: [
@@ -107,7 +101,6 @@ const staticOptions = asLanguageClientOptionsById({
       configurationSection: 'cobol-lsp'
     },
     mutualizable: false,
-    vscodeExtensionIds: ['cobol'],
     defaultConfigurationOverride: {
       'cobol-lsp.subroutine-manager.paths-local': ['/tmp/project']
     },
@@ -126,8 +119,7 @@ const staticOptions = asLanguageClientOptionsById({
         language: 'dart'
       }
     ],
-    mutualizable: true,
-    vscodeExtensionIds: ['dart']
+    mutualizable: true
   },
   go: {
     documentSelector: [
@@ -138,7 +130,6 @@ const staticOptions = asLanguageClientOptionsById({
       { language: 'tmpl', scheme: 'file' }
     ],
     mutualizable: true,
-    vscodeExtensionIds: ['vscode-go'],
     defaultConfigurationOverride: {
       gopls: {
         'ui.navigation.importShortcut': 'Definition'
@@ -152,8 +143,7 @@ const staticOptions = asLanguageClientOptionsById({
     synchronize: {
       configurationSection: 'groovy'
     },
-    mutualizable: true,
-    vscodeExtensionIds: ['vscode-groovy']
+    mutualizable: true
   },
   java: {
     documentSelector: [
@@ -165,7 +155,6 @@ const staticOptions = asLanguageClientOptionsById({
       configurationSection: ['java', 'editor.insertSpaces', 'editor.tabSize']
     },
     mutualizable: true,
-    vscodeExtensionIds: ['java'],
     async createAdditionalFeatures (client) {
       const { JavaExtensionFeature } = await import('./extensions/java')
       return [
@@ -198,8 +187,7 @@ const staticOptions = asLanguageClientOptionsById({
         language: 'javascript'
       }
     ],
-    mutualizable: true,
-    vscodeExtensionIds: ['typescript-language-features']
+    mutualizable: true
   },
   kotlin: {
     // https://github.com/fwcd/vscode-kotlin/blob/db5916080868a6a8e064c60d49624926c2fa61bd/src/languageSetup.ts#L104
@@ -221,7 +209,6 @@ const staticOptions = asLanguageClientOptionsById({
       configurationSection: 'Lua'
     },
     mutualizable: true,
-    vscodeExtensionIds: ['lua'],
     defaultConfigurationOverride: {
       'Lua.runtime.version': 'Lua 5.4',
       'Lua.diagnostics.enable': true,
@@ -256,8 +243,6 @@ const staticOptions = asLanguageClientOptionsById({
     ],
     middleware: clangdHotfixMiddleware,
     mutualizable: false
-    // The extension is cpptools BUT the language server is unable to use the client configuration (it requires client code)
-    // vscodeExtensionIds: ['cpptools']
   },
   'php-serenata': {
     // https://gitlab.com/Serenata/visual-studio-code-client/-/blob/master/src/extension.ts#L120
@@ -315,8 +300,7 @@ const staticOptions = asLanguageClientOptionsById({
     synchronize: {
       configurationSection: 'python'
     },
-    mutualizable: true,
-    vscodeExtensionIds: ['vscode-python']
+    mutualizable: true
   },
   r: {
     // https://github.com/REditorSupport/vscode-R/blob/96ed4740101d8cd82f908b415df1dd205b4be824/src/languageService.ts#L186
@@ -328,7 +312,6 @@ const staticOptions = asLanguageClientOptionsById({
       configurationSection: 'r.lsp'
     },
     mutualizable: true,
-    vscodeExtensionIds: ['vscode-R'],
     defaultConfigurationOverride: {
       'r.lsp.diagnostics': false
     }
@@ -341,8 +324,7 @@ const staticOptions = asLanguageClientOptionsById({
       }
     ],
     synchronize: {},
-    mutualizable: true,
-    vscodeExtensionIds: ['typescript-language-features']
+    mutualizable: true
   },
   ruby: {
     // https://github.com/castwide/vscode-solargraph/blob/3ebd9241f013305a84ec64334fca45b487bde904/src/language-client.ts#L56
@@ -350,7 +332,6 @@ const staticOptions = asLanguageClientOptionsById({
       { scheme: 'file', language: 'ruby' }
     ],
     mutualizable: true,
-    vscodeExtensionIds: ['solargraph'],
     defaultConfigurationOverride: {
       'solargraph.diagnostics': true,
       'solargraph.formatting': true
@@ -374,7 +355,6 @@ const staticOptions = asLanguageClientOptionsById({
       configurationSection: 'metals'
     },
     mutualizable: false,
-    vscodeExtensionIds: ['scalameta'],
     maxInitializeDuration: 60_000,
     readinessMessageMatcher: /compiled scala-project in/
   },
@@ -407,8 +387,7 @@ const staticOptions = asLanguageClientOptionsById({
       }
     ],
     synchronize: {},
-    mutualizable: true,
-    vscodeExtensionIds: ['typescript-language-features']
+    mutualizable: true
   },
   verilog: {
     documentSelector: [
@@ -418,7 +397,6 @@ const staticOptions = asLanguageClientOptionsById({
       }
     ],
     mutualizable: false,
-    vscodeExtensionIds: ['svlangserver'],
     defaultConfigurationOverride: {
       'systemverilog.linter': 'icarus',
       'systemverilog.launchConfiguration': 'iverilog -g2012 -t null'
@@ -433,8 +411,7 @@ const staticOptions = asLanguageClientOptionsById({
       }
     ],
     synchronize: {},
-    mutualizable: true,
-    vscodeExtensionIds: ['typescript-language-features']
+    mutualizable: true
   }
 })
 
