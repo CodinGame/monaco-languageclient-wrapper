@@ -124,7 +124,10 @@
   "overrides": {
     "vscode": "$vscode",
     "monaco-editor": "$monaco-editor",
-    "@typescript-eslint/eslint-plugin": "$@typescript-eslint/eslint-plugin"
+    "@typescript-eslint/eslint-plugin": "$@typescript-eslint/eslint-plugin",
+    "@codingame/semantic-release-config": {
+      "@codingame/semantic-release-rules": "1.1.0"
+    }
   },
   "volta": {
     "node": "20.10.0",
