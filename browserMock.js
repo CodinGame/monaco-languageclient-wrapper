@@ -6,6 +6,8 @@ Object.defineProperty(document, 'queryCommandSupported', {
   value: jest.fn().mockImplementation(() => true),
 });
 
+window.process = undefined
+
 Object.defineProperty(window, 'matchMedia', {
   writable: true,
   value: jest.fn().mockImplementation(query => ({
