@@ -100,7 +100,7 @@
     "modulePathIgnorePatterns": [
       "<rootDir>/dist/"
     ],
-    "setupFiles": [
+    "setupFilesAfterEnv": [
       "fake-indexeddb/auto",
       "<rootDir>/browserMock.js"
     ],
