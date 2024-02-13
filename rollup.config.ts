@@ -63,6 +63,12 @@ export default rollup.defineConfig({
     {
       name: 'external-resolver',
       resolveId (id) {
+        if (id === 'vscode-languageclient/browser') {
+          return {
+            id: 'vscode-languageclient/browser.js',
+            external: 'absolute'
+          }
+        }
         if (isExternal(id)) {
           return {
             id,
