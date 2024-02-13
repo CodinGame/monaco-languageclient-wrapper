@@ -1,6 +1,5 @@
-const fs = require('fs/promises')
-const { performance } = require('perf_hooks')
-const path = require('path')
+import fs from 'fs/promises'
+import { performance } from 'perf_hooks'
 
 Object.defineProperty(document, 'queryCommandSupported', {
   value: jest.fn().mockImplementation(() => true),
