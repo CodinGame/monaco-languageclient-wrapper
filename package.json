@@ -3,6 +3,10 @@
   "version": "0.0.0-semantic-release",
   "private": false,
   "description": "Enhanced Monaco editor with TextMate grammars and more",
+  "type": "module",
+  "release": {
+    "extends": "@codingame/semantic-release-config-github"
+  },
   "scripts": {
     "test": "jest --runInBand",
     "test:watch": "jest --watch",
