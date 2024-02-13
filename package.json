@@ -95,7 +95,7 @@
     "not IE_Mob 11"
   ],
   "jest": {
-    "resolver": "<rootDir>/jest/resolver.js",
+    "resolver": "<rootDir>/jest/resolver.cjs",
     "testEnvironment": "./FixJSDOMEnvironment.js",
     "modulePathIgnorePatterns": [
       "<rootDir>/dist/"
@@ -108,12 +108,12 @@
       "^.+\\.module\\.(css|sass|scss)$"
     ],
     "transform": {
-      "^(?!.*\\.(js|ts|css|json)$)": "<rootDir>/jest/fileTransform.js",
-      "^.+\\.css$": "<rootDir>/jest/cssTransform.js",
+      "^(?!.*\\.(js|ts|css|json)$)": "<rootDir>/jest/fileTransform.cjs",
+      "^.+\\.css$": "<rootDir>/jest/cssTransform.cjs",
       "^.+\\.(js|ts)$": [
         "<rootDir>/node_modules/babel-jest",
         {
-          "configFile": "./babel.test.config.js"
+          "configFile": "./babel.test.config.cjs"
         }
       ]
     },

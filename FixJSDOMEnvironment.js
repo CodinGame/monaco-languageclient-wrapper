@@ -1,7 +1,6 @@
-const JSDOMEnvironment = require('jest-environment-jsdom').default
+import { TestEnvironment } from 'jest-environment-jsdom'
 
-
-class FixJSDOMEnvironment extends JSDOMEnvironment {
+class FixJSDOMEnvironment extends TestEnvironment {
   constructor(...args) {
     super(...args);
 
@@ -11,4 +10,4 @@ class FixJSDOMEnvironment extends JSDOMEnvironment {
 }
 
 // https://github.com/facebook/jest/blob/v29.4.3/website/versioned_docs/version-29.4/Configuration.md#testenvironment-string
-module.exports = FixJSDOMEnvironment
+export default FixJSDOMEnvironment
