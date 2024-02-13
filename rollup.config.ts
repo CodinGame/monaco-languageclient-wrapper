@@ -29,6 +29,19 @@ const extensions = ['.js', '.ts']
 // But the polyfill doesn't export all required fields and make the build crash
 const IGNORED_NODE_POLYFILLS = new Set(['os', 'fs'])
 
+function isExternal (source: string) {
+  if (IGNORED_NODE_POLYFILLS.has(source)) {
+    return true
+  }
+  if (source.startsWith('extensions/')) {
+    return false
+  }
+  if (externals.some(external => source === external || source.startsWith(`${external}/`))) {
+    return true
+  }
+  return false
+}
+
 export default rollup.defineConfig({
   cache: false,
   input: {
@@ -37,21 +50,6 @@ export default rollup.defineConfig({
   treeshake: {
     annotations: true,
     moduleSideEffects: false
-  },
-  external: function isExternal (source, importer, isResolved) {
-    if (IGNORED_NODE_POLYFILLS.has(source)) {
-      return true
-    }
-    if (isResolved) {
-      return false
-    }
-    if (source.startsWith('extensions/')) {
-      return false
-    }
-    if (externals.some(external => source === external || source.startsWith(`${external}/`))) {
-      return true
-    }
-    return false
   },
   output: [{
     chunkFileNames: '[name].js',
@@ -62,6 +60,24 @@ export default rollup.defineConfig({
     preserveModulesRoot: 'src'
   }],
   plugins: [
+    {
+      name: 'external-resolver',
+      resolveId (id) {
+        if (id === 'vscode-languageclient/browser') {
+          return {
+            id: 'vscode-languageclient/browser.js',
+            external: 'absolute'
+          }
+        }
+        if (isExternal(id)) {
+          return {
+            id,
+            external: true
+          }
+        }
+        return undefined
+      }
+    },
     typescript({
       noEmitOnError: true
     }),
