@@ -8,7 +8,7 @@ import {
 } from 'vscode-languageserver/lib/common/api'
 import { monaco } from '@codingame/monaco-editor-wrapper'
 import { MessageTransports } from 'vscode-languageclient'
-import { getFile, updateFile } from '../customRequests'
+import { getFileContent, getFileStats, listFiles, StatFileResult, updateFile } from '../customRequests'
 import { Infrastructure, LanguageClientId, LanguageClientManager, LanguageClientOptions } from '../'
 
 class PipedMessageReader extends AbstractMessageReader {
@@ -133,9 +133,21 @@ export class TestInfrastructure implements Infrastructure {
   // use same method as CodinGameInfrastructure to be able to simply catch it
   async getFileContent (resource: Uri, languageClient: LanguageClientManager): Promise<string | undefined> {
     try {
-      return (await getFile(resource.toString(true), languageClient)).text
+      return (await getFileContent(resource.toString(true), languageClient)).text
     } catch (error) {
       return undefined
+    }
+  }
+
+  public async getFileStats (directory: monaco.Uri, languageClient: LanguageClientManager): Promise<StatFileResult> {
+    return (await getFileStats(directory.toString(true), languageClient))
+  }
+
+  public async listFiles (directory: monaco.Uri, languageClient: LanguageClientManager): Promise<string[]> {
+    try {
+      return (await listFiles(directory.toString(true), languageClient)).files
+    } catch (error) {
+      return []
     }
   }
 

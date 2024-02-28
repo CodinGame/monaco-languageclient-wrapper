@@ -9,7 +9,7 @@ import { createModelReference } from 'vscode/monaco'
 import * as vscode from 'vscode'
 import { RegisteredFileSystemProvider, RegisteredMemoryFile, registerFileSystemOverlay } from '@codingame/monaco-vscode-files-service-override'
 import pDefer, { TestInfrastructure, waitClientNotification, waitClientRequest } from './tools'
-import { GetTextDocumentParams, getTextDocumentRequestType, GetTextDocumentResult, saveTextDocumentRequestType } from '../customRequests'
+import { getFileStatsRequestType, GetTextDocumentParams, getTextDocumentRequestType, GetTextDocumentResult, saveTextDocumentRequestType, StatFileParams, StatFileResult } from '../customRequests'
 import { createLanguageClientManager, LanguageClientManager, getLanguageClientOptions, StaticLanguageClientId } from '..'
 
 async function initializeLanguageClientAndGetConnection (
@@ -182,7 +182,20 @@ async function testLanguageClient (
     return editor
   })
 
-  const [getDocumentRequest, sendGetDocumentRequestResponse] = await waitClientRequest<GetTextDocumentParams, GetTextDocumentResult, never>(handler => connection.onRequest(getTextDocumentRequestType, handler))
+  const getDocumentRequestPromise = waitClientRequest<GetTextDocumentParams, GetTextDocumentResult, never>(handler => connection.onRequest(getTextDocumentRequestType, handler))
+  const [getFileStatsRequest, sendGetFileStatsRequestResponse] = await waitClientRequest<StatFileParams, StatFileResult, never>(handler => connection.onRequest(getFileStatsRequestType, handler))
+  expect(getFileStatsRequest).toEqual({
+    uri: 'file:///tmp/project/src/main/Otherfile.java'
+  })
+
+  sendGetFileStatsRequestResponse({
+    mtime: 0,
+    name: 'Otherfile.java',
+    size: 50,
+    type: 'file'
+  })
+
+  const [getDocumentRequest, sendGetDocumentRequestResponse] = await getDocumentRequestPromise
   expect(getDocumentRequest).toEqual({
     textDocument: {
       uri: 'file:///tmp/project/src/main/Otherfile.java'
