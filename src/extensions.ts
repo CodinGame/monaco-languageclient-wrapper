@@ -83,23 +83,24 @@ class InfrastructureTextFileSystemProvider implements IFileSystemProviderWithFil
   constructor (private infrastructure: Infrastructure, private languageClientManager: LanguageClientManager) {
   }
 
-  private cachedContent: Map<string, Promise<string | undefined>> = new Map()
-  private async getFileContent (resource: monaco.Uri): Promise<string | undefined> {
+  private isBlacklisted (resource: monaco.Uri) {
     const REMOTE_FILE_BLACKLIST = ['.git/config', '.vscode', monaco.Uri.parse(this.infrastructure.rootUri).path]
 
     const blacklisted = REMOTE_FILE_BLACKLIST.some(blacklisted => resource.path.endsWith(blacklisted))
-    if (blacklisted) {
-      return undefined
-    }
-    if (!this.cachedContent.has(resource.toString())) {
-      this.cachedContent.set(resource.toString(), this.infrastructure.getFileContent!(resource, this.languageClientManager))
-    }
-    return await this.cachedContent.get(resource.toString())
+    return blacklisted
   }
 
   async readFile (resource: monaco.Uri): Promise<Uint8Array> {
-    const content = await this.getFileContent(resource)
-    return encoder.encode(content)
+    if (this.isBlacklisted(resource)) {
+      throw FileSystemProviderError.create('Not allowed', FileSystemProviderErrorCode.NoPermissions)
+    }
+    try {
+      const file = await this.infrastructure.getFileContent!(resource, this.languageClientManager)
+
+      return encoder.encode(file)
+    } catch (err) {
+      throw FileSystemProviderError.create(err as Error, FileSystemProviderErrorCode.Unknown)
+    }
   }
 
   async writeFile (): Promise<void> {
@@ -116,13 +117,16 @@ class InfrastructureTextFileSystemProvider implements IFileSystemProviderWithFil
 
   async stat (resource: monaco.Uri): Promise<IStat> {
     try {
-      const content = await this.getFileContent(resource)
-      if (content != null) {
+      if (this.isBlacklisted(resource)) {
+        throw FileSystemProviderError.create('Not allowed', FileSystemProviderErrorCode.NoPermissions)
+      }
+      const fileStats = await this.infrastructure.getFileStats?.(resource, this.languageClientManager)
+      if (fileStats != null) {
         return {
-          type: FileType.File,
-          size: encoder.encode(content).length,
-          mtime: Date.now(),
-          ctime: Date.now()
+          type: fileStats.type === 'directory' ? FileType.Directory : FileType.File,
+          size: fileStats.size,
+          mtime: fileStats.mtime,
+          ctime: 0
         }
       }
     } catch (err) {
@@ -134,8 +138,20 @@ class InfrastructureTextFileSystemProvider implements IFileSystemProviderWithFil
   async mkdir (): Promise<void> {
   }
 
-  async readdir () {
-    return []
+  async readdir (resource: monaco.Uri) {
+    const result = await this.infrastructure.listFiles?.(resource, this.languageClientManager)
+    if (result == null) {
+      return []
+    }
+    return result.map(file => {
+      let name = file
+      let type = FileType.File
+      if (file.endsWith('/')) {
+        type = FileType.Directory
+        name = file.slice(0, -1)
+      }
+      return <[string, FileType]>[name, type]
+    })
   }
 
   delete (): Promise<void> {

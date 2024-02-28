@@ -23,9 +23,31 @@ export interface GetTextDocumentParams {
 
 export interface GetTextDocumentResult {
   text: string
+  mtime?: number
 }
 
 export const getTextDocumentRequestType = new ProtocolRequestType<GetTextDocumentParams, GetTextDocumentResult, never, void, void>('textDocument/get')
+
+export interface StatFileParams {
+  uri: string
+}
+export interface StatFileResult {
+  type: 'directory' | 'file'
+  size: number
+  name: string
+  mtime: number
+}
+
+export const getFileStatsRequestType = new ProtocolRequestType<StatFileParams, StatFileResult, never, void, void>('file/stats')
+
+export interface ListFilesParams {
+  directory: string
+}
+export interface ListFilesResult {
+  files: string[]
+}
+
+export const listFileRequestType = new ProtocolRequestType<ListFilesParams, ListFilesResult, never, void, void>('file/list')
 
 export function updateFile (uri: string, text: string, languageClient: LanguageClient): Promise<void> {
   return languageClient.sendRequest(saveTextDocumentRequestType, {
@@ -36,10 +58,22 @@ export function updateFile (uri: string, text: string, languageClient: LanguageC
   })
 }
 
-export function getFile (uri: string, languageClient: LanguageClient): Promise<{ text: string }> {
+export function getFileContent (uri: string, languageClient: LanguageClient): Promise<GetTextDocumentResult> {
   return languageClient.sendRequest(getTextDocumentRequestType, {
     textDocument: {
       uri
     }
+  })
+}
+
+export function getFileStats (uri: string, languageClient: LanguageClient): Promise<StatFileResult> {
+  return languageClient.sendRequest(getFileStatsRequestType, {
+    uri
+  })
+}
+
+export function listFiles (directory: string, languageClient: LanguageClient): Promise<ListFilesResult> {
+  return languageClient.sendRequest(listFileRequestType, {
+    directory
   })
 }
