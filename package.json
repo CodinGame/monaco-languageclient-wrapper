@@ -120,9 +120,6 @@
           "configFile": "./babel.test.config.cjs"
         }
       ]
-    },
-    "moduleNameMapper": {
-      "^vscode-oniguruma/release/onig.wasm$": "<rootDir>/jest/onig.js"
     }
   },
   "overrides": {
