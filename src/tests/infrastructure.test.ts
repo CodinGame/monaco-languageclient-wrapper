@@ -9,7 +9,7 @@ import { createModelReference } from 'vscode/monaco'
 import * as vscode from 'vscode'
 import { RegisteredFileSystemProvider, RegisteredMemoryFile, registerFileSystemOverlay } from '@codingame/monaco-vscode-files-service-override'
 import pDefer, { TestInfrastructure, waitClientNotification, waitClientRequest } from './tools'
-import { GetTextDocumentParams, getTextDocumentRequestType, GetTextDocumentResult, saveTextDocumentRequestType } from '../customRequests'
+import { getFileStatsRequestType, ReadFileParams, readFileRequestType, ReadFileResult, StatFileParams, StatFileResult, WriteFileParams, writeFileRequestType } from '../customRequests'
 import { createLanguageClientManager, LanguageClientManager, getLanguageClientOptions, StaticLanguageClientId } from '..'
 
 async function initializeLanguageClientAndGetConnection (
@@ -182,17 +182,28 @@ async function testLanguageClient (
     return editor
   })
 
-  const [getDocumentRequest, sendGetDocumentRequestResponse] = await waitClientRequest<GetTextDocumentParams, GetTextDocumentResult, never>(handler => connection.onRequest(getTextDocumentRequestType, handler))
-  expect(getDocumentRequest).toEqual({
-    textDocument: {
-      uri: 'file:///tmp/project/src/main/Otherfile.java'
-    }
+  const readFileRequestPromise = waitClientRequest<ReadFileParams, ReadFileResult, never>(handler => connection.onRequest(readFileRequestType, handler))
+  const [getFileStatsRequest, sendGetFileStatsRequestResponse] = await waitClientRequest<StatFileParams, StatFileResult, never>(handler => connection.onRequest(getFileStatsRequestType, handler))
+  expect(getFileStatsRequest).toEqual({
+    uri: 'file:///tmp/project/src/main/Otherfile.java'
+  })
+
+  sendGetFileStatsRequestResponse({
+    mtime: 0,
+    name: 'Otherfile.java',
+    size: 50,
+    type: 'file'
+  })
+
+  const [readFileRequest, sendReadFileRequestResponse] = await readFileRequestPromise
+  expect(readFileRequest).toEqual({
+    uri: 'file:///tmp/project/src/main/Otherfile.java'
   })
 
   const openNotificationPromise = waitClientNotification(connection.onDidOpenTextDocument)
 
-  sendGetDocumentRequestResponse({
-    text: 'other file content'
+  sendReadFileRequestResponse({
+    content: btoa('other file content')
   })
 
   // Expect the model to be open
@@ -219,7 +230,7 @@ async function testLanguageClient (
 
   // Expect the model to be saved
   const willSavePromise = waitClientNotification(connection.onWillSaveTextDocument)
-  const saveRequestPromise = waitClientRequest(handler => connection.onRequest(saveTextDocumentRequestType, handler))
+  const writeFileRequestPromise = waitClientRequest<WriteFileParams, void, never>(handler => connection.onRequest(writeFileRequestType, handler))
   const didSavePromise = waitClientNotification(connection.onDidSaveTextDocument)
 
   expect(await willSavePromise).toEqual({
@@ -228,14 +239,12 @@ async function testLanguageClient (
     },
     reason: vscode.TextDocumentSaveReason.Manual
   })
-  const [saveRequest, sendSaveRequestResponse] = await saveRequestPromise
-  expect(await saveRequest).toEqual({
-    textDocument: {
-      uri: mainFileUri.toString(),
-      text: modelRef.object.textEditorModel!.getValue()
-    }
+  const [writeFileRequest, sendWriteFileResponse] = await writeFileRequestPromise
+  expect(writeFileRequest).toEqual({
+    uri: mainFileUri.toString(),
+    content: btoa(modelRef.object.textEditorModel!.getValue())
   })
-  sendSaveRequestResponse(null)
+  sendWriteFileResponse()
 
   expect(await didSavePromise).toEqual({
     textDocument: {
