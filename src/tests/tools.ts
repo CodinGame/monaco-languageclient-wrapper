@@ -1,4 +1,3 @@
-import { Uri } from 'monaco-editor'
 import { AbstractMessageReader, AbstractMessageWriter, createMessageConnection, DataCallback, Disposable, Message, MessageReader, MessageWriter, NotificationHandler, RequestHandler } from 'vscode-languageserver-protocol'
 import {
   createConnection,
@@ -8,7 +7,7 @@ import {
 } from 'vscode-languageserver/lib/common/api'
 import { monaco } from '@codingame/monaco-editor-wrapper'
 import { MessageTransports } from 'vscode-languageclient'
-import { getFile, updateFile } from '../customRequests'
+import { getFileStats, listFiles, StatFileResult, readFile, writeFile } from '../customRequests'
 import { Infrastructure, LanguageClientId, LanguageClientManager, LanguageClientOptions } from '../'
 
 class PipedMessageReader extends AbstractMessageReader {
@@ -131,18 +130,26 @@ export class TestInfrastructure implements Infrastructure {
   }
 
   // use same method as CodinGameInfrastructure to be able to simply catch it
-  async getFileContent (resource: Uri, languageClient: LanguageClientManager): Promise<string | undefined> {
-    try {
-      return (await getFile(resource.toString(true), languageClient)).text
-    } catch (error) {
-      return undefined
-    }
+  public async readFile (resource: monaco.Uri, languageClient: LanguageClientManager): Promise<string> {
+    return (await readFile(resource.toString(true), languageClient)).content
   }
 
   // use same method as CodinGameInfrastructure to be able to simply catch it
-  public async saveFileContent (document: monaco.Uri, content: string, languageClient: LanguageClientManager): Promise<void> {
+  public async writeFile (document: monaco.Uri, content: string, languageClient: LanguageClientManager): Promise<void> {
     if (languageClient.isConnected()) {
-      await updateFile(document.toString(), content, languageClient)
+      await writeFile(document.toString(), content, languageClient)
+    }
+  }
+
+  public async getFileStats (directory: monaco.Uri, languageClient: LanguageClientManager): Promise<StatFileResult> {
+    return (await getFileStats(directory.toString(true), languageClient))
+  }
+
+  public async listFiles (directory: monaco.Uri, languageClient: LanguageClientManager): Promise<string[]> {
+    try {
+      return (await listFiles(directory.toString(true), languageClient)).files
+    } catch (error) {
+      return []
     }
   }
 
