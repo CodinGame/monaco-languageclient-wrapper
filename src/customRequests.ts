@@ -6,40 +6,65 @@ export interface WillShutdownParams {
 }
 export const willShutdownNotificationType = new ProtocolNotificationType<WillShutdownParams, void>('willShutdown')
 
-export interface SaveTextDocumentParams {
-  textDocument: {
-    uri: string
-    text: string
-  }
+export interface WriteFileParams {
+  uri: string
+  content: string
 }
 
-export const saveTextDocumentRequestType = new ProtocolRequestType<SaveTextDocumentParams, void, never, void, void>('textDocument/save')
+export const writeFileRequestType = new ProtocolRequestType<WriteFileParams, void, never, void, void>('file/write')
 
-export interface GetTextDocumentParams {
-  textDocument: {
-    uri: string
-  }
+export interface ReadFileParams {
+  uri: string
 }
 
-export interface GetTextDocumentResult {
-  text: string
+export interface ReadFileResult {
+  content: string
 }
 
-export const getTextDocumentRequestType = new ProtocolRequestType<GetTextDocumentParams, GetTextDocumentResult, never, void, void>('textDocument/get')
+export const readFileRequestType = new ProtocolRequestType<ReadFileParams, ReadFileResult, never, void, void>('file/read')
 
-export function updateFile (uri: string, text: string, languageClient: LanguageClient): Promise<void> {
-  return languageClient.sendRequest(saveTextDocumentRequestType, {
-    textDocument: {
-      uri,
-      text
-    }
+export interface StatFileParams {
+  uri: string
+}
+export interface StatFileResult {
+  type: 'directory' | 'file'
+  size: number
+  name: string
+  mtime: number
+}
+
+export const getFileStatsRequestType = new ProtocolRequestType<StatFileParams, StatFileResult, never, void, void>('file/stats')
+
+export interface ListFilesParams {
+  directory: string
+}
+export interface ListFilesResult {
+  files: string[]
+}
+
+export const listFileRequestType = new ProtocolRequestType<ListFilesParams, ListFilesResult, never, void, void>('file/readdir')
+
+export function writeFile (uri: string, content: string, languageClient: LanguageClient): Promise<void> {
+  return languageClient.sendRequest(writeFileRequestType, {
+    uri,
+    content
   })
 }
 
-export function getFile (uri: string, languageClient: LanguageClient): Promise<{ text: string }> {
-  return languageClient.sendRequest(getTextDocumentRequestType, {
-    textDocument: {
-      uri
-    }
+export function readFile (uri: string, languageClient: LanguageClient): Promise<ReadFileResult> {
+  return languageClient.sendRequest(readFileRequestType, {
+    uri
+  })
+}
+
+export function getFileStats (uri: string, languageClient: LanguageClient): Promise<StatFileResult> {
+  return languageClient.sendRequest(getFileStatsRequestType, {
+    uri
+  })
+}
+
+export function listFiles (directory: string, languageClient: LanguageClient): Promise<ListFilesResult> {
+  return languageClient.sendRequest(listFileRequestType, {
+    directory
   })
 }
