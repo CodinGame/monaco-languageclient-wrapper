@@ -1,5 +1,4 @@
-import { createEditor, initializePromise, monaco, registerEditorOpenHandler } from '@codingame/monaco-editor-wrapper'
-import { initUserConfiguration } from '@codingame/monaco-vscode-configuration-service-override'
+import { createEditor, initialize, monaco, registerEditorOpenHandler } from '@codingame/monaco-editor-wrapper'
 import { CompletionTriggerKind, ServerCapabilities, TextDocumentSyncKind, Range } from 'vscode-languageserver-protocol'
 import {
   _Connection,
@@ -271,12 +270,13 @@ async function testLanguageClient (
 }
 
 beforeAll(async () => {
-  await initializePromise
+  await initialize({
+    configurationDefaults: {
+      'files.autoSave': 'off'
+    }
+  })
 })
 
-void initUserConfiguration(JSON.stringify({
-  'files.autoSave': 'off'
-}))
 describe('Infrastructure', () => {
   test('Codingame behavior without mutualization', async () => {
     await testLanguageClient(false, false)
