@@ -1,5 +1,6 @@
 import fs from 'fs/promises'
 import { performance } from 'perf_hooks'
+import { fetch as fetchPolyfill } from 'whatwg-fetch'
 
 Object.defineProperty(document, 'queryCommandSupported', {
   value: jest.fn().mockImplementation(() => true),
@@ -22,12 +23,16 @@ Object.defineProperty(window, 'matchMedia', {
 });
 
 Object.defineProperty(window, 'fetch', {
-  value: jest.fn(async (url) => {
-    const content = await fs.readFile(new URL(url).pathname)
-    return {
-      json: async () => JSON.stringify(JSON.parse(content.toString())),
-      arrayBuffer: async () => content.buffer.slice(content.byteOffset, content.byteOffset + content.byteLength),
-      status: 200
+  value: jest.fn(async (url, options) => {
+    if (url.startsWith('file:')) {
+      const content = await fs.readFile(new URL(url).pathname)
+      return {
+        json: async () => JSON.stringify(JSON.parse(content.toString())),
+        arrayBuffer: async () => content.buffer.slice(content.byteOffset, content.byteOffset + content.byteLength),
+        status: 200
+      }
+    } else {
+      return fetchPolyfill(url, options)
     }
   })
 })

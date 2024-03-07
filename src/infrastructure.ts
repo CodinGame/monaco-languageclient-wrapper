@@ -3,7 +3,7 @@ import { MessageTransports } from 'vscode-languageclient'
 import * as monaco from 'monaco-editor'
 import * as vscode from 'vscode'
 import { LSPAny } from 'vscode-languageserver-protocol'
-import { getFile, updateFile } from './customRequests'
+import { StatFileResult, getFileStats, listFiles, writeFile, readFile } from './customRequests'
 import { LanguageClientManager } from './languageClient'
 import { LanguageClientId, LanguageClientOptions } from './languageClientOptions'
 
@@ -31,16 +31,28 @@ export interface Infrastructure {
   /**
    * Save a file on the filesystem
    * @param document The document to save
-   * @param reason The reason of the save
+   * @param content The content of the file in base64
    * @param languageClient The languageclient we're trying to save the file to
    */
-  saveFileContent? (document: monaco.Uri, content: string, languageClient: LanguageClientManager): Promise<void>
+  writeFile? (document: monaco.Uri, content: string, languageClient: LanguageClientManager): Promise<void>
   /**
-   * Get a text file content as a model
+   * Get a text file content
    * @param resource the Uri of the file
    * @param languageClient The languageclient we're trying to get the file from
    */
-  getFileContent? (resource: monaco.Uri, languageClient: LanguageClientManager): Promise<string | undefined>
+  readFile? (resource: monaco.Uri, languageClient: LanguageClientManager): Promise<string>
+  /**
+   * Get file stats on a given file
+   * @param resource the Uri of the file
+   * @param languageClient The languageclient we're trying to get the file from
+   */
+  getFileStats? (resource: monaco.Uri, languageClient: LanguageClientManager): Promise<StatFileResult>
+  /**
+   * List the files of a directory
+   * @param resource the Uri of the directory
+   * @param languageClient The languageclient we're trying to get the file from
+   */
+  listFiles? (resource: monaco.Uri, languageClient: LanguageClientManager): Promise<string[]>
 
   /**
    * Open a connection to the language server
@@ -106,17 +118,25 @@ export abstract class CodinGameInfrastructure implements Infrastructure {
     name: 'main'
   }]
 
-  public async saveFileContent (document: monaco.Uri, content: string, languageClient: LanguageClientManager): Promise<void> {
+  public async writeFile (document: monaco.Uri, content: string, languageClient: LanguageClientManager): Promise<void> {
     if (languageClient.isConnected()) {
-      await updateFile(document.toString(), content, languageClient)
+      await writeFile(document.toString(), content, languageClient)
     }
   }
 
-  public async getFileContent (resource: monaco.Uri, languageClient: LanguageClientManager): Promise<string | undefined> {
+  public async readFile (resource: monaco.Uri, languageClient: LanguageClientManager): Promise<string> {
+    return (await readFile(resource.toString(true), languageClient)).content
+  }
+
+  public async getFileStats (directory: monaco.Uri, languageClient: LanguageClientManager): Promise<StatFileResult> {
+    return (await getFileStats(directory.toString(true), languageClient))
+  }
+
+  public async listFiles (directory: monaco.Uri, languageClient: LanguageClientManager): Promise<string[]> {
     try {
-      return (await getFile(resource.toString(true), languageClient)).text
+      return (await listFiles(directory.toString(true), languageClient)).files
     } catch (error) {
-      return undefined
+      return []
     }
   }
 

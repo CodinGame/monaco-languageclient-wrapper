@@ -10,6 +10,25 @@ import { Infrastructure } from './infrastructure'
 import { LanguageClientManager } from './languageClient'
 import { MonacoLanguageClient } from './createLanguageClient'
 
+async function bufferToBase64 (buffer: ArrayBuffer | Uint8Array) {
+  // use a FileReader to generate a base64 data URI:
+  const base64url = await new Promise<string>((resolve) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(reader.result as string)
+    reader.readAsDataURL(new Blob([buffer]))
+  })
+  // remove the `data:...;base64,` part from the start
+  return base64url.slice(base64url.indexOf(',') + 1)
+}
+
+async function base64ToBufferAsync (base64: string) {
+  const dataUrl = `data:application/octet-binary;base64,${base64}`
+
+  const result = await fetch(dataUrl)
+  const buffer = await result.arrayBuffer()
+  return new Uint8Array(buffer)
+}
+
 interface ResolvedTextDocumentSyncCapabilities {
   resolvedTextDocumentSync?: TextDocumentSyncOptions
 }
@@ -31,7 +50,7 @@ export class InitializeTextDocumentFeature implements StaticFeature {
     const languageClient = this.languageClient
     async function saveFile (textDocument: vscode.TextDocument) {
       if (documentSelector != null && vscode.languages.match(documentSelector, textDocument) > 0 && textDocument.uri.scheme === 'file') {
-        await infrastructure.saveFileContent?.(textDocument.uri, textDocument.getText(), languageClient)
+        await infrastructure.writeFile?.(textDocument.uri, btoa(textDocument.getText()), languageClient)
 
         // Always send notification even if the server doesn't support it (because csharp register the didSave feature too late)
         await languageClient.sendNotification(DidSaveTextDocumentNotification.type, {
@@ -76,30 +95,31 @@ export class WillDisposeFeature implements StaticFeature {
   clear (): void {}
 }
 
-const encoder = new TextEncoder()
-const decoder = new TextDecoder()
-class InfrastructureTextFileSystemProvider implements IFileSystemProviderWithFileReadWriteCapability {
+class InfrastructureFileSystemProvider implements IFileSystemProviderWithFileReadWriteCapability {
   capabilities = FileSystemProviderCapabilities.FileReadWrite | FileSystemProviderCapabilities.PathCaseSensitive | FileSystemProviderCapabilities.Readonly
   constructor (private infrastructure: Infrastructure, private languageClientManager: LanguageClientManager) {
   }
 
-  private cachedContent: Map<string, Promise<string | undefined>> = new Map()
-  private async getFileContent (resource: monaco.Uri): Promise<string | undefined> {
+  private isBlacklisted (resource: monaco.Uri) {
     const REMOTE_FILE_BLACKLIST = ['.git/config', '.vscode', monaco.Uri.parse(this.infrastructure.rootUri).path]
 
     const blacklisted = REMOTE_FILE_BLACKLIST.some(blacklisted => resource.path.endsWith(blacklisted))
-    if (blacklisted) {
-      return undefined
-    }
-    if (!this.cachedContent.has(resource.toString())) {
-      this.cachedContent.set(resource.toString(), this.infrastructure.getFileContent!(resource, this.languageClientManager))
-    }
-    return await this.cachedContent.get(resource.toString())
+    return blacklisted
   }
 
   async readFile (resource: monaco.Uri): Promise<Uint8Array> {
-    const content = await this.getFileContent(resource)
-    return encoder.encode(content)
+    if (this.isBlacklisted(resource)) {
+      throw FileSystemProviderError.create('Not allowed', FileSystemProviderErrorCode.NoPermissions)
+    }
+    try {
+      const file = await this.infrastructure.readFile!(resource, this.languageClientManager)
+      return await base64ToBufferAsync(file)
+    } catch (err) {
+      if ((err as Error).message === 'File not found') {
+        throw FileSystemProviderError.create(err as Error, FileSystemProviderErrorCode.FileNotFound)
+      }
+      throw FileSystemProviderError.create(err as Error, FileSystemProviderErrorCode.Unknown)
+    }
   }
 
   async writeFile (): Promise<void> {
@@ -116,16 +136,22 @@ class InfrastructureTextFileSystemProvider implements IFileSystemProviderWithFil
 
   async stat (resource: monaco.Uri): Promise<IStat> {
     try {
-      const content = await this.getFileContent(resource)
-      if (content != null) {
+      if (this.isBlacklisted(resource)) {
+        throw FileSystemProviderError.create('Not allowed', FileSystemProviderErrorCode.NoPermissions)
+      }
+      const fileStats = await this.infrastructure.getFileStats?.(resource, this.languageClientManager)
+      if (fileStats != null) {
         return {
-          type: FileType.File,
-          size: encoder.encode(content).length,
-          mtime: Date.now(),
-          ctime: Date.now()
+          type: fileStats.type === 'directory' ? FileType.Directory : FileType.File,
+          size: fileStats.size,
+          mtime: fileStats.mtime,
+          ctime: 0
         }
       }
     } catch (err) {
+      if ((err as Error).message === 'File not found') {
+        throw FileSystemProviderError.create(err as Error, FileSystemProviderErrorCode.FileNotFound)
+      }
       throw FileSystemProviderError.create(err as Error, FileSystemProviderErrorCode.Unknown)
     }
     throw FileSystemProviderError.create('file not found', FileSystemProviderErrorCode.FileNotFound)
@@ -134,8 +160,20 @@ class InfrastructureTextFileSystemProvider implements IFileSystemProviderWithFil
   async mkdir (): Promise<void> {
   }
 
-  async readdir () {
-    return []
+  async readdir (resource: monaco.Uri) {
+    const result = await this.infrastructure.listFiles?.(resource, this.languageClientManager)
+    if (result == null) {
+      return []
+    }
+    return result.map(file => {
+      let name = file
+      let type = FileType.File
+      if (file.endsWith('/')) {
+        type = FileType.Directory
+        name = file.slice(0, -1)
+      }
+      return <[string, FileType]>[name, type]
+    })
   }
 
   delete (): Promise<void> {
@@ -156,17 +194,17 @@ export class FileSystemFeature implements StaticFeature {
     const disposables = new DisposableStore()
 
     // Register readonly file system overlay to access remote files
-    if (this.infrastructure.getFileContent != null) {
-      disposables.add(registerFileSystemOverlay(-1, new InfrastructureTextFileSystemProvider(this.infrastructure, this.languageClientManager)))
+    if (this.infrastructure.readFile != null) {
+      disposables.add(registerFileSystemOverlay(-1, new InfrastructureFileSystemProvider(this.infrastructure, this.languageClientManager)))
     }
 
-    if (this.infrastructure.saveFileContent != null) {
+    if (this.infrastructure.writeFile != null) {
       const watcher = vscode.workspace.createFileSystemWatcher(new vscode.RelativePattern(vscode.Uri.parse(this.infrastructure.rootUri), '**/*'))
       disposables.add(watcher)
       const onFileChange = async (uri: vscode.Uri) => {
         if ((await vscode.workspace.fs.stat(uri)).type === vscode.FileType.File) {
           const content = await vscode.workspace.fs.readFile(uri)
-          await this.infrastructure.saveFileContent?.(uri, decoder.decode(content), this.languageClientManager)
+          await this.infrastructure.writeFile?.(uri, await bufferToBase64(content), this.languageClientManager)
         }
       }
       watcher.onDidChange(onFileChange)
