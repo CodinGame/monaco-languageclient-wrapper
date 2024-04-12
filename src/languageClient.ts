@@ -324,7 +324,7 @@ export class LanguageClientManager implements LanguageClient {
 
     this.languageClient.registerFeature(new WillDisposeFeature(this.languageClient, this.onWillShutdownEmitter))
 
-    if (this.infrastructure.getFileContent != null) {
+    if (this.infrastructure.readFile != null) {
       this.languageClient.registerFeature(new FileSystemFeature(this.infrastructure, this))
     }
 
