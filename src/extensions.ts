@@ -5,10 +5,11 @@ import { DidSaveTextDocumentNotification, Disposable, DocumentSelector, Emitter,
 import * as vscode from 'vscode'
 import { IDisposable } from 'monaco-editor'
 import { DisposableStore } from 'vscode/monaco'
-import { willShutdownNotificationType, WillShutdownParams } from './customRequests'
-import { Infrastructure } from './infrastructure'
-import { LanguageClientManager } from './languageClient'
+import { URI } from 'vscode/vscode/vs/base/common/uri'
 import { MonacoLanguageClient } from './createLanguageClient'
+import { LanguageClientManager } from './languageClient'
+import { Infrastructure } from './infrastructure'
+import { willShutdownNotificationType, WillShutdownParams } from './customRequests'
 
 async function bufferToBase64 (buffer: ArrayBuffer | Uint8Array) {
   // use a FileReader to generate a base64 data URI:
@@ -95,6 +96,51 @@ export class WillDisposeFeature implements StaticFeature {
   clear (): void {}
 }
 
+class InfrastructureFileSystemUpdaterProvider implements IFileSystemProviderWithFileReadWriteCapability {
+  capabilities = FileSystemProviderCapabilities.FileReadWrite | FileSystemProviderCapabilities.PathCaseSensitive
+  constructor (private infrastructure: Infrastructure, private languageClientManager: LanguageClientManager) {
+  }
+
+  readFile (): Promise<Uint8Array> {
+    throw FileSystemProviderError.create('Not allowed', FileSystemProviderErrorCode.NoPermissions)
+  }
+
+  async writeFile (resource: URI, content: Uint8Array): Promise<void> {
+    await this.infrastructure.writeFile!(resource, await bufferToBase64(content), this.languageClientManager)
+
+    throw FileSystemProviderError.create('File written, continue', FileSystemProviderErrorCode.FileNotFound)
+  }
+
+  onDidChangeCapabilities = new vscode.EventEmitter<never>().event
+  onDidChangeFile = new vscode.EventEmitter<never>().event
+  onDidWatchError = new vscode.EventEmitter<never>().event
+  watch (): IDisposable {
+    return {
+      dispose () {}
+    }
+  }
+
+  stat (): Promise<IStat> {
+    throw FileSystemProviderError.create('Not allowed', FileSystemProviderErrorCode.NoPermissions)
+  }
+
+  async mkdir (): Promise<void> {
+    throw FileSystemProviderError.create('Not allowed', FileSystemProviderErrorCode.NoPermissions)
+  }
+
+  readdir (): Promise<[string, FileType][]> {
+    throw FileSystemProviderError.create('Not found', FileSystemProviderErrorCode.FileNotFound)
+  }
+
+  delete (): Promise<void> {
+    throw FileSystemProviderError.create('Not allowed', FileSystemProviderErrorCode.NoPermissions)
+  }
+
+  rename (): Promise<void> {
+    throw FileSystemProviderError.create('Not allowed', FileSystemProviderErrorCode.NoPermissions)
+  }
+}
+
 class InfrastructureFileSystemProvider implements IFileSystemProviderWithFileReadWriteCapability {
   capabilities = FileSystemProviderCapabilities.FileReadWrite | FileSystemProviderCapabilities.PathCaseSensitive | FileSystemProviderCapabilities.Readonly
   constructor (private infrastructure: Infrastructure, private languageClientManager: LanguageClientManager) {
@@ -158,6 +204,7 @@ class InfrastructureFileSystemProvider implements IFileSystemProviderWithFileRea
   }
 
   async mkdir (): Promise<void> {
+    throw FileSystemProviderError.create('Not allowed', FileSystemProviderErrorCode.NoPermissions)
   }
 
   async readdir (resource: monaco.Uri) {
@@ -177,11 +224,11 @@ class InfrastructureFileSystemProvider implements IFileSystemProviderWithFileRea
   }
 
   delete (): Promise<void> {
-    throw new Error('Method not implemented.')
+    throw FileSystemProviderError.create('Not allowed', FileSystemProviderErrorCode.NoPermissions)
   }
 
   rename (): Promise<void> {
-    throw new Error('Method not implemented.')
+    throw FileSystemProviderError.create('Not allowed', FileSystemProviderErrorCode.NoPermissions)
   }
 }
 
@@ -193,22 +240,14 @@ export class FileSystemFeature implements StaticFeature {
   private registerFileHandlers (): Disposable {
     const disposables = new DisposableStore()
 
-    // Register readonly file system overlay to access remote files
     if (this.infrastructure.readFile != null) {
+      // Register a readonly file system overlay to access remote files
       disposables.add(registerFileSystemOverlay(-1, new InfrastructureFileSystemProvider(this.infrastructure, this.languageClientManager)))
     }
 
     if (this.infrastructure.writeFile != null) {
-      const watcher = vscode.workspace.createFileSystemWatcher(new vscode.RelativePattern(vscode.Uri.parse(this.infrastructure.rootUri), '**/*'))
-      disposables.add(watcher)
-      const onFileChange = async (uri: vscode.Uri) => {
-        if ((await vscode.workspace.fs.stat(uri)).type === vscode.FileType.File) {
-          const content = await vscode.workspace.fs.readFile(uri)
-          await this.infrastructure.writeFile?.(uri, await bufferToBase64(content), this.languageClientManager)
-        }
-      }
-      watcher.onDidChange(onFileChange)
-      watcher.onDidCreate(onFileChange)
+      // register another filesystem to capture file write with a higher priority
+      disposables.add(registerFileSystemOverlay(1, new InfrastructureFileSystemUpdaterProvider(this.infrastructure, this.languageClientManager)))
     }
 
     return disposables
