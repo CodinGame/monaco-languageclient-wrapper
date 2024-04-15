@@ -247,7 +247,7 @@ export class FileSystemFeature implements StaticFeature {
 
     if (this.infrastructure.writeFile != null) {
       // register another filesystem to capture file write with a higher priority
-      disposables.add(registerFileSystemOverlay(1, new InfrastructureFileSystemUpdaterProvider(this.infrastructure, this.languageClientManager)))
+      disposables.add(registerFileSystemOverlay(10, new InfrastructureFileSystemUpdaterProvider(this.infrastructure, this.languageClientManager)))
     }
 
     return disposables
