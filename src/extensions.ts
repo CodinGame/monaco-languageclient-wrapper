@@ -101,7 +101,7 @@ class InfrastructureFileSystemUpdaterProvider implements IFileSystemProviderWith
   constructor (private infrastructure: Infrastructure, private languageClientManager: LanguageClientManager) {
   }
 
-  readFile (): Promise<Uint8Array> {
+  async readFile (): Promise<Uint8Array> {
     throw FileSystemProviderError.create('Not allowed', FileSystemProviderErrorCode.NoPermissions)
   }
 
@@ -120,7 +120,7 @@ class InfrastructureFileSystemUpdaterProvider implements IFileSystemProviderWith
     }
   }
 
-  stat (): Promise<IStat> {
+  async stat (): Promise<IStat> {
     throw FileSystemProviderError.create('Not allowed', FileSystemProviderErrorCode.NoPermissions)
   }
 
@@ -128,15 +128,15 @@ class InfrastructureFileSystemUpdaterProvider implements IFileSystemProviderWith
     throw FileSystemProviderError.create('Not allowed', FileSystemProviderErrorCode.NoPermissions)
   }
 
-  readdir (): Promise<[string, FileType][]> {
+  async readdir (): Promise<[string, FileType][]> {
     throw FileSystemProviderError.create('Not found', FileSystemProviderErrorCode.FileNotFound)
   }
 
-  delete (): Promise<void> {
+  async delete (): Promise<void> {
     throw FileSystemProviderError.create('Not allowed', FileSystemProviderErrorCode.NoPermissions)
   }
 
-  rename (): Promise<void> {
+  async rename (): Promise<void> {
     throw FileSystemProviderError.create('Not allowed', FileSystemProviderErrorCode.NoPermissions)
   }
 }
@@ -223,11 +223,11 @@ class InfrastructureFileSystemProvider implements IFileSystemProviderWithFileRea
     })
   }
 
-  delete (): Promise<void> {
+  async delete (): Promise<void> {
     throw FileSystemProviderError.create('Not allowed', FileSystemProviderErrorCode.NoPermissions)
   }
 
-  rename (): Promise<void> {
+  async rename (): Promise<void> {
     throw FileSystemProviderError.create('Not allowed', FileSystemProviderErrorCode.NoPermissions)
   }
 }
