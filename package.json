@@ -27,7 +27,7 @@
   ],
   "types": "./dist/index.d.ts",
   "dependencies": {
-    "@codingame/monaco-editor-wrapper": "^6.6.8",
+    "@codingame/monaco-editor-wrapper": "^6.6.9",
     "@codingame/monaco-vscode-files-service-override": "^5.0.0",
     "delay": "^6.0.0",
     "monaco-editor": "npm:@codingame/monaco-vscode-editor-api@^5.0.0",
