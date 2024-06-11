@@ -30,6 +30,7 @@ class SimpleExtensionContext implements ExtensionContext, Disposable {
     }
   }
 
+  get languageModelAccessInformation () { return unsupported() }
   get workspaceState () { return unsupported() }
   get globalState () { return unsupported() }
   get secrets () { return unsupported() }
