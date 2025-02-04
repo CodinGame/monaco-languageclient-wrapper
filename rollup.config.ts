@@ -1,7 +1,6 @@
 import { visualizer } from 'rollup-plugin-visualizer'
 import commonjs from '@rollup/plugin-commonjs'
 import { nodeResolve } from '@rollup/plugin-node-resolve'
-import eslint from '@rollup/plugin-eslint'
 import cleanup from 'js-cleanup'
 import * as rollup from 'rollup'
 import * as recast from 'recast'
@@ -18,9 +17,7 @@ const __dirname = dirname(__filename)
 const PURE_ANNO = '#__PURE__'
 const EXTENSION_DIR = path.resolve(__dirname, 'extensions')
 
-const externals = [
-  ...Object.keys(pkg.dependencies)
-]
+const externals = [...Object.keys(pkg.dependencies)]
 
 const extensions = ['.js', '.ts']
 
@@ -29,14 +26,14 @@ const extensions = ['.js', '.ts']
 // But the polyfill doesn't export all required fields and make the build crash
 const IGNORED_NODE_POLYFILLS = new Set(['os', 'fs'])
 
-function isExternal (source: string) {
+function isExternal(source: string) {
   if (IGNORED_NODE_POLYFILLS.has(source)) {
     return true
   }
   if (source.startsWith('extensions/')) {
     return false
   }
-  if (externals.some(external => source === external || source.startsWith(`${external}/`))) {
+  if (externals.some((external) => source === external || source.startsWith(`${external}/`))) {
     return true
   }
   return false
@@ -51,18 +48,20 @@ export default rollup.defineConfig({
     annotations: true,
     moduleSideEffects: false
   },
-  output: [{
-    chunkFileNames: '[name].js',
-    hoistTransitiveImports: false,
-    dir: 'dist',
-    format: 'esm',
-    preserveModules: true,
-    preserveModulesRoot: 'src'
-  }],
+  output: [
+    {
+      chunkFileNames: '[name].js',
+      hoistTransitiveImports: false,
+      dir: 'dist',
+      format: 'esm',
+      preserveModules: true,
+      preserveModulesRoot: 'src'
+    }
+  ],
   plugins: [
     {
       name: 'external-resolver',
-      resolveId (id) {
+      resolveId(id) {
         if (id === 'vscode-languageclient/browser') {
           return {
             id: 'vscode-languageclient/browser.js',
@@ -82,18 +81,13 @@ export default rollup.defineConfig({
       noEmitOnError: true
     }),
     nodePolyfills(),
-    eslint({
-      throwOnError: true,
-      throwOnWarning: true,
-      include: ['**/*.ts']
-    }),
     nodeResolve({
       extensions,
       browser: true
     }),
     {
       name: 'resolve-extensions',
-      resolveId (id) {
+      resolveId(id) {
         if (id.startsWith('extensions/')) {
           return path.resolve(__dirname, `${id}.js`)
         }
@@ -114,7 +108,7 @@ export default rollup.defineConfig({
     visualizer(),
     {
       name: 'dynamic-import-polyfill',
-      renderDynamicImport (): { left: string, right: string } {
+      renderDynamicImport(): { left: string; right: string } {
         return {
           left: 'import(',
           right: ').then(module => module)'
@@ -123,27 +117,27 @@ export default rollup.defineConfig({
     },
     {
       name: 'improve-extension-treeshaking',
-      transform (code, id) {
+      transform(code, id) {
         if (id.startsWith(EXTENSION_DIR)) {
           const ast = recast.parse(code, {
             parser: recastBabylonParser
           })
           let transformed: boolean = false
-          function addComment (node: recast.types.namedTypes.Expression) {
-            if (!(node.comments ?? []).some(comment => comment.value === PURE_ANNO)) {
+          function addComment(node: recast.types.namedTypes.Expression) {
+            if (!(node.comments ?? []).some((comment) => comment.value === PURE_ANNO)) {
               transformed = true
               node.comments = [recast.types.builders.commentBlock(PURE_ANNO, true)]
             }
           }
           recast.visit(ast.program.body, {
-            visitNewExpression (path) {
+            visitNewExpression(path) {
               const node = path.node
               if (node.callee.type === 'Identifier') {
                 addComment(node)
               }
               this.traverse(path)
             },
-            visitCallExpression (path) {
+            visitCallExpression(path) {
               const node = path.node
               if (node.callee.type === 'Identifier') {
                 addComment(node)
@@ -154,15 +148,14 @@ export default rollup.defineConfig({
               this.traverse(path)
               return undefined
             },
-            visitFunctionDeclaration () {
+            visitFunctionDeclaration() {
               // Do not treeshake code inside functions, only at root
               return false
             },
-            visitThrowStatement () {
+            visitThrowStatement() {
               return false
             }
           })
-          // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
           if (transformed) {
             code = recast.print(ast).code
             code = code.replace(/\/\*#__PURE__\*\/\s+/g, '/*#__PURE__*/ ') // Remove space after PURE comment
@@ -171,9 +164,10 @@ export default rollup.defineConfig({
         }
         return undefined
       }
-    }, {
+    },
+    {
       name: 'cleanup',
-      renderChunk (code) {
+      renderChunk(code) {
         // Remove comments, and #__PURE__ comments in enum IIFE in particular because webpack will treeshake them out
         // While rollup doesn't if the parameter is used
         return cleanup(code, null, {

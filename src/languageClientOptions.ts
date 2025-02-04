@@ -4,7 +4,10 @@ import { Disposable } from 'vscode-languageserver-protocol'
 import staticOptions, { StaticLanguageClientId } from './staticOptions'
 import { MonacoLanguageClient } from './createLanguageClient'
 
-export type LanguageClientOptions = Pick<BaseLanguageClientOptions, 'documentSelector' | 'synchronize' | 'initializationOptions' | 'middleware' | 'errorHandler'> & {
+export type LanguageClientOptions = Pick<
+  BaseLanguageClientOptions,
+  'documentSelector' | 'synchronize' | 'initializationOptions' | 'middleware' | 'errorHandler'
+> & {
   defaultConfigurationOverride?: Record<string, unknown>
   /**
    * Is this language server mutualizable by the CodinGame mutualized proxy
@@ -21,12 +24,14 @@ export type LanguageClientOptions = Pick<BaseLanguageClientOptions, 'documentSel
    */
   readinessMessageMatcher?: RegExp
 
-  createAdditionalFeatures?(client: MonacoLanguageClient): Promise<(StaticFeature | DynamicFeature<unknown>)[]>
+  createAdditionalFeatures?(
+    client: MonacoLanguageClient
+  ): Promise<(StaticFeature | DynamicFeature<unknown>)[]>
 }
 
 const dynamicOptions: Partial<Record<string, LanguageClientOptions>> = {}
 
-export function registerLanguageClient (id: string, options: LanguageClientOptions): Disposable {
+export function registerLanguageClient(id: string, options: LanguageClientOptions): Disposable {
   dynamicOptions[id] = options
 
   return Disposable.create(() => {
@@ -38,8 +43,8 @@ export function registerLanguageClient (id: string, options: LanguageClientOptio
 
 export type LanguageClientId = StaticLanguageClientId | string
 
-export function getLanguageClientOptions (id: StaticLanguageClientId): LanguageClientOptions
-export function getLanguageClientOptions (id: string): LanguageClientOptions | undefined
-export function getLanguageClientOptions (id: LanguageClientId): LanguageClientOptions | undefined {
+export function getLanguageClientOptions(id: StaticLanguageClientId): LanguageClientOptions
+export function getLanguageClientOptions(id: string): LanguageClientOptions | undefined
+export function getLanguageClientOptions(id: LanguageClientId): LanguageClientOptions | undefined {
   return dynamicOptions[id] ?? staticOptions[id as StaticLanguageClientId]
 }

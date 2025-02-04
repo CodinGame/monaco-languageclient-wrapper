@@ -1,4 +1,9 @@
-import { IWebSocket, WebSocketMessageReader, WebSocketMessageWriter, toSocket } from 'vscode-ws-jsonrpc'
+import {
+  IWebSocket,
+  WebSocketMessageReader,
+  WebSocketMessageWriter,
+  toSocket
+} from 'vscode-ws-jsonrpc'
 import { MessageTransports } from 'vscode-languageclient'
 import * as monaco from 'monaco-editor'
 import * as vscode from 'vscode'
@@ -26,7 +31,7 @@ export interface Infrastructure {
   /**
    * Does a mutualization proxy will be used, it means we don't need to load configurations for this server
    */
-  useMutualizedProxy (languageClientId: LanguageClientId, options: LanguageClientOptions): boolean
+  useMutualizedProxy(languageClientId: LanguageClientId, options: LanguageClientOptions): boolean
 
   /**
    * Save a file on the filesystem
@@ -34,43 +39,50 @@ export interface Infrastructure {
    * @param content The content of the file in base64
    * @param languageClient The languageclient we're trying to save the file to
    */
-  writeFile? (document: monaco.Uri, content: string, languageClient: LanguageClientManager): Promise<void>
+  writeFile?(
+    document: monaco.Uri,
+    content: string,
+    languageClient: LanguageClientManager
+  ): Promise<void>
   /**
    * Get a text file content
    * @param resource the Uri of the file
    * @param languageClient The languageclient we're trying to get the file from
    */
-  readFile? (resource: monaco.Uri, languageClient: LanguageClientManager): Promise<string>
+  readFile?(resource: monaco.Uri, languageClient: LanguageClientManager): Promise<string>
   /**
    * Get file stats on a given file
    * @param resource the Uri of the file
    * @param languageClient The languageclient we're trying to get the file from
    */
-  getFileStats? (resource: monaco.Uri, languageClient: LanguageClientManager): Promise<StatFileResult>
+  getFileStats?(
+    resource: monaco.Uri,
+    languageClient: LanguageClientManager
+  ): Promise<StatFileResult>
   /**
    * List the files of a directory
    * @param resource the Uri of the directory
    * @param languageClient The languageclient we're trying to get the file from
    */
-  listFiles? (resource: monaco.Uri, languageClient: LanguageClientManager): Promise<string[]>
+  listFiles?(resource: monaco.Uri, languageClient: LanguageClientManager): Promise<string[]>
 
   /**
    * Open a connection to the language server
    * @param id The language server id
    */
-  openConnection (id: LanguageClientId): Promise<MessageTransports>
+  openConnection(id: LanguageClientId): Promise<MessageTransports>
 
-  getInitializationOptions? (documentSelector?: vscode.DocumentSelector): LSPAny
+  getInitializationOptions?(documentSelector?: vscode.DocumentSelector): LSPAny
 }
 
 class CloseOnDisposeWebSocketMessageReader extends WebSocketMessageReader {
-  override dispose () {
+  override dispose() {
     super.dispose()
     this.socket.dispose()
   }
 }
 
-async function openWebsocketConnection (url: URL | string): Promise<MessageTransports> {
+async function openWebsocketConnection(url: URL | string): Promise<MessageTransports> {
   const webSocket = new WebSocket(url)
   const socket: IWebSocket = toSocket(webSocket)
 
@@ -89,7 +101,7 @@ async function openWebsocketConnection (url: URL | string): Promise<MessageTrans
 }
 
 export abstract class CodinGameInfrastructure implements Infrastructure {
-  constructor (
+  constructor(
     /**
      * The domain of the server
      */
@@ -103,39 +115,53 @@ export abstract class CodinGameInfrastructure implements Infrastructure {
      * A list of urls which link to zip files containing libraries/resources
      */
     private libraryUrls?: string[]
-  ) {
-  }
+  ) {}
 
-  useMutualizedProxy (languageClientId: LanguageClientId, options: LanguageClientOptions): boolean {
+  useMutualizedProxy(languageClientId: LanguageClientId, options: LanguageClientOptions): boolean {
     return this._useMutualizedProxy && options.mutualizable
   }
 
   public readonly automaticTextDocumentUpdate = false
   public readonly rootUri = 'file:///tmp/project'
-  public readonly workspaceFolders: typeof vscode.workspace.workspaceFolders = [{
-    uri: monaco.Uri.file('/tmp/project'),
-    index: 0,
-    name: 'main'
-  }]
+  public readonly workspaceFolders: typeof vscode.workspace.workspaceFolders = [
+    {
+      uri: monaco.Uri.file('/tmp/project'),
+      index: 0,
+      name: 'main'
+    }
+  ]
 
-  public async writeFile (document: monaco.Uri, content: string, languageClient: LanguageClientManager): Promise<void> {
+  public async writeFile(
+    document: monaco.Uri,
+    content: string,
+    languageClient: LanguageClientManager
+  ): Promise<void> {
     if (languageClient.isConnected()) {
       await writeFile(document.toString(), content, languageClient)
     }
   }
 
-  public async readFile (resource: monaco.Uri, languageClient: LanguageClientManager): Promise<string> {
+  public async readFile(
+    resource: monaco.Uri,
+    languageClient: LanguageClientManager
+  ): Promise<string> {
     return (await readFile(resource.toString(true), languageClient)).content
   }
 
-  public async getFileStats (directory: monaco.Uri, languageClient: LanguageClientManager): Promise<StatFileResult> {
-    return (await getFileStats(directory.toString(true), languageClient))
+  public async getFileStats(
+    directory: monaco.Uri,
+    languageClient: LanguageClientManager
+  ): Promise<StatFileResult> {
+    return await getFileStats(directory.toString(true), languageClient)
   }
 
-  public async listFiles (directory: monaco.Uri, languageClient: LanguageClientManager): Promise<string[]> {
+  public async listFiles(
+    directory: monaco.Uri,
+    languageClient: LanguageClientManager
+  ): Promise<string[]> {
     try {
       return (await listFiles(directory.toString(true), languageClient)).files
-    } catch (error) {
+    } catch {
       return []
     }
   }
@@ -145,10 +171,13 @@ export abstract class CodinGameInfrastructure implements Infrastructure {
    */
   protected abstract getSecurityToken(): Promise<string>
 
-  public async openConnection (id: LanguageClientId): Promise<MessageTransports> {
+  public async openConnection(id: LanguageClientId): Promise<MessageTransports> {
     try {
-      const url = new URL(this.sessionId != null ? `run/${this.sessionId}/${id}` : `run/${id}`, this.serverAddress)
-      this.libraryUrls?.forEach(libraryUrl => url.searchParams.append('libraryUrl', libraryUrl))
+      const url = new URL(
+        this.sessionId != null ? `run/${this.sessionId}/${id}` : `run/${id}`,
+        this.serverAddress
+      )
+      this.libraryUrls?.forEach((libraryUrl) => url.searchParams.append('libraryUrl', libraryUrl))
       url.searchParams.append('token', await this.getSecurityToken())
 
       const connection = await openWebsocketConnection(url)
@@ -161,20 +190,22 @@ export abstract class CodinGameInfrastructure implements Infrastructure {
     }
   }
 
-  public getInitializationOptions (documentSelector?: vscode.DocumentSelector): LSPAny {
+  public getInitializationOptions(documentSelector?: vscode.DocumentSelector): LSPAny {
     // Provide all open model content to the backend so it's able to write them on the disk
     // BEFORE starting the server or registering the workspace folders
     // The didOpen notification already contain the file content but some LSP (like gopls)
     // don't use it and needs the file to be up-to-date on the disk before the workspace folder is added
-    let documents = vscode.workspace.textDocuments.filter(doc => doc.uri.scheme === 'file')
+    let documents = vscode.workspace.textDocuments.filter((doc) => doc.uri.scheme === 'file')
     if (documentSelector != null) {
-      documents = documents.filter(doc => vscode.languages.match(documentSelector, doc))
+      documents = documents.filter((doc) => vscode.languages.match(documentSelector, doc))
     }
-    const files = documents
-      .reduce((map, doc) => {
+    const files = documents.reduce(
+      (map, doc) => {
         map[doc.uri.toString(true)] = doc.getText()
         return map
-      }, <Record<string, string>>{})
+      },
+      <Record<string, string>>{}
+    )
     return {
       files
     }
