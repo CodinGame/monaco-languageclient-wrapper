@@ -14,11 +14,7 @@ export default rollup.defineConfig({
     if (isResolved) {
       return false
     }
-    // Do not include types that rollup-plugin-dts fails to parse
-    if (/^proxy-polyfill/.test(source)) {
-      return true
-    }
-    if (externals.some(external => source === external || source.startsWith(`${external}/`))) {
+    if (externals.some((external) => source === external || source.startsWith(`${external}/`))) {
       return true
     }
     return false

@@ -1,5 +1,4 @@
 import { MessageTransports } from 'vscode-languageclient'
-import 'proxy-polyfill'
 import type { WorkspaceFolder } from 'vscode'
 import { CodinGameInfrastructure, Infrastructure } from './infrastructure'
 import { WillShutdownParams } from './customRequests'
