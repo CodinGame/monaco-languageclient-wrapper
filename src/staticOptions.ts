@@ -3,10 +3,12 @@ import { Middleware } from 'vscode-languageclient'
 import type { LanguageClientOptions } from './languageClientOptions'
 
 type LanguageClientOptionsById<T extends string> = Record<T, LanguageClientOptions>
-const asLanguageClientOptionsById = <K extends string> (options: LanguageClientOptionsById<K>): LanguageClientOptionsById<K> => options
+const asLanguageClientOptionsById = <K extends string>(
+  options: LanguageClientOptionsById<K>
+): LanguageClientOptionsById<K> => options
 
 const clangdHotfixMiddleware: Middleware = {
-  async provideCompletionItem (document, position, context, token, next) {
+  async provideCompletionItem(document, position, context, token, next) {
     const list = await next(document, position, context, token)
     // Hotfix (see https://github.com/clangd/vscode-clangd/blob/df56a9a058fca773eb4c096d0f6a5a31b71b79d7/src/clangd-context.ts#L124)
     const items = Array.isArray(list) ? list : list?.items
@@ -48,12 +50,10 @@ const staticOptions = asLanguageClientOptionsById({
     mutualizable: false
   },
   csharp: {
-    documentSelector: [
-      { scheme: 'file', language: 'csharp' }
-    ],
+    documentSelector: [{ scheme: 'file', language: 'csharp' }],
     mutualizable: true,
     middleware: {
-      async provideDefinition (document, position, token, next) {
+      async provideDefinition(document, position, token, next) {
         const definition = await next(document, position, token)
         // Transform file:/$metadata$/... uris to omnisharp-metadata:/... so we can register a text document content provider
         // See https://github.com/OmniSharp/omnisharp-roslyn/issues/2238
@@ -69,11 +69,9 @@ const staticOptions = asLanguageClientOptionsById({
         return definition
       }
     },
-    async createAdditionalFeatures (client) {
+    async createAdditionalFeatures(client) {
       const { CsharpExtensionFeature } = await import('./extensions/csharp')
-      return [
-        new CsharpExtensionFeature(client)
-      ]
+      return [new CsharpExtensionFeature(client)]
     }
   },
   cpp: {
@@ -104,11 +102,9 @@ const staticOptions = asLanguageClientOptionsById({
     defaultConfigurationOverride: {
       'cobol-lsp.subroutine-manager.paths-local': ['/tmp/project']
     },
-    async createAdditionalFeatures (client) {
+    async createAdditionalFeatures(client) {
       const { CobolResolveSubroutineFeature } = await import('./extensions/cobol')
-      return [
-        new CobolResolveSubroutineFeature(client)
-      ]
+      return [new CobolResolveSubroutineFeature(client)]
     }
   },
   dart: {
@@ -137,9 +133,7 @@ const staticOptions = asLanguageClientOptionsById({
     }
   },
   groovy: {
-    documentSelector: [
-      { scheme: 'file', language: 'groovy' }
-    ],
+    documentSelector: [{ scheme: 'file', language: 'groovy' }],
     synchronize: {
       configurationSection: 'groovy'
     },
@@ -155,11 +149,9 @@ const staticOptions = asLanguageClientOptionsById({
       configurationSection: ['java', 'editor.insertSpaces', 'editor.tabSize']
     },
     mutualizable: true,
-    async createAdditionalFeatures (client) {
+    async createAdditionalFeatures(client) {
       const { JavaExtensionFeature } = await import('./extensions/java')
-      return [
-        new JavaExtensionFeature(client)
-      ]
+      return [new JavaExtensionFeature(client)]
     },
     initializationOptions: {
       extendedClientCapabilities: {
@@ -207,9 +199,7 @@ const staticOptions = asLanguageClientOptionsById({
     maxInitializeDuration: 60_000
   },
   lua: {
-    documentSelector: [
-      { scheme: 'file', language: 'lua' }
-    ],
+    documentSelector: [{ scheme: 'file', language: 'lua' }],
     synchronize: {
       configurationSection: 'Lua'
     },
@@ -221,23 +211,27 @@ const staticOptions = asLanguageClientOptionsById({
     }
   },
   mysql: {
-    documentSelector: [{
-      scheme: 'file',
-      language: 'sql'
-    }],
+    documentSelector: [
+      {
+        scheme: 'file',
+        language: 'sql'
+      }
+    ],
     // Disable code actions
     middleware: {
-      provideCodeActions () {
+      provideCodeActions() {
         return []
       }
     },
     mutualizable: false
   },
   ocaml: {
-    documentSelector: [{
-      scheme: 'file',
-      language: 'ocaml'
-    }],
+    documentSelector: [
+      {
+        scheme: 'file',
+        language: 'ocaml'
+      }
+    ],
     mutualizable: false
   },
   'objective-c': {
@@ -262,15 +256,11 @@ const staticOptions = asLanguageClientOptionsById({
     },
     initializationOptions: () => ({
       configuration: {
-        uris: vscode.workspace.workspaceFolders?.map(folder => folder.uri.toString()),
+        uris: vscode.workspace.workspaceFolders?.map((folder) => folder.uri.toString()),
         phpVersion: 7.3,
-        fileExtensions: [
-          'php'
-        ],
+        fileExtensions: ['php'],
         indexDatabaseUri: 'file:///tmp/index.sqlite',
-        excludedPathExpressions: [
-          'file:///opt/serenata'
-        ]
+        excludedPathExpressions: ['file:///opt/serenata']
       }
     }),
     mutualizable: true
@@ -286,22 +276,22 @@ const staticOptions = asLanguageClientOptionsById({
     mutualizable: true
   },
   postgresql: {
-    documentSelector: [{
-      scheme: 'file',
-      language: 'postgres'
-    }],
+    documentSelector: [
+      {
+        scheme: 'file',
+        language: 'postgres'
+      }
+    ],
     // Disable code actions
     middleware: {
-      provideCodeActions () {
+      provideCodeActions() {
         return []
       }
     },
     mutualizable: false
   },
   python: {
-    documentSelector: [
-      { scheme: 'file', language: 'python' }
-    ],
+    documentSelector: [{ scheme: 'file', language: 'python' }],
     synchronize: {
       configurationSection: 'python'
     },
@@ -333,9 +323,7 @@ const staticOptions = asLanguageClientOptionsById({
   },
   ruby: {
     // https://github.com/castwide/vscode-solargraph/blob/3ebd9241f013305a84ec64334fca45b487bde904/src/language-client.ts#L56
-    documentSelector: [
-      { scheme: 'file', language: 'ruby' }
-    ],
+    documentSelector: [{ scheme: 'file', language: 'ruby' }],
     mutualizable: true,
     defaultConfigurationOverride: {
       'solargraph.diagnostics': true,
@@ -347,15 +335,11 @@ const staticOptions = asLanguageClientOptionsById({
   },
   rust: {
     // https://github.com/rust-lang/vscode-rust/blob/b1ae67b06640ffab6e1ebb72e07364b4477dfbf1/rust-analyzer/editors/code/src/client.ts#L42
-    documentSelector: [
-      { scheme: 'file', language: 'rust' }
-    ],
+    documentSelector: [{ scheme: 'file', language: 'rust' }],
     mutualizable: false
   },
   scala: {
-    documentSelector: [
-      { scheme: 'file', language: 'scala' }
-    ],
+    documentSelector: [{ scheme: 'file', language: 'scala' }],
     synchronize: {
       configurationSection: 'metals'
     },
@@ -372,7 +356,7 @@ const staticOptions = asLanguageClientOptionsById({
     ],
     // Disable code actions
     middleware: {
-      provideCodeActions () {
+      provideCodeActions() {
         return []
       }
     },

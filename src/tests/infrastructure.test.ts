@@ -1,17 +1,42 @@
-import { createEditor, initialize, monaco, registerEditorOpenHandler } from '@codingame/monaco-editor-wrapper'
-import { CompletionTriggerKind, ServerCapabilities, TextDocumentSyncKind, Range } from 'vscode-languageserver-protocol'
 import {
-  _Connection,
-  _
-} from 'vscode-languageserver/lib/common/api'
-import { createModelReference } from 'vscode/monaco'
+  createEditor,
+  initialize,
+  monaco,
+  registerEditorOpenHandler
+} from '@codingame/monaco-editor-wrapper'
+import {
+  CompletionTriggerKind,
+  ServerCapabilities,
+  TextDocumentSyncKind,
+  Range
+} from 'vscode-languageserver-protocol'
+import { _Connection, _ } from 'vscode-languageserver/lib/common/api'
+import { createModelReference } from '@codingame/monaco-vscode-api/monaco'
 import * as vscode from 'vscode'
-import { RegisteredFileSystemProvider, RegisteredMemoryFile, registerFileSystemOverlay } from '@codingame/monaco-vscode-files-service-override'
+import {
+  RegisteredFileSystemProvider,
+  RegisteredMemoryFile,
+  registerFileSystemOverlay
+} from '@codingame/monaco-vscode-files-service-override'
 import pDefer, { TestInfrastructure, waitClientNotification, waitClientRequest } from './tools'
-import { getFileStatsRequestType, ReadFileParams, readFileRequestType, ReadFileResult, StatFileParams, StatFileResult, WriteFileParams, writeFileRequestType } from '../customRequests'
-import { createLanguageClientManager, LanguageClientManager, getLanguageClientOptions, StaticLanguageClientId } from '..'
+import {
+  getFileStatsRequestType,
+  ReadFileParams,
+  readFileRequestType,
+  ReadFileResult,
+  StatFileParams,
+  StatFileResult,
+  WriteFileParams,
+  writeFileRequestType
+} from '../customRequests'
+import {
+  createLanguageClientManager,
+  LanguageClientManager,
+  getLanguageClientOptions,
+  StaticLanguageClientId
+} from '..'
 
-async function initializeLanguageClientAndGetConnection (
+async function initializeLanguageClientAndGetConnection(
   languageClientId: StaticLanguageClientId,
   capabilities: ServerCapabilities<unknown>,
   automaticTextDocumentUpdate: boolean = false,
@@ -38,26 +63,31 @@ async function initializeLanguageClientAndGetConnection (
   return [languageClient, connection]
 }
 
-async function testLanguageClient (
+async function testLanguageClient(
   automaticTextDocumentUpdate: boolean,
   useMutualizedProxy: boolean
 ) {
   // Create a java language client supporting all document sync features
-  const [languageClient, connection] = await initializeLanguageClientAndGetConnection('java', {
-    completionProvider: {},
-    textDocumentSync: {
-      openClose: true,
-      change: TextDocumentSyncKind.Incremental,
-      save: true,
-      willSave: true
+  const [languageClient, connection] = await initializeLanguageClientAndGetConnection(
+    'java',
+    {
+      completionProvider: {},
+      textDocumentSync: {
+        openClose: true,
+        change: TextDocumentSyncKind.Incremental,
+        save: true,
+        willSave: true
+      },
+      hoverProvider: true,
+      declarationProvider: true,
+      definitionProvider: true,
+      typeDefinitionProvider: true,
+      implementationProvider: true,
+      referencesProvider: true
     },
-    hoverProvider: true,
-    declarationProvider: true,
-    definitionProvider: true,
-    typeDefinitionProvider: true,
-    implementationProvider: true,
-    referencesProvider: true
-  }, automaticTextDocumentUpdate, useMutualizedProxy)
+    automaticTextDocumentUpdate,
+    useMutualizedProxy
+  )
 
   const onRemainingRequest = jest.fn()
   const onRemainingNotification = jest.fn()
@@ -102,15 +132,17 @@ async function testLanguageClient (
   })
 
   // Change the model...
-  model.applyEdits([{
-    range: {
-      startLineNumber: 1,
-      startColumn: 20,
-      endLineNumber: 1,
-      endColumn: 20
-    },
-    text: '\n\tSystem.out.println("toto");\n'
-  }])
+  model.applyEdits([
+    {
+      range: {
+        startLineNumber: 1,
+        startColumn: 20,
+        endLineNumber: 1,
+        endColumn: 20
+      },
+      text: '\n\tSystem.out.println("toto");\n'
+    }
+  ])
 
   // ... and expect the changed to be sent to the server
   expect(await waitClientNotification(connection.onDidChangeTextDocument)).toEqual({
@@ -118,18 +150,20 @@ async function testLanguageClient (
       uri: mainFileUri.toString(),
       version: 2
     },
-    contentChanges: [{
-      range: {
-        start: { line: 0, character: 19 },
-        end: { line: 0, character: 19 }
-      },
-      rangeLength: 0,
-      text: '\n\tSystem.out.println("toto");\n'
-    }]
+    contentChanges: [
+      {
+        range: {
+          start: { line: 0, character: 19 },
+          end: { line: 0, character: 19 }
+        },
+        rangeLength: 0,
+        text: '\n\tSystem.out.println("toto");\n'
+      }
+    ]
   })
 
   // wait 1sec to be sure no request is sent during this interval
-  await new Promise(resolve => setTimeout(resolve, 1000))
+  await new Promise((resolve) => setTimeout(resolve, 1000))
 
   // Test a completion request
   const completionRequestPromise = waitClientRequest(connection.onCompletion)
@@ -181,8 +215,14 @@ async function testLanguageClient (
     return editor
   })
 
-  const readFileRequestPromise = waitClientRequest<ReadFileParams, ReadFileResult, never>(handler => connection.onRequest(readFileRequestType, handler))
-  const [getFileStatsRequest, sendGetFileStatsRequestResponse] = await waitClientRequest<StatFileParams, StatFileResult, never>(handler => connection.onRequest(getFileStatsRequestType, handler))
+  const readFileRequestPromise = waitClientRequest<ReadFileParams, ReadFileResult, never>(
+    (handler) => connection.onRequest(readFileRequestType, handler)
+  )
+  const [getFileStatsRequest, sendGetFileStatsRequestResponse] = await waitClientRequest<
+    StatFileParams,
+    StatFileResult,
+    never
+  >((handler) => connection.onRequest(getFileStatsRequestType, handler))
   expect(getFileStatsRequest).toEqual({
     uri: 'file:///tmp/project/src/main/Otherfile.java'
   })
@@ -216,7 +256,9 @@ async function testLanguageClient (
   })
 
   const createdEditor = await editorOpenDeferred.promise
-  createdEditor.dispose()
+  setTimeout(() => {
+    createdEditor.dispose()
+  }, 100)
 
   // Expect the model to be closed
   expect(await waitClientNotification(connection.onDidCloseTextDocument)).toEqual({
@@ -229,7 +271,9 @@ async function testLanguageClient (
 
   // Expect the model to be saved
   const willSavePromise = waitClientNotification(connection.onWillSaveTextDocument)
-  const writeFileRequestPromise = waitClientRequest<WriteFileParams, void, never>(handler => connection.onRequest(writeFileRequestType, handler))
+  const writeFileRequestPromise = waitClientRequest<WriteFileParams, void, never>((handler) =>
+    connection.onRequest(writeFileRequestType, handler)
+  )
   const didSavePromise = waitClientNotification(connection.onDidSaveTextDocument)
 
   expect(await willSavePromise).toEqual({
@@ -267,10 +311,12 @@ async function testLanguageClient (
 
   const disposePromise = languageClient.dispose()
 
-  const [, sendShutdownResponse] = await waitClientRequest<void, void, void>((handler) => connection.onShutdown((token) => handler(undefined, token)))
+  const [, sendShutdownResponse] = await waitClientRequest<void, void, void>((handler) =>
+    connection.onShutdown((token) => handler(undefined, token))
+  )
   sendShutdownResponse()
 
-  await waitClientNotification<void>(handler => connection.onExit(() => handler(undefined)))
+  await waitClientNotification<void>((handler) => connection.onExit(() => handler(undefined)))
 
   await disposePromise
 

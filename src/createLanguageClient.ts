@@ -1,7 +1,18 @@
-import { MessageReader, MessageWriter, Message, Event, DataCallback, Disposable, PartialMessageInfo } from 'vscode-jsonrpc'
 import {
-  Middleware, ErrorHandler, MessageTransports, BaseLanguageClient
-  , LanguageClientOptions as BaseLanguageClientOptions
+  MessageReader,
+  MessageWriter,
+  Message,
+  Event,
+  DataCallback,
+  Disposable,
+  PartialMessageInfo
+} from 'vscode-jsonrpc'
+import {
+  Middleware,
+  ErrorHandler,
+  MessageTransports,
+  BaseLanguageClient,
+  LanguageClientOptions as BaseLanguageClientOptions
 } from 'vscode-languageclient'
 import { InitializeParams, InitializeRequest } from 'vscode-languageserver-protocol'
 import { LanguageClientId, LanguageClientOptions } from './languageClientOptions'
@@ -12,7 +23,10 @@ interface MessageMiddleware {
 }
 
 class MiddlewareMessageWriter implements MessageWriter {
-  constructor (private delegate: MessageWriter, private middleware: MessageMiddleware) {}
+  constructor(
+    private delegate: MessageWriter,
+    private middleware: MessageMiddleware
+  ) {}
 
   onError: Event<[Error, Message | undefined, number | undefined]> = (cb) => {
     return this.delegate.onError(cb)
@@ -22,20 +36,23 @@ class MiddlewareMessageWriter implements MessageWriter {
     return this.delegate.onClose(cb)
   }
 
-  dispose (): void {
+  dispose(): void {
     this.delegate.dispose()
   }
 
-  write (msg: Message): Promise<void> {
+  write(msg: Message): Promise<void> {
     return this.delegate.write(this.middleware(msg))
   }
 
-  end (): void {
+  end(): void {
     return this.delegate.end()
   }
 }
 class MiddlewareMessageReader implements MessageReader {
-  constructor (private delegate: MessageReader, private middleware: MessageMiddleware) {}
+  constructor(
+    private delegate: MessageReader,
+    private middleware: MessageMiddleware
+  ) {}
 
   onError: Event<Error> = (cb) => {
     return this.delegate.onError(cb)
@@ -49,27 +66,32 @@ class MiddlewareMessageReader implements MessageReader {
     return this.delegate.onPartialMessage(cb)
   }
 
-  listen (callback: DataCallback): Disposable {
-    return this.delegate.listen(message => {
+  listen(callback: DataCallback): Disposable {
+    return this.delegate.listen((message) => {
       callback(this.middleware(message))
     })
   }
 
-  dispose (): void {
+  dispose(): void {
     this.delegate.dispose()
   }
 }
 
 interface IConnectionProvider {
-    get(encoding: string): Promise<MessageTransports>
+  get(encoding: string): Promise<MessageTransports>
 }
 
 export class MonacoLanguageClient extends BaseLanguageClient {
-  constructor (id: string, name: string, clientOptions: BaseLanguageClientOptions, protected readonly connectionProvider: IConnectionProvider) {
+  constructor(
+    id: string,
+    name: string,
+    clientOptions: BaseLanguageClientOptions,
+    protected readonly connectionProvider: IConnectionProvider
+  ) {
     super(id, name, clientOptions)
   }
 
-  protected override createMessageTransports (encoding: string): Promise<MessageTransports> {
+  protected override createMessageTransports(encoding: string): Promise<MessageTransports> {
     return this.connectionProvider.get(encoding)
   }
 }
@@ -80,12 +102,12 @@ export class MonacoLanguageClient extends BaseLanguageClient {
  * @param transports The original transports
  * @returns The transformed transports
  */
-function hackTransports (transports: MessageTransports): MessageTransports {
+function hackTransports(transports: MessageTransports): MessageTransports {
   return {
-    reader: new MiddlewareMessageReader(transports.reader, message => {
+    reader: new MiddlewareMessageReader(transports.reader, (message) => {
       return message
     }),
-    writer: new MiddlewareMessageWriter(transports.writer, message => {
+    writer: new MiddlewareMessageWriter(transports.writer, (message) => {
       if (Message.isRequest(message) && message.method === InitializeRequest.type.method) {
         const params = message.params as InitializeParams
         // Hack to fix url converted from /toto/tata to \\toto\tata in windows
@@ -105,18 +127,17 @@ function hackTransports (transports: MessageTransports): MessageTransports {
 }
 
 class CGLSPConnectionProvider implements IConnectionProvider {
-  constructor (
+  constructor(
     private id: LanguageClientId,
     private infrastructure: Infrastructure
-  ) {
-  }
+  ) {}
 
-  async get () {
+  async get() {
     return hackTransports(await this.infrastructure.openConnection(this.id))
   }
 }
 
-async function createLanguageClient (
+async function createLanguageClient(
   id: LanguageClientId,
   infrastructure: Infrastructure,
   {
@@ -130,7 +151,8 @@ async function createLanguageClient (
 ): Promise<MonacoLanguageClient> {
   const allInitializationOptions = () => {
     const infrastructureInitOptions = infrastructure.getInitializationOptions?.(documentSelector)
-    const languageInitOptions = typeof initializationOptions === 'function' ? initializationOptions() : initializationOptions
+    const languageInitOptions =
+      typeof initializationOptions === 'function' ? initializationOptions() : initializationOptions
     if (infrastructureInitOptions != null || languageInitOptions != null) {
       return {
         ...(infrastructureInitOptions ?? {}),
@@ -143,15 +165,14 @@ async function createLanguageClient (
   // Hack to force close the connection when the language client stops
   // Even if the `shutdown` request failed
   class _MonacoLanguageClient extends MonacoLanguageClient {
-    override async stop (timeout: number): Promise<void> {
-      // eslint-disable-next-line dot-notation
+    override async stop(timeout: number): Promise<void> {
       const connection = this['_connection']
       try {
         await super.stop(timeout)
       } finally {
         try {
           connection.dispose()
-        } catch (err) {
+        } catch {
           // ignore
         }
       }
@@ -159,7 +180,8 @@ async function createLanguageClient (
   }
 
   const client = new _MonacoLanguageClient(
-    `${id}-languageclient`, `CodinGame ${id} Language Client`,
+    `${id}-languageclient`,
+    `CodinGame ${id} Language Client`,
     {
       // use a language id as a document selector
       documentSelector,
