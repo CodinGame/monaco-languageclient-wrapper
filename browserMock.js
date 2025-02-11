@@ -1,6 +1,9 @@
 import fs from 'fs/promises'
 import { performance } from 'perf_hooks'
 import { fetch as fetchPolyfill } from 'whatwg-fetch'
+import crypto from 'node:crypto'
+
+Object.defineProperty(globalThis, 'crypto', { value: crypto })
 
 Object.defineProperty(document, 'queryCommandSupported', {
   value: jest.fn().mockImplementation(() => true)
@@ -140,9 +143,7 @@ Object.defineProperty(window, 'TextDecoder', {
   }
 })
 
-Object.defineProperty(window, 'Buffer', {
-  value: undefined
-})
+Object.defineProperty(window, 'Buffer', { value: undefined })
 
 // Force override performance, for some reason the implementation is empty otherwise
 let _performance = performance
@@ -157,8 +158,6 @@ Object.defineProperty(global, 'performance', {
   }
 })
 
-global.CSS = {
-  escape: (v) => v
-}
+global.CSS = { escape: (v) => v }
 
 Element.prototype.scrollIntoView = jest.fn()
