@@ -161,3 +161,5 @@ Object.defineProperty(global, 'performance', {
 global.CSS = { escape: (v) => v }
 
 Element.prototype.scrollIntoView = jest.fn()
+
+window.document.adoptedStyleSheets = []
