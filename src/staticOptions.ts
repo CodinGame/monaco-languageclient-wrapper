@@ -406,6 +406,24 @@ const staticOptions = asLanguageClientOptionsById({
     ],
     synchronize: {},
     mutualizable: true
+  },
+  powershell: {
+    // https://github.com/PowerShell/PowerShellEditorServices/blob/1a988a964d9803a4b82d2f0f56b5c8a225b11156/src/PowerShellEditorServices/Utility/LspUtils.cs#L12
+    documentSelector: [
+      {
+        scheme: 'file',
+        language: 'powershell'
+      },
+      {
+        scheme: 'file',
+        language: 'pwsh'
+      },
+      {
+        scheme: 'file',
+        pattern: '**/*.ps*1'
+      }
+    ],
+    mutualizable: true
   }
 })
 
