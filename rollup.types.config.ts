@@ -1,6 +1,6 @@
 import * as rollup from 'rollup'
 import dts from 'rollup-plugin-dts'
-import pkg from './package.json' assert { type: 'json' }
+import pkg from './package.json' with { type: 'json' }
 import removeVscodeDeclareModule from './rollup/rollup-plugin-remove-vscode-declare-module'
 
 const externals = [...Object.keys(pkg.dependencies)]

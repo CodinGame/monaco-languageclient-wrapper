@@ -11,9 +11,9 @@
     "test": "jest --runInBand",
     "test:watch": "jest --watch",
     "build": "npm run lint && npm run compile && npm run generate-types && npm run test",
-    "compile": "node --experimental-json-modules ./node_modules/.bin/rollup --config rollup.config.ts --configPlugin typescript",
+    "compile": "node --experimental-json-modules ./node_modules/.bin/rollup --config rollup.config.ts --configPlugin typescript --configImportAttributesKey with",
     "lint": "eslint '{src/**/*.ts,scripts/*.ts,rollup.config.ts}' && prettier --check '**/*.{js,ts}'",
-    "generate-types": "tsc --project tsconfig.types.json && node --experimental-json-modules ./node_modules/.bin/rollup --config rollup.types.config.ts --configPlugin typescript && rm -rf ./dist/types",
+    "generate-types": "tsc --project tsconfig.types.json && node --experimental-json-modules ./node_modules/.bin/rollup --config rollup.types.config.ts --configPlugin typescript --configImportAttributesKey with && rm -rf ./dist/types",
     "preprepare": "./scripts/install-extensions"
   },
   "repository": {

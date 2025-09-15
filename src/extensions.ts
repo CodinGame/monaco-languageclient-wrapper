@@ -143,7 +143,7 @@ class InfrastructureFileSystemUpdaterProvider
     throw FileSystemProviderError.create('Not allowed', FileSystemProviderErrorCode.NoPermissions)
   }
 
-  async writeFile(resource: URI, content: Uint8Array): Promise<void> {
+  async writeFile(resource: URI, content: Uint8Array<ArrayBuffer>): Promise<void> {
     await this.infrastructure.writeFile!(
       resource,
       await bufferToBase64(content),
