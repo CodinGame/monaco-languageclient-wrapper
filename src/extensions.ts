@@ -26,7 +26,7 @@ import { LanguageClientManager } from './languageClient'
 import { Infrastructure } from './infrastructure'
 import { willShutdownNotificationType, WillShutdownParams } from './customRequests'
 
-async function bufferToBase64(buffer: ArrayBuffer | Uint8Array) {
+async function bufferToBase64(buffer: ArrayBuffer | Uint8Array<ArrayBuffer>) {
   // use a FileReader to generate a base64 data URI:
   const base64url = await new Promise<string>((resolve) => {
     const reader = new FileReader()
