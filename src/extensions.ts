@@ -129,9 +129,7 @@ export class WillDisposeFeature implements StaticFeature {
   clear(): void {}
 }
 
-class InfrastructureFileSystemUpdaterProvider
-  implements IFileSystemProviderWithFileReadWriteCapability
-{
+class InfrastructureFileSystemUpdaterProvider implements IFileSystemProviderWithFileReadWriteCapability {
   capabilities =
     FileSystemProviderCapabilities.FileReadWrite | FileSystemProviderCapabilities.PathCaseSensitive
   constructor(
