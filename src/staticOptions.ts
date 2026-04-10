@@ -94,7 +94,7 @@ const staticOptions = asLanguageClientOptionsById({
     mutualizable: true
   },
   cobol: {
-    documentSelector: [{ scheme: 'file', language: 'COBOL' }],
+    documentSelector: [{ scheme: 'file', language: 'cobol' }],
     synchronize: {
       configurationSection: 'cobol-lsp'
     },
