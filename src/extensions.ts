@@ -8,7 +8,7 @@ import {
   IStat,
   registerFileSystemOverlay
 } from '@codingame/monaco-vscode-files-service-override'
-import { StaticFeature, FeatureState } from 'vscode-languageclient/lib/common/api'
+import { StaticFeature, FeatureState } from 'vscode-languageclient'
 import {
   DidSaveTextDocumentNotification,
   Disposable,
@@ -74,7 +74,12 @@ export class InitializeTextDocumentFeature implements StaticFeature {
     async function saveFile(textDocument: vscode.TextDocument) {
       if (
         documentSelector != null &&
-        vscode.languages.match(documentSelector, textDocument) > 0 &&
+        vscode.languages.match(
+          languageClient.languageClient!.protocol2CodeConverter.asDocumentSelector(
+            documentSelector
+          ),
+          textDocument
+        ) > 0 &&
         textDocument.uri.scheme === 'file'
       ) {
         await infrastructure.writeFile?.(

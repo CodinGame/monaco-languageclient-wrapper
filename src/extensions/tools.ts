@@ -1,5 +1,5 @@
 import { ExtensionContext } from 'vscode'
-import { FeatureState, StaticFeature } from 'vscode-languageclient/lib/browser/main'
+import { FeatureState, StaticFeature } from 'vscode-languageclient'
 import { Disposable, DocumentSelector, ServerCapabilities } from 'vscode-languageserver-protocol'
 
 export function unsupported(): never {

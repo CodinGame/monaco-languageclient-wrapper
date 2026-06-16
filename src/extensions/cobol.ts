@@ -36,7 +36,12 @@ export class CobolResolveSubroutineFeature extends ExtensionFeature {
             return contantRoutinePath
           }
           return vscode.workspace.textDocuments
-            .filter((textDocument) => vscode.languages.match(documentSelector, textDocument))
+            .filter((textDocument) =>
+              vscode.languages.match(
+                this.languageClient.protocol2CodeConverter.asDocumentSelector(documentSelector),
+                textDocument
+              )
+            )
             .filter((document) =>
               document.getText().match(new RegExp(`PROGRAM-ID\\.\\W+${routineName}\\.`, 'gi'))
             )

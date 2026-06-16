@@ -1,5 +1,5 @@
 import { commands, Uri, languages, ExtensionContext, workspace, CancellationToken } from 'vscode'
-import { Position as LSPosition, Location as LSLocation } from 'vscode-languageclient'
+import { Position as LSPosition, Location as LSLocation } from 'vscode-languageclient/browser'
 import { JavaInlayHintsProvider } from 'extensions/java/inlayHintsProvider'
 import { registerCommands as registerJavaCommands } from 'extensions/java/sourceAction'
 import { Commands } from 'extensions/java/commands'
@@ -53,7 +53,9 @@ export class JavaExtensionFeature extends ExtensionFeature {
 
     context.subscriptions.push(
       languages.registerInlayHintsProvider(
-        this.languageClient.clientOptions.documentSelector!,
+        this.languageClient.protocol2CodeConverter.asDocumentSelector(
+          this.languageClient.clientOptions.documentSelector!
+        ),
         new JavaInlayHintsProvider(this.languageClient)
       )
     )

@@ -4,15 +4,16 @@ import {
   createMessageConnection,
   DataCallback,
   Disposable,
+  HandlerResult,
   Message,
   MessageReader,
   MessageWriter,
   NotificationHandler,
   RequestHandler
 } from 'vscode-languageserver-protocol'
-import { createConnection, WatchDog, _Connection, _ } from 'vscode-languageserver/lib/common/api'
+import { createConnection, WatchDog, _Connection, _ } from 'vscode-languageserver'
 import { monaco } from '@codingame/monaco-editor-wrapper'
-import { MessageTransports } from 'vscode-languageclient'
+import { MessageTransports } from 'vscode-languageclient/browser'
 import { getFileStats, listFiles, StatFileResult, readFile, writeFile } from '../customRequests'
 import { Infrastructure, LanguageClientId, LanguageClientManager, LanguageClientOptions } from '../'
 
@@ -66,34 +67,22 @@ export interface DeferredPromise<ValueType> {
   reject(reason?: unknown): void
 }
 
-export default function pDefer<ValueType>(): DeferredPromise<ValueType> {
-  let resolve: (value: ValueType | PromiseLike<ValueType>) => void = () => {}
-  let reject: (reason?: unknown) => void = () => {}
-  const promise = new Promise<ValueType>((_resolve, _reject) => {
-    resolve = _resolve
-    reject = _reject
-  })
-
-  return {
-    promise,
-    resolve,
-    reject
-  }
-}
-
 function isDisposable(v: unknown): v is Disposable {
   return v != null && typeof (v as Disposable).dispose === 'function'
 }
 
-type ClientRequestHandler<Params, Result> = [Params, (result: Result) => void]
+type ClientRequestHandler<Params, Result, Error> = [
+  Params,
+  (result: Awaited<HandlerResult<Result, Error>>) => void
+]
 export async function waitClientRequest<Params, Result, Error>(
   listen: (handler: RequestHandler<Params, Result, Error>) => unknown
-): Promise<ClientRequestHandler<Params, Result>> {
-  const clientRequestHandlerPromise = new Promise<ClientRequestHandler<Params, Result>>(
+): Promise<ClientRequestHandler<Params, Result, Error>> {
+  const clientRequestHandlerPromise = new Promise<ClientRequestHandler<Params, Result, Error>>(
     (resolve) => {
       const disposable = listen((params: Params) => {
         if (isDisposable(disposable)) disposable.dispose()
-        const deferred = pDefer<Result>()
+        const deferred = Promise.withResolvers<Awaited<HandlerResult<Result, Error>>>()
         resolve([params, (result) => deferred.resolve(result)])
         return deferred.promise
       })
@@ -119,7 +108,7 @@ export async function waitClientNotification<Params>(
 }
 
 export class TestInfrastructure implements Infrastructure {
-  private connectionDeferred = pDefer<_Connection<_, _, _, _, _, _, _>>()
+  private connectionDeferred = Promise.withResolvers<_Connection<_, _, _, _, _, _, _>>()
 
   constructor(
     public automaticTextDocumentUpdate: boolean,

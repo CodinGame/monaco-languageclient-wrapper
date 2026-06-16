@@ -8,7 +8,6 @@ import {
   Event,
   LogMessageNotification
 } from 'vscode-languageserver-protocol'
-import * as vscode from 'vscode'
 import { errorHandler } from '@codingame/monaco-vscode-api/monaco'
 import once from 'once'
 import { DisposableCollection } from 'vscode-ws-jsonrpc'
@@ -120,13 +119,6 @@ export class LanguageClientManager implements LanguageClient {
 
   get onError(): Event<Error> {
     return this.onErrorEmitter.event
-  }
-
-  isModelManaged(document: vscode.TextDocument): boolean {
-    if (this.clientOptions.documentSelector == null) {
-      return false
-    }
-    return vscode.languages.match(this.clientOptions.documentSelector, document) > 0
   }
 
   isDisposed(): boolean {
@@ -394,12 +386,12 @@ export class LanguageClientManager implements LanguageClient {
     await this.languageClient.start()
   }
 
-  async sendNotification<P>(type: NotificationType<P>, params?: P): Promise<void> {
-    await this.languageClient!.sendNotification(type, params)
+  sendNotification: MonacoLanguageClient['sendNotification'] = (...args: unknown[]) => {
+    return Reflect.apply(this.languageClient!.sendNotification, this.languageClient, args)
   }
 
-  sendRequest<P, R, E>(type: RequestType<P, R, E>, params: P): Promise<R> {
-    return this.languageClient!.sendRequest<P, R, E>(type, params)
+  sendRequest: MonacoLanguageClient['sendRequest'] = (...args: unknown[]) => {
+    return Reflect.apply(this.languageClient!.sendRequest, this.languageClient, args)
   }
 }
 
