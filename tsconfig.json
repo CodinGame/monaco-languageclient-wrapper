@@ -2,7 +2,8 @@
   "extends": "@codingame/tsconfig",
   "compilerOptions": {
     "outDir": "dist",
-    "baseUrl": "./src",
+    "moduleResolution": "bundler",
+    "rootDir": "./src",
     "isolatedModules": false,
     "lib": [
       "dom",
@@ -13,9 +14,10 @@
     "noEmit": true,
     "paths": {
       "extensions/*": [
-        "../extensions/*"
+        "./extensions/*"
       ]
     },
+    "types": ["node"],
     "sourceMap": true,
     "resolveJsonModule": true
   },
