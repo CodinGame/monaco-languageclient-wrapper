@@ -1,5 +1,5 @@
 import * as vscode from 'vscode'
-import { Middleware } from 'vscode-languageclient'
+import { Middleware } from 'vscode-languageclient/browser'
 import type { LanguageClientOptions } from './languageClientOptions'
 
 type LanguageClientOptionsById<T extends string> = Record<T, LanguageClientOptions>

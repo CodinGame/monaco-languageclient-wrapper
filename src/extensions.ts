@@ -8,7 +8,7 @@ import {
   IStat,
   registerFileSystemOverlay
 } from '@codingame/monaco-vscode-files-service-override'
-import { StaticFeature, FeatureState } from 'vscode-languageclient'
+import { StaticFeature, FeatureState } from 'vscode-languageclient/browser'
 import {
   DidSaveTextDocumentNotification,
   Disposable,

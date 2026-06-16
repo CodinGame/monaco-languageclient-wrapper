@@ -1,4 +1,4 @@
-import { MessageTransports } from 'vscode-languageclient'
+import { MessageTransports } from 'vscode-languageclient/browser'
 import type { WorkspaceFolder } from 'vscode'
 import { CodinGameInfrastructure, Infrastructure } from './infrastructure'
 import { WillShutdownParams } from './customRequests'

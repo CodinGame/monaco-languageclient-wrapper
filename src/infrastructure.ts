@@ -4,7 +4,7 @@ import {
   WebSocketMessageWriter,
   toSocket
 } from 'vscode-ws-jsonrpc'
-import { MessageTransports } from 'vscode-languageclient'
+import { MessageTransports } from 'vscode-languageclient/browser'
 import * as monaco from 'monaco-editor'
 import * as vscode from 'vscode'
 import { LSPAny } from 'vscode-languageserver-protocol'

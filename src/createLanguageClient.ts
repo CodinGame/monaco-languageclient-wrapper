@@ -13,7 +13,7 @@ import {
   MessageTransports,
   BaseLanguageClient,
   LanguageClientOptions as BaseLanguageClientOptions
-} from 'vscode-languageclient'
+} from 'vscode-languageclient/browser'
 import { InitializeParams, InitializeRequest } from 'vscode-languageserver-protocol'
 import { LanguageClientId, LanguageClientOptions } from './languageClientOptions'
 import { Infrastructure } from './infrastructure'

@@ -1,5 +1,8 @@
-import { LanguageClientOptions as BaseLanguageClientOptions } from 'vscode-languageclient'
-import { StaticFeature, DynamicFeature } from 'vscode-languageclient'
+import {
+  LanguageClientOptions as BaseLanguageClientOptions,
+  StaticFeature,
+  DynamicFeature
+} from 'vscode-languageclient/browser'
 import { Disposable } from 'vscode-languageserver-protocol'
 import staticOptions, { StaticLanguageClientId } from './staticOptions'
 import { MonacoLanguageClient } from './createLanguageClient'

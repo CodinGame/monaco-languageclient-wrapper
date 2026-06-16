@@ -1,4 +1,4 @@
-import { CloseAction, ErrorAction, State } from 'vscode-languageclient'
+import { CloseAction, ErrorAction, State } from 'vscode-languageclient/browser'
 import delay from 'delay'
 import {
   CancellationToken,
