@@ -4,13 +4,14 @@ import {
   monaco,
   registerEditorOpenHandler
 } from '@codingame/monaco-editor-wrapper'
+import { beforeAll, describe, expect, jest, test } from '@jest/globals'
 import {
   CompletionTriggerKind,
   ServerCapabilities,
   TextDocumentSyncKind,
   Range
 } from 'vscode-languageserver-protocol'
-import { _Connection, _ } from 'vscode-languageserver/lib/common/api'
+import { _Connection, _ } from 'vscode-languageserver'
 import { createModelReference } from '@codingame/monaco-vscode-api/monaco'
 import * as vscode from 'vscode'
 import {
@@ -18,7 +19,7 @@ import {
   RegisteredMemoryFile,
   registerFileSystemOverlay
 } from '@codingame/monaco-vscode-files-service-override'
-import pDefer, { TestInfrastructure, waitClientNotification, waitClientRequest } from './tools'
+import { TestInfrastructure, waitClientNotification, waitClientRequest } from './tools'
 import {
   getFileStatsRequestType,
   ReadFileParams,
@@ -48,7 +49,7 @@ async function initializeLanguageClientAndGetConnection(
     ...getLanguageClientOptions(languageClientId),
     createAdditionalFeatures: undefined
   })
-  const startPromise = languageClient.start()
+  languageClient.start()
 
   const connection = await infrastructure.getConnection()
 
@@ -57,8 +58,6 @@ async function initializeLanguageClientAndGetConnection(
   sendInitializationResult({
     capabilities
   })
-
-  await startPromise
 
   return [languageClient, connection]
 }
@@ -90,7 +89,7 @@ async function testLanguageClient(
   )
 
   const onRemainingRequest = jest.fn()
-  const onRemainingNotification = jest.fn()
+  const onRemainingNotification = jest.fn<() => void>()
   connection.onRequest(onRemainingRequest)
   connection.onNotification(onRemainingNotification)
 
@@ -112,6 +111,8 @@ async function testLanguageClient(
   fs.registerFile(new RegisteredMemoryFile(mainFileUri, fileContent))
   const fileSystemDisposable = registerFileSystemOverlay(1, fs)
 
+  const didOpenNotificationPromise = waitClientNotification(connection.onDidOpenTextDocument)
+
   const modelRef = await createModelReference(mainFileUri)
   const model = modelRef.object.textEditorModel!
 
@@ -122,7 +123,7 @@ async function testLanguageClient(
   })
 
   // Expect the model to be open
-  expect(await waitClientNotification(connection.onDidOpenTextDocument)).toEqual({
+  expect(await didOpenNotificationPromise).toEqual({
     textDocument: {
       uri: mainFileUri.toString(),
       languageId: 'java',
@@ -199,7 +200,7 @@ async function testLanguageClient(
     range: Range.create(1, 1, 1, 10)
   })
 
-  const editorOpenDeferred = pDefer<monaco.editor.IStandaloneCodeEditor>()
+  const editorOpenDeferred = Promise.withResolvers<monaco.editor.IStandaloneCodeEditor>()
   const editorHandlerDisposable = registerEditorOpenHandler(async (modelRef) => {
     // do nothing
     const editor = createEditor(document.createElement('div'), {

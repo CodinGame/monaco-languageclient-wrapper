@@ -2,6 +2,7 @@ import { whenReady } from '@codingame/monaco-vscode-java-default-extension'
 import { initialize } from '@codingame/monaco-editor-wrapper'
 import { TestInfrastructure } from './tools'
 import { createLanguageClientManager, getLanguageClientOptions } from '..'
+import { beforeAll, describe, test } from '@jest/globals'
 
 beforeAll(async () => {
   await initialize()
