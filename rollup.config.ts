@@ -7,8 +7,8 @@ import * as recast from 'recast'
 import recastBabylonParser from 'recast/parsers/babylon.js'
 import nodePolyfills from 'rollup-plugin-polyfill-node'
 import typescript from '@rollup/plugin-typescript'
-import path, { dirname } from 'path'
-import { fileURLToPath } from 'url'
+import path, { dirname } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import pkg from './package.json' with { type: 'json' }
 
 const __filename = fileURLToPath(import.meta.url)
