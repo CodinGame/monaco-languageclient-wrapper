@@ -1,0 +1,13 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["eslint", "typescript"],
+  "categories": {
+    "correctness": "error"
+  },
+  "env": {
+    "browser": true
+  },
+  "rules": {
+    "@typescript-eslint/no-unused-vars": ["error", { "ignoreRestSiblings": true }]
+  }
+}
