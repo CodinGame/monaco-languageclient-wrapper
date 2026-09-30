@@ -4,6 +4,8 @@ import {
   monaco,
   registerEditorOpenHandler
 } from '@codingame/monaco-editor-wrapper'
+import '@codingame/monaco-editor-wrapper/features/configuration'
+import '@codingame/monaco-editor-wrapper/features/dialogs'
 import { beforeAll, describe, expect, jest, test } from '@jest/globals'
 import {
   CompletionTriggerKind,

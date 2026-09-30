@@ -1,5 +1,7 @@
 import { whenReady } from '@codingame/monaco-vscode-java-default-extension'
 import { initialize } from '@codingame/monaco-editor-wrapper'
+import '@codingame/monaco-editor-wrapper/features/configuration'
+import '@codingame/monaco-editor-wrapper/features/dialogs'
 import { TestInfrastructure } from './tools'
 import { createLanguageClientManager, getLanguageClientOptions } from '..'
 import { beforeAll, describe, test } from '@jest/globals'
