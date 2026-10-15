@@ -88,6 +88,11 @@ export class InitializeTextDocumentFeature implements StaticFeature {
           languageClient
         )
 
+        // The client may have been disposed or stopped while the file was being written
+        if (languageClient.languageClient == null) {
+          return
+        }
+
         // Always send notification even if the server doesn't support it (because csharp register the didSave feature too late)
         await languageClient.sendNotification(DidSaveTextDocumentNotification.type, {
           textDocument: {
